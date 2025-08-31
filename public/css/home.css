@@ -1,0 +1,125 @@
+/* Dashboard Fancy Box*/
+.wrimagecard {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    text-align: left;
+    position: relative;
+    background: #fff;
+    box-shadow: 12px 15px 20px 0px rgba(46, 61, 73, 0.15);
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.wrimagecard .fa {
+    position: relative;
+    font-size: 70px;
+}
+
+.wrimagecard-topimage_header {
+    padding: 20px;
+}
+
+a.wrimagecard:hover, .wrimagecard-topimage:hover {
+    box-shadow: 2px 4px 8px 0px rgba(46, 61, 73, 0.2);
+}
+
+.wrimagecard-topimage a {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.wrimagecard-topimage_title {
+    padding: 20px 24px;
+    height: 80px;
+    padding-bottom: 0.75rem;
+    position: relative;
+}
+
+.wrimagecard-topimage a {
+    border-bottom: none;
+    text-decoration: none;
+    color: #525c65;
+    transition: color 0.3s ease;
+}
+
+/* View Users fancy box on dashboard */
+.backcolorUser {
+    background-color: #ff9f4330;
+}
+
+.iconcolorUser {
+    color: #f368e0;
+}
+
+/* View Templates fancy box on dashboard */
+.backcolorTemplate {
+    background-color: #ee525330;
+}
+
+.iconcolorTemplate {
+    color: #ff9f43;
+}
+
+/* View Categories fancy box on dashboard */
+.backcolorCategory {
+    background-color: #0abde330;
+}
+
+.iconcolorCategory {
+    color: #ee5253;
+}
+
+/* View Fonts fancy box on dashboard */
+.backcolorFont {
+    background-color: #10ac8430;
+}
+
+.iconcolorFont {
+    color: #0abde3;
+}
+
+/* View Logos fancy box on dashboard */
+.backcolorLogo {
+    background-color: #00d2d330;
+}
+
+.iconcolorLogo {
+    color: #10ac84;
+}
+
+/* View Auth. Sign fancy box on dashboard */
+.backcolorAuthsign {
+    background-color: #54a0ff30;
+}
+
+.iconcolorAuthsign {
+    color: #00d2d3;
+}
+
+/* Create IDs fancy box on dashboard */
+.backcolorCreateID {
+    background-color: #5f27cd30;
+}
+
+.iconcolorCreateID {
+    color: #54a0ff;
+}
+
+/* View ID cards fancy box on dashboard */
+.backcolorViewID {
+    background-color: #b3393930;
+}
+
+.iconcolorViewID {
+    color: #5f27cd;
+}
+
+/* Settings fancy box on dashboard */
+.backcolorSetting {
+    background-color: #1B9CFC30;
+}
+
+.iconcolorSetting {
+    color: #576574;
+}
