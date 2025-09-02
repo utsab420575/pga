@@ -11,16 +11,14 @@ class Department extends Model
 
     protected $guarded = [];
 
-    // If your table isn't "departments", set it:
-    // protected $table = 'departments';
-
     public function faculty()
     {
-        return $this->belongsTo(Faculty::class);     // App\Models\Faculty
+        return $this->belongsTo(Faculty::class);
     }
 
+    // keep method name from your original codebase
     public function applicant()
     {
-        return $this->hasMany(Applicant::class);     // App\Models\Applicant
+        return $this->hasMany(Applicant::class);
     }
 }

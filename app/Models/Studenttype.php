@@ -11,11 +11,9 @@ class Studenttype extends Model
 
     protected $guarded = [];
 
-    // If your table isn't "studenttypes", set it:
-    // protected $table = 'studenttypes';
-
+    // keep method name from your original codebase
     public function applicant()
     {
-        return $this->hasMany(Applicant::class); // App\Models\Applicant
+        return $this->hasMany(Applicant::class);
     }
 }

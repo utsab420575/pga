@@ -11,12 +11,9 @@ class Faculty extends Model
 
     protected $guarded = [];
 
-    // If your table isn't "faculties", set it:
-    // protected $table = 'faculties';
-
-    // Keep method name as in old code to avoid changing callers
+    // keep method name from your original codebase
     public function department()
     {
-        return $this->hasMany(Department::class); // App\Models\Department
+        return $this->hasMany(Department::class);
     }
 }

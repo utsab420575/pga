@@ -11,11 +11,9 @@ class Degree extends Model
 
     protected $guarded = [];
 
-    // If your table isn't "degrees", you can set it:
-    // protected $table = 'degrees';
-
+    // keep method name from your original codebase
     public function applicant()
     {
-        return $this->hasMany(Applicant::class); // App\Models\Applicant
+        return $this->hasMany(Applicant::class);
     }
 }
