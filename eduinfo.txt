@@ -1,0 +1,92 @@
+basic_info
+	-id
+	-bn_name
+	-f_name
+	-m_name
+	-g_incode
+	-passport_no
+	-per_address
+	-pre_address
+	-dob
+	-nationality
+	-nid
+	-religion
+	-gender
+	-marital_status
+	-field_of_interest
+	-photo
+	-sign
+	-applicant_id
+	
+eduinfo
+    id
+    degree
+    institute
+	year_of_passing
+	field
+	cgpa
+	applicant_id
+thesis
+	id
+	title
+	institute
+	period
+	applicant_id
+publication
+	id
+	title
+	authors
+	details
+	year_of_publication
+	applicant_id
+job_experience
+	id
+	from
+	to
+	designation
+	organization
+	details
+	applicant_id
+reference
+	id
+	name
+	designation
+	institute
+	address
+	phone
+	email
+	applicant_id
+	order_no
+attachment_type
+	id
+	title
+	status
+	required
+attachment
+	id
+	file
+	attachment_type_id
+	applicant_id
+eligibility_degree
+	id
+	degree
+	institute
+	country
+	cgpa
+	date_graduation
+	duration
+	total_credit
+	mode
+	period
+	uni_status
+	url
+	applicant_id
+settings
+	id
+	session
+	start_date
+	end_date
+	last_payment_date
+	eligibility_last_date
+
+    
