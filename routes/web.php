@@ -16,6 +16,7 @@ use App\Http\Controllers\AttachmentTypeController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\EligibilityDegreeController;
 use App\Http\Controllers\SettingController;
+use App\Http\Controllers\EligibilityVerificationController;
 
 
 /*
@@ -200,4 +201,6 @@ Route::prefix('setting')->name('setting.')->middleware('roles:admin,applicant')-
     Route::delete('delete/{id}', [SettingController::class, 'destroy'])->name('delete');
 });
 
-
+Route::get('applicant/eligibility-form/{id}', [EligibilityVerificationController::class, 'create'])
+    ->name('applicant.eligibility_master_form')
+    ->middleware(['auth','roles:admin,applicant']);
