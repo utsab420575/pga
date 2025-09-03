@@ -50,7 +50,8 @@ class BasicInfoController extends Controller
         }
 
         BasicInfo::create($data);
-        return redirect()->route('basic_info.all')->with('success', 'Basic info created.');
+        //return redirect()->route('basic_info.all')->with('success', 'Basic info created.');
+        return redirect()->back();
     }
 
     public function show($id)
@@ -67,6 +68,7 @@ class BasicInfoController extends Controller
 
     public function update(Request $request, $id)
     {
+
         $item = BasicInfo::findOrFail($id);
         $data = $request->validate([
             'full_name_block_letter' => 'required|string|max:255',
@@ -98,7 +100,8 @@ class BasicInfoController extends Controller
         }
 
         $item->update($data);
-        return redirect()->route('basic_info.all')->with('success', 'Basic info updated.');
+        return redirect()->back()->with('success', 'Basic info updated.');
+        //return redirect()->route('basic_info.all')->with('success', 'Basic info updated.');
     }
 
     public function destroy($id)

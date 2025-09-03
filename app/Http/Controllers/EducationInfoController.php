@@ -30,13 +30,24 @@ class EducationInfoController extends Controller
         ]);
 
         EducationInfo::create($data);
-        return redirect()->route('education_info.all')->with('success', 'Education info created.');
+        return redirect()->back()->with('success', 'Education Information Added');
     }
 
     public function show($id)
     {
-        $item = EducationInfo::findOrFail($id);
-        return view('education_info.show', compact('item'));
+        $item = \App\Models\EducationInfo::findOrFail($id);
+
+        // (optional) authorize that the logged-in user can see this row
+
+        return response()->json([
+            'id'              => $item->id,
+            'degree'          => $item->degree,
+            'institute'       => $item->institute,
+            'year_of_passing' => $item->year_of_passing,
+            'field'           => $item->field,
+            'cgpa'            => $item->cgpa,
+            'applicant_id'    => $item->applicant_id,
+        ]);
     }
 
     public function edit($id)
@@ -58,13 +69,13 @@ class EducationInfoController extends Controller
         ]);
 
         $item->update($data);
-        return redirect()->route('education_info.all')->with('success', 'Education info updated.');
+        return redirect()->back()->with('success', 'Education Information Updated');
     }
 
     public function destroy($id)
     {
         $item = EducationInfo::findOrFail($id);
         $item->delete();
-        return redirect()->route('education_info.all')->with('success', 'Education info deleted.');
+        return redirect()->back()->with('success','Education Information Deleted successfully');
     }
 }

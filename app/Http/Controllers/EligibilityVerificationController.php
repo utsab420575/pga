@@ -12,7 +12,7 @@ class EligibilityVerificationController extends Controller
     {
         $applicant = Applicant::with([
             'basicInfo',
-            'eligibilityDegrees',
+            'eligibilityDegree',
             'educationInfos',
             'attachments.type',
         ])->findOrFail($applicantId);
@@ -25,10 +25,20 @@ class EligibilityVerificationController extends Controller
             abort(403, 'You are not allowed to access this page.');
         }
 
+        // Business rule: page opens only if payment_status=1 AND applicationtype_id=1
+        // (If your column is literally `application_type_id`, change the property name below.)
+        if (auth()->user()->user_type === 'applicant') {
+            if (!($applicant->payment_status == 1 && $applicant->applicationtype_id == 2)) {
+                return back()->withErrors('This page is available only for paid Admission applications.');
+                // Or: abort(403, 'This page is available only for paid Admission applications.');
+            }
+        }
+
+
         return view('applicant.eligibility_master_form', [
             'applicant'          => $applicant,
             'basicInfo'          => $applicant->basicInfo,
-            'eligibilityDegrees' => $applicant->eligibilityDegrees,
+            'eligibilityDegree' => $applicant->eligibilityDegree,
             'educationInfos'     => $applicant->educationInfos,
             'attachments'        => $applicant->attachments,
             'attachmentTypes'    => AttachmentType::orderBy('title')->get(),

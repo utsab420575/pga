@@ -15,6 +15,10 @@
           integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
           crossorigin="anonymous">
 
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+
     @yield('css')
 </head>
 <body>
@@ -112,6 +116,41 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/js/bootstrap.min.js"
         integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy"
         crossorigin="anonymous"></script>
+{{--for sweetalert--}}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- Add Script Data(You can write it any javascript file and than just import this js) -->
+{{--this will be fire for any 'delete' class element[const target = event.target.closest('.delete');]--}}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('click', function (event) {
+            // Check if the clicked element or its parent has the 'delete' class
+            const target = event.target.closest('.delete');
+            if (target) {
+                event.preventDefault(); // Prevent default action
+
+                // Get the deletion URL
+                const deleteUrl = target.getAttribute('href');
+
+                // Show SweetAlert2 confirmation
+                Swal.fire({
+                    title: "Are you sure?",
+                    text: "This action cannot be undone!",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "Yes, delete it!",
+                    cancelButtonText: "Cancel",
+                    confirmButtonColor: "#d33",
+                    cancelButtonColor: "#3085d6",
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Redirect to the deletion URL
+                        window.location.href = deleteUrl;
+                    }
+                });
+            }
+        });
+    });
+</script>
 
 @yield('script')
 </body>

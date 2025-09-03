@@ -107,7 +107,7 @@ Route::prefix('education_info')->name('education_info.')->middleware('roles:admi
     Route::get('all',            [EducationInfoController::class, 'index'])->name('all');
     Route::get('add',            [EducationInfoController::class, 'create'])->name('add');
     Route::post('add',           [EducationInfoController::class, 'store'])->name('store');
-    Route::get('view/{id}',      [EducationInfoController::class, 'show'])->name('view');
+    Route::get('show/{id}',      [EducationInfoController::class, 'show'])->name('show');
     Route::get('edit/{id}',      [EducationInfoController::class, 'edit'])->name('edit');
     Route::put('update/{id}',    [EducationInfoController::class, 'update'])->name('update');
     Route::delete('delete/{id}', [EducationInfoController::class, 'destroy'])->name('delete');

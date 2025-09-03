@@ -61,45 +61,48 @@
                 </div>
 
                 {{-- CARD 2: Eligibility Degree --}}
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <span><b>Eligibility Degree</b></span>
-                        <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#eligibilityModal">
-                            Add
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        @if($eligibilityDegrees->count())
-                            <div class="table-responsive">
-                                <table class="table table-sm table-bordered mb-0">
-                                    <thead>
-                                    <tr>
-                                        <th>Degree</th><th>Institute</th><th>Country</th><th>CGPA</th><th>Grad. Date</th><th>Mode</th><th>Uni Status</th><th>Total Credit</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    @foreach($eligibilityDegrees as $ed)
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span><b>Eligibility Degree</b></span>
+                            <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#eligibilityModal">
+                                {{ $eligibilityDegree ? 'Update' : 'Add' }}
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            @if($eligibilityDegree)
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered mb-0">
+                                        <thead>
                                         <tr>
-                                            <td>{{ $ed->degree }}</td>
-                                            <td>{{ $ed->institute }}</td>
-                                            <td>{{ $ed->country }}</td>
-                                            <td>{{ $ed->cgpa }}</td>
-                                            <td>{{ optional($ed->date_graduation)->format('Y-m-d') }}</td>
-                                            <td>{{ $ed->mode }}</td>
-                                            <td>{{ $ed->uni_status }}</td>
-                                            <td>{{ $ed->total_credit }}</td>
+                                            <th>Degree</th><th>Institute</th><th>Country</th><th>CGPA</th><th>Grad. Date</th>
+                                            <th>Duration</th><th>Total Credit</th><th>Mode</th><th>Period</th><th>Uni Status</th><th>Total Credit</th>
                                         </tr>
-                                    @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        @else
-                            <em>No eligibility degree added.</em>
-                        @endif
+                                        </thead>
+                                        <tbody>
+                                        <tr>
+                                            <td>{{ $eligibilityDegree->degree }}</td>
+                                            <td>{{ $eligibilityDegree->institute }}</td>
+                                            <td>{{ $eligibilityDegree->country }}</td>
+                                            <td>{{ $eligibilityDegree->cgpa }}</td>
+                                            <td>{{ optional($eligibilityDegree->date_graduation)->format('Y-m-d') }}</td>
+                                            <td>{{ $eligibilityDegree->duration}}</td>
+                                            <td>{{ $eligibilityDegree->total_credit }}</td>
+                                            <td>{{ $eligibilityDegree->mode }}</td>
+                                            <td>{{ $eligibilityDegree->period }}</td>
+                                            <td>{{ $eligibilityDegree->uni_status }}</td>
+                                            <td>{{ $eligibilityDegree->total_credit }}</td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @else
+                                <em>No eligibility degree added.</em>
+                            @endif
+                        </div>
                     </div>
-                </div>
 
-                {{-- CARD 3: Education Info (you can add multiple) --}}
+
+                    {{-- CARD 3: Education Info (you can add multiple) --}}
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span><b>Education Info</b></span>
@@ -108,30 +111,57 @@
                         </button>
                     </div>
                     <div class="card-body">
-                        @if($educationInfos->count())
-                            <div class="table-responsive">
-                                <table class="table table-sm table-bordered mb-0">
-                                    <thead>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered mb-0">
+                                <thead>
+                                <tr>
+                                    <th>Degree</th>
+                                    <th>Institute</th>
+                                    <th>Year</th>
+                                    <th>Field</th>
+                                    <th>CGPA</th>
+                                    <th style="width:110px">Action</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                @forelse($educationInfos as $ei)
                                     <tr>
-                                        <th>Degree</th><th>Institute</th><th>Year</th><th>Field</th><th>CGPA</th>
+                                        <td>{{ $ei->degree }}</td>
+                                        <td>{{ $ei->institute }}</td>
+                                        <td>{{ $ei->year_of_passing }}</td>
+                                        <td>{{ $ei->field }}</td>
+                                        <td>{{ $ei->cgpa }}</td>
+                                        <td>
+                                            {{--here we send data to modal using link--}}
+                                            <a
+                                                href="#"
+                                                class="btn btn-outline-primary btn-sm ei-edit"
+                                                data-update-url="{{ route('education_info.update', $ei->id) }}"
+                                                data-degree="{{ $ei->degree }}"
+                                                data-institute="{{ $ei->institute }}"
+                                                data-year_of_passing="{{ $ei->year_of_passing }}"
+                                                data-field="{{ $ei->field }}"
+                                                data-cgpa="{{ $ei->cgpa }}"
+                                                title="Edit"
+                                            >
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+
+                                            <a
+                                                href="{{ route('education_info.delete', $ei->id) }}"
+                                                class="btn btn-outline-danger btn-sm ei-delete"
+                                                data-delete-url="{{ route('education_info.delete', $ei->id) }}"
+                                            >
+                                                <i class="fas fa-trash-alt mr-1" aria-hidden="true"></i>
+                                            </a>
+                                        </td>
                                     </tr>
-                                    </thead>
-                                    <tbody>
-                                    @foreach($educationInfos as $ei)
-                                        <tr>
-                                            <td>{{ $ei->degree }}</td>
-                                            <td>{{ $ei->institute }}</td>
-                                            <td>{{ $ei->year_of_passing }}</td>
-                                            <td>{{ $ei->field }}</td>
-                                            <td>{{ $ei->cgpa }}</td>
-                                        </tr>
-                                    @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        @else
-                            <em>No education info yet.</em>
-                        @endif
+                                @empty
+                                    <tr><td colspan="6"><em>No education info yet.</em></td></tr>
+                                @endforelse
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
@@ -240,7 +270,9 @@
                         <div class="form-group col-md-6">
                             <label>Nationality</label>
                             <input type="text" name="nationality" class="form-control"
-                                   value="{{ old('nationality', $basicInfo->nationality ?? '') }}" required>
+                                   value="{{ old('nationality', $basicInfo->nationality ?? '') }}"
+                                   placeholder="Bangldesh"
+                                   required>
                         </div>
                     </div>
 
@@ -301,11 +333,11 @@
                     <div class="form-row">
                         <div class="form-group col-md-6">
                             <label>Present Address</label>
-                            <textarea name="pre_address" class="form-control" rows="2">{{ old('pre_address', $basicInfo->pre_address ?? '') }}</textarea>
+                            <textarea name="pre_address" class="form-control" rows="2" required>{{ old('pre_address', $basicInfo->pre_address ?? '') }}</textarea>
                         </div>
                         <div class="form-group col-md-6">
                             <label>Permanent Address</label>
-                            <textarea name="per_address" class="form-control" rows="2">{{ old('per_address', $basicInfo->per_address ?? '') }}</textarea>
+                            <textarea name="per_address" class="form-control" rows="2" required>{{ old('per_address', $basicInfo->per_address ?? '') }}</textarea>
                         </div>
                     </div>
                 </div>
@@ -323,80 +355,145 @@
     {{-- Eligibility Degree Modal --}}
     <div class="modal fade" id="eligibilityModal" tabindex="-1" role="dialog" aria-labelledby="eligibilityLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg" role="document">
-            <form class="modal-content" method="POST" action="{{ route('eligibility_degree.store') }}">
+            <form class="modal-content"
+                  method="POST"
+                  action="{{ $eligibilityDegree ? route('eligibility_degree.update', $eligibilityDegree->id) : route('eligibility_degree.store') }}">
                 @csrf
+                @if($eligibilityDegree) @method('PUT') @endif
+
                 <input type="hidden" name="applicant_id" value="{{ $applicant->id }}">
+
                 <div class="modal-header">
-                    <h5 class="modal-title" id="eligibilityLabel">Eligibility Degree</h5>
+                    <h5 class="modal-title" id="eligibilityLabel">{{ $eligibilityDegree ? 'Update Eligibility Degree' : 'Add Eligibility Degree' }}</h5>
                     <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
                 </div>
+
                 <div class="modal-body">
                     <div class="form-row">
-                        <div class="form-group col-md-6"><label>Degree</label><input type="text" name="degree" class="form-control" required></div>
-                        <div class="form-group col-md-6"><label>Institute/University</label><input type="text" name="institute" class="form-control"></div>
+                        <div class="form-group col-md-12">
+                            <label>Degree</label>
+                            <input type="text" name="degree" class="form-control" required
+                                   value="{{ old('degree', $eligibilityDegree->degree ?? '') }}"
+                            >
+                        </div>
                     </div>
+
                     <div class="form-row">
-                        <div class="form-group col-md-4"><label>Country</label><input type="text" name="country" class="form-control"></div>
-                        <div class="form-group col-md-4"><label>CGPA/GPA/Class</label><input type="number" step="0.01" name="cgpa" class="form-control"></div>
-                        <div class="form-group col-md-4"><label>Date of Graduation</label><input type="date" name="date_graduation" class="form-control"></div>
+                        <div class="form-group col-md-12">
+                            <label>Institute/University</label>
+                            <input type="text" name="institute" class="form-control" required
+                                   value="{{ old('institute', $eligibilityDegree->institute ?? '') }}">
+                        </div>
                     </div>
+
                     <div class="form-row">
-                        <div class="form-group col-md-4"><label>Duration</label><input type="text" name="duration" class="form-control" placeholder="e.g., 4 years"></div>
-                        <div class="form-group col-md-4"><label>Total Credit</label><input type="number" step="0.01" name="total_credit" class="form-control"></div>
-                        <div class="form-group col-md-4"><label>Mode</label>
-                            <select name="mode" class="form-control">
+                        <div class="form-group col-md-4">
+                            <label>Country</label>
+                            <input type="text" name="country" class="form-control" required
+                                   value="{{ old('country', $eligibilityDegree->country ?? '') }}">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>CGPA/GPA/Class</label>
+                            <input type="number" step="0.01" name="cgpa" class="form-control" required
+                                   value="{{ old('cgpa', $eligibilityDegree->cgpa ?? '') }}">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Date of Graduation</label>
+                            <input type="date" name="date_graduation" class="form-control" required
+                                   value="{{ old('date_graduation', optional($eligibilityDegree->date_graduation ?? null)->format('Y-m-d')) }}">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label>Duration in Year</label>
+                            <input type="number" name="duration" class="form-control" placeholder="e.g., 4" required
+                                   value="{{ old('duration', $eligibilityDegree->duration ?? '') }}">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Total Credit</label>
+                            <input type="number" step="0.01" name="total_credit" class="form-control" required
+                                   value="{{ old('total_credit', $eligibilityDegree->total_credit ?? '') }}">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Mode</label>
+                            @php $modeOld = old('mode', $eligibilityDegree->mode ?? ''); @endphp
+                            <select name="mode" class="form-control" required>
                                 <option value="">--select--</option>
-                                <option>Full-time</option>
-                                <option>Part-Time</option>
-                                <option>Distance learning</option>
+                                <option {{ $modeOld==='Full-time' ? 'selected':'' }}>Full-time</option>
+                                <option {{ $modeOld==='Part-Time' ? 'selected':'' }}>Part-Time</option>
+                                <option {{ $modeOld==='Distance learning' ? 'selected':'' }}>Distance learning</option>
                             </select>
                         </div>
                     </div>
+
                     <div class="form-row">
-                        <div class="form-group col-md-4"><label>Period</label><input type="text" name="period" class="form-control" placeholder="2018-2022"></div>
-                        <div class="form-group col-md-4"><label>University Status</label>
-                            <select name="uni_status" class="form-control">
+                        <div class="form-group col-md-4">
+                            <label>Period</label>
+                            <input type="text" name="period" class="form-control" placeholder="2018-2022" required
+                                   value="{{ old('period', $eligibilityDegree->period ?? '') }}">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>University Status</label>
+                            @php $uniOld = old('uni_status', $eligibilityDegree->uni_status ?? ''); @endphp
+                            <select name="uni_status" class="form-control" required>
                                 <option value="">--select--</option>
-                                <option>Public</option><option>Private</option><option>International</option>
+                                <option {{ $uniOld==='Public' ? 'selected':'' }}>Public</option>
+                                <option {{ $uniOld==='Private' ? 'selected':'' }}>Private</option>
+                                <option {{ $uniOld==='International' ? 'selected':'' }}>International</option>
                             </select>
                         </div>
-                        <div class="form-group col-md-4"><label>University Web Link</label><input type="url" name="url" class="form-control" placeholder="https://..."></div>
+                        <div class="form-group col-md-4">
+                            <label>University Web Link</label>
+                            <input type="url" name="url" class="form-control" placeholder="https://..." required
+                                   value="{{ old('url', $eligibilityDegree->url ?? '') }}">
+                        </div>
                     </div>
                 </div>
+
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-success">Save</button>
+                    <button type="submit" class="btn btn-success">{{ $eligibilityDegree ? 'Update' : 'Save' }}</button>
                 </div>
             </form>
         </div>
     </div>
 
+
+    {{-- Education Info Modal --}}
     {{-- Education Info Modal --}}
     <div class="modal fade" id="educationModal" tabindex="-1" role="dialog" aria-labelledby="educationLabel" aria-hidden="true">
         <div class="modal-dialog" role="document">
-            <form class="modal-content" method="POST" action="{{ route('education_info.store') }}">
+            <form id="educationForm" class="modal-content" method="POST" action="{{ route('education_info.store') }}">
                 @csrf
+                <input type="hidden" id="ei_method" name="_method" value="POST">
                 <input type="hidden" name="applicant_id" value="{{ $applicant->id }}">
+
                 <div class="modal-header">
-                    <h5 class="modal-title" id="educationLabel">Education Info</h5>
+                    <h5 class="modal-title" id="educationLabel"><span id="ei_modal_title">Add Education Info</span></h5>
                     <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
                 </div>
+
                 <div class="modal-body">
                     <div class="form-group"><label>Degree</label><input type="text" name="degree" class="form-control" required></div>
                     <div class="form-group"><label>Institute</label><input type="text" name="institute" class="form-control" required></div>
                     <div class="form-row">
-                        <div class="form-group col-md-6"><label>Year of Passing</label><input type="number" name="year_of_passing" class="form-control" min="1900" max="2100"></div>
+                        <div class="form-group col-md-6"><label>Year of Passing</label><input type="number" name="year_of_passing" class="form-control" min="1900" max="2100" required></div>
                         <div class="form-group col-md-6"><label>Field</label><input type="text" name="field" class="form-control"></div>
                     </div>
                     <div class="form-group"><label>CGPA</label><input type="number" step="0.01" name="cgpa" class="form-control"></div>
                 </div>
+
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-success">Save</button>
+                    <button id="ei_submit_btn" type="submit" class="btn btn-success">Save</button>
                 </div>
             </form>
         </div>
     </div>
+
+
+
 
     {{-- Attachment Modal --}}
     <div class="modal fade" id="attachmentModal" tabindex="-1" role="dialog" aria-labelledby="attachmentLabel" aria-hidden="true">
@@ -434,8 +531,73 @@
 
 @endsection
 
+
+{{-- hidden DELETE form for Education Info data delete --}}
+<form id="eiDeleteForm" method="POST" style="display:none;">
+    @csrf
+    @method('DELETE')
+</form>
+
+
 @section('script')
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.3/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/js/bootstrap.min.js"></script>
+
+
+   {{-- sweealert--}}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.addEventListener('click', function (event) {
+                const link = event.target.closest('.ei-delete');
+                if (!link) return;
+
+                event.preventDefault();
+
+                const deleteUrl = link.getAttribute('data-delete-url') || link.getAttribute('href');
+
+                Swal.fire({
+                    title: "Are you sure?",
+                    text: "This action cannot be undone!",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "Yes, delete it!",
+                    cancelButtonText: "Cancel",
+                    confirmButtonColor: "#d33",
+                    cancelButtonColor: "#3085d6",
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const form = document.getElementById('eiDeleteForm');
+                        form.setAttribute('action', deleteUrl);
+                        form.submit(); // <-- sends POST with _method=DELETE
+                    }
+                });
+            });
+        });
+    </script>
+
+
+    {{-- this is for education info --}}
+    <script>
+        document.addEventListener('click', function(e){
+            const link = e.target.closest('.ei-edit');
+            if (!link) return;
+            e.preventDefault();
+
+            const f = document.getElementById('educationForm');
+            f.setAttribute('action', link.dataset.updateUrl);
+            document.getElementById('ei_method').value = 'PUT';
+            document.getElementById('ei_modal_title').textContent = 'Update Education Info';
+            document.getElementById('ei_submit_btn').textContent  = 'Update';
+
+            f.querySelector('[name=degree]').value          = link.dataset.degree || '';
+            f.querySelector('[name=institute]').value       = link.dataset.institute || '';
+            f.querySelector('[name=year_of_passing]').value = link.dataset.year_of_passing || '';
+            f.querySelector('[name=field]').value           = link.dataset.field || '';
+            f.querySelector('[name=cgpa]').value            = link.dataset.cgpa || '';
+
+            $('#educationModal').modal('show');
+        });
+    </script>
+
 @endsection

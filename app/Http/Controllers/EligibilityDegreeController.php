@@ -36,7 +36,7 @@ class EligibilityDegreeController extends Controller
         ]);
 
         EligibilityDegree::create($data);
-        return redirect()->route('eligibility_degree.all')->with('success', 'Eligibility degree created.');
+        return redirect()->back()->with('success', 'Eligibility Degree Created.');
     }
 
     public function show($id)
@@ -70,7 +70,7 @@ class EligibilityDegreeController extends Controller
         ]);
 
         $item->update($data);
-        return redirect()->route('eligibility_degree.all')->with('success', 'Eligibility degree updated.');
+        return redirect()->back()->with('success', 'Eligibility Degree Updated.');
     }
 
     public function destroy($id)

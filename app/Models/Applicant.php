@@ -32,7 +32,8 @@ class Applicant extends Model
     public function jobExperiences()      { return $this->hasMany(JobExperience::class); }
     public function references()          { return $this->hasMany(Reference::class); }
     public function attachments()         { return $this->hasMany(Attachment::class); }
-    public function eligibilityDegrees()  { return $this->hasMany(EligibilityDegree::class); }
+    //public function eligibilityDegrees()  { return $this->hasMany(EligibilityDegree::class); }
+    public function eligibilityDegree()  { return $this->hasOne(EligibilityDegree::class); }
 
     protected $casts = [
         'payment_status' => 'boolean',
