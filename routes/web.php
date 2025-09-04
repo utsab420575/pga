@@ -169,7 +169,7 @@ Route::prefix('attachment_type')->name('attachment_type.')->middleware('roles:ad
 });
 
 // ATTACHMENTS
-Route::prefix('attachment')->name('attachment.')->middleware('roles:admin,applicant')->group(function () {
+Route::prefix('attachments')->name('attachments.')->middleware('roles:admin,applicant')->group(function () {
     Route::get('all',            [AttachmentController::class, 'index'])->name('all');
     Route::get('add',            [AttachmentController::class, 'create'])->name('add');
     Route::post('add',           [AttachmentController::class, 'store'])->name('store');
@@ -177,6 +177,10 @@ Route::prefix('attachment')->name('attachment.')->middleware('roles:admin,applic
     Route::get('edit/{id}',      [AttachmentController::class, 'edit'])->name('edit');
     Route::put('update/{id}',    [AttachmentController::class, 'update'])->name('update');
     Route::delete('delete/{id}', [AttachmentController::class, 'destroy'])->name('delete');
+
+    //for upload and delete
+    Route::post('upload',  [AttachmentController::class, 'upload'])->name('upload');
+    Route::delete('{id}',  [AttachmentController::class, 'destroy'])->name('delete');
 });
 
 // ELIGIBILITY DEGREES

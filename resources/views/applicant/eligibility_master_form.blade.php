@@ -166,40 +166,89 @@
                 </div>
 
                 {{-- CARD 4: Attachments --}}
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <span><b>Attachments</b></span>
-                        <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#attachmentModal">
-                            Upload
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        @if($attachments->count())
-                            <div class="table-responsive">
-                                <table class="table table-sm table-bordered mb-0">
-                                    <thead>
-                                    <tr>
-                                        <th>Type</th><th>File</th><th>Uploaded</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    @foreach($attachments as $at)
-                                        <tr>
-                                            <td>{{ optional($at->type)->title }}</td>
-                                            <td>
-                                                <a href="{{ Storage::url($at->file) }}" target="_blank">view</a>
-                                            </td>
-                                            <td>{{ $at->created_at->format('Y-m-d H:i') }}</td>
-                                        </tr>
-                                    @endforeach
-                                    </tbody>
-                                </table>
+                    <div class="card">
+                        <div class="card-header">Required Documents (which must be attached here with) :</div>
+                        <div class="card-body">
+                            <div class="row">
+                                @foreach($attachmentTypes as $type)
+                                    @php
+                                        $uploaded = $attachments->where('attachment_type_id', $type->id);
+                                    @endphp
+                                    <div class="col-md-12">
+                                        <div class="card mb-3" id="doc-{{ $type->id }}">
+                                            <div class="card-header d-flex justify-content-between align-items-center">
+                                                <span>{{ $type->title }}</span>
+                                                @if($type->required)
+                                                    <span class="badge badge-danger">required</span>
+                                                @endif
+                                            </div>
+                                            <div class="card-body">
+
+                                                {{-- Upload input (multiple) --}}
+                                                <form action="{{ route('attachments.upload') }}" method="POST" enctype="multipart/form-data">
+                                                    @csrf
+                                                    <input type="hidden" name="attachment_type_id" value="{{ $type->id }}">
+                                                    <input type="hidden" name="applicant_id" value="{{ $applicant->id }}">
+
+                                                    <div class="d-flex align-items-center">
+                                                        <input type="file" name="files[]" class="form-control-file" accept="image/*,.pdf" multiple required>
+                                                        <button type="submit" class="btn btn-primary btn-sm ml-2">Upload</button>
+                                                    </div>
+                                                </form>
+
+                                                {{-- Preview all uploaded files --}}
+                                                @if($uploaded->count())
+                                                    <div class="mt-3">
+                                                        @foreach($uploaded as $file)
+                                                            <div class="d-inline-block text-center mr-3 mb-2">
+                                                                @if(Str::endsWith($file->file, ['.jpg','.jpeg','.png']))
+                                                                    <img src="{{ asset($file->file) }}" width="100"
+                                                                         style="border:1px solid #ccc; border-radius:5px; margin-bottom:10px; display:block;" class="border rounded d-block mb-1">
+                                                                @else
+                                                                    @php
+                                                                        // Build a display name from the stored file path
+                                                                        $url        = asset($file->file);
+                                                                        $filename   = basename($file->file);                           // e.g. 12_4_20250904_153012_123456_my_degree_certificate.pdf
+                                                                        $nameNoExt  = pathinfo($filename, PATHINFO_FILENAME);          // 12_4_20250904_153012_123456_my_degree_certificate
+                                                                        $parts      = explode('_', $nameNoExt);
+
+                                                                        // Our pattern: applicantId _ typeId _ YYYYMMDD _ HHMMSS _ micro _ original_slug
+                                                                        // So original starts from index 5; if not present, just use the whole base.
+                                                                        $origSlug   = count($parts) >= 6 ? implode('_', array_slice($parts, 5)) : $nameNoExt;
+
+                                                                        // Make it pretty for display
+                                                                        $displayName = str_replace('_', ' ', $origSlug);
+                                                                    @endphp
+
+                                                                    <a href="{{ asset($file->file) }}" target="_blank" class="btn btn-outline-info btn-sm"
+                                                                       style="margin-bottom:10px; display:inline-block;">View {{ $displayName }}</a>
+                                                                @endif
+
+                                                                <div>
+                                                                    <a href="{{ asset($file->file) }}" download  style="margin-right:5px;" class="btn btn-success btn-sm">Download</a>
+                                                                    <form action="{{ route('attachments.delete', $file->id) }}" method="POST" class="d-inline">
+                                                                        @csrf
+                                                                        @method('DELETE')
+                                                                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                                                    </form>
+                                                                </div>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                @endif
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
                             </div>
-                        @else
-                            <em>No attachments yet.</em>
-                        @endif
+                        </div>
                     </div>
-                </div>
+
+
+
+                    {{--empty div--}}
+                <div class=" mt-5 mb-5"></div>
 
             </div>
         </div>
@@ -271,7 +320,7 @@
                             <label>Nationality</label>
                             <input type="text" name="nationality" class="form-control"
                                    value="{{ old('nationality', $basicInfo->nationality ?? '') }}"
-                                   placeholder="Bangldesh"
+                                   placeholder="Bangladesh"
                                    required>
                         </div>
                     </div>
@@ -496,38 +545,8 @@
 
 
     {{-- Attachment Modal --}}
-    <div class="modal fade" id="attachmentModal" tabindex="-1" role="dialog" aria-labelledby="attachmentLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <form class="modal-content" method="POST" action="{{ route('attachment.store') }}" enctype="multipart/form-data">
-                @csrf
-                <input type="hidden" name="applicant_id" value="{{ $applicant->id }}">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="attachmentLabel">Upload Attachment</h5>
-                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
-                </div>
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label>Attachment Type</label>
-                        <select name="attachment_type_id" class="form-control" required>
-                            <option value="">--select--</option>
-                            @foreach($attachmentTypes as $type)
-                                <option value="{{ $type->id }}">{{ $type->title }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>File (jpg/png/webp/pdf)</label>
-                        <input type="file" name="file" class="form-control-file" accept=".jpg,.jpeg,.png,.webp,.pdf" required>
-                        <small class="text-muted">Images or PDF allowed.</small>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-success">Upload</button>
-                </div>
-            </form>
-        </div>
-    </div>
+
+
 
 @endsection
 
