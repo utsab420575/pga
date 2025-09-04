@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Attachment;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
@@ -10,7 +9,6 @@ use Illuminate\Pagination\Paginator;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Validator;
@@ -32,7 +30,7 @@ use Illuminate\Support\Facades\Response;
 use Illuminate\Console\View\Components\Alert;
 use DateTime;
 
-class HomeController extends Controller
+class HomeController_v2 extends Controller
 {
     /**
      * Create a new controller instance.
@@ -107,32 +105,33 @@ class HomeController extends Controller
 
     public function apply_now_submit(Request $request)
     {
-        $this->validate($request, [
-            'degree' => ['required'],
-            'department' => ['required'],
-            'studenttype' => ['required'],
-            'applicationtype' => ['required'],
-            'declaration' =>'accepted'
-        ]);
+        $this->validate($request,[
+        'degree' => ['required'],
+        'department' => ['required'],
+        'studenttype' => ['required'],
+        'applicationtype' => ['required'],
+        'declaration' =>'accepted'
+    ]);
 
-        $application = Applicationtype::find($request->applicationtype);
+      	$application = Applicationtype::find($request->applicationtype);
+        $checkApplication = Applicant::where('applicationtype_id',$request->applicationtype)->where('department_id',$request->department)->where('user_id',Auth::user()->id)->first();
 
-        $checkApplication = Applicant::where('applicationtype_id', $request->applicationtype)
-            ->where('department_id', $request->department)
-            ->where('user_id', Auth::user()->id)
-            ->first();
-
-        if ($checkApplication) {
-            return Redirect::back()->withErrors('Already applied in this department');
-        } else {
+        if($checkApplication)
+        {
+            return redirect::back()->withErrors('Already applied in this department');
+        }
+        else
+        {
             $applicant = new Applicant;
-
-            if ($application->type == "Admission") {
-                $applicant->roll = 100000 + Applicant::where('applicationtype_id', 1)->count() + 1;
-            } else {
-                $applicant->roll = 200000 + Applicant::where('applicationtype_id', 2)->count() + 1;
+            if($application->type == "Admission")
+            {
+                $applicant->roll = 100000+Applicant::where('applicationtype_id',1)->count()+1;
             }
-
+            else
+            {
+                $applicant->roll = 200000+Applicant::where('applicationtype_id',2)->count()+1;
+            }
+            //$applicant->roll = 100000+Applicant::count()+1;
             $applicant->payment_status = 0;
             $applicant->edit_per = 0;
             $applicant->department_id = $request->department;
@@ -142,20 +141,10 @@ class HomeController extends Controller
             $applicant->user_id = Auth::user()->id;
             $applicant->save();
 
-            // ✅ Clone previous applicant data if exists
-            $userApplicants = Applicant::where('user_id', Auth::id())->orderBy('id', 'asc')->get();
-
-            if ($userApplicants->count() > 1) {
-                $oldApplicantId = $userApplicants->first()->id;   // oldest applicant id
-                $newApplicantId = $applicant->id;                 // newly created applicant id
-
-                $this->cloneApplicantData($oldApplicantId, $newApplicantId);
-            }
-
-            return redirect("application/" . $applicant->id);
+            return redirect("application/".$applicant->id);
         }
-    }
 
+    }
 
     public function application($id)
     {
@@ -279,88 +268,6 @@ class HomeController extends Controller
         $equivalance_fees = Applicant::where('payment_status',1)->where('applicationtype_id',2)->orderBy('department_id','ASC')->orderBy('roll','ASC')->get();
 
         return view('payment-report')->with('departments',$departments)->with('admission_fees',$admission_fees)->with('equivalance_fees',$equivalance_fees);
-    }
-
-
-    //clone applicant(all row copy from elibility applicant to new applicant)
-    protected function cloneApplicantData($oldApplicantId, $newApplicantId)
-    {
-        // ✅ Copy basic_infos
-        $basicInfo = \DB::table('basic_infos')->where('applicant_id', $oldApplicantId)->first();
-        if ($basicInfo) {
-            $data = (array) $basicInfo;
-            unset($data['id']);
-            $data['applicant_id'] = $newApplicantId;
-            \DB::table('basic_infos')->insert($data);
-        }
-
-        // ✅ Copy eligibility_degree
-        $eligibilityDegrees = \DB::table('eligibility_degrees')->where('applicant_id', $oldApplicantId)->get();
-        foreach ($eligibilityDegrees as $degree) {
-            $data = (array) $degree;
-            unset($data['id']);
-            $data['applicant_id'] = $newApplicantId;
-            \DB::table('eligibility_degrees')->insert($data);
-        }
-
-        // ✅ Copy education_info
-        $educationInfos = \DB::table('education_infos')->where('applicant_id', $oldApplicantId)->get();
-        foreach ($educationInfos as $edu) {
-            $data = (array) $edu;
-            unset($data['id']);
-            $data['applicant_id'] = $newApplicantId;
-            \DB::table('education_infos')->insert($data);
-        }
-
-        // ✅ Copy attachments + files (if needed)
-        $this->cloneAttachmentsWithFiles($oldApplicantId, $newApplicantId);
-    }
-
-
-
-    protected function cloneAttachmentsWithFiles(int $oldApplicantId, int $newApplicantId): void
-    {
-        $attachments = Attachment::where('applicant_id', $oldApplicantId)->get();
-
-        $todayFolder = now()->format('Y-m-d');         // e.g. 2025-09-04
-        $destDirRel  = "attachments/{$todayFolder}";   // relative (public/)
-        $destDirAbs  = public_path($destDirRel);       // absolute
-
-        // ensure daily folder exists
-        if (!is_dir($destDirAbs)) {
-            mkdir($destDirAbs, 0777, true);
-        }
-
-        foreach ($attachments as $a) {
-            $srcAbs = public_path($a->file);
-            if (!is_file($srcAbs)) {
-                // original file missing -> skip
-                continue;
-            }
-
-            $ext      = strtolower(pathinfo($srcAbs, PATHINFO_EXTENSION));
-            $base     = pathinfo($srcAbs, PATHINFO_FILENAME);
-            // make a safe base (no spaces/specials)
-            $safeBase = preg_replace('/[^A-Za-z0-9_\-]/', '_', $base);
-
-            // new filename pattern: newApplicantId_typeId_timestamp_originalBase.ext
-            $newName  = $newApplicantId . '_' .
-                $a->attachment_type_id . '_' .
-                now()->format('Ymd_His_u') . '_' .
-                $safeBase . '.' . $ext;
-
-            $destAbs = $destDirAbs . DIRECTORY_SEPARATOR . $newName;
-
-            // copy the file
-            File::copy($srcAbs, $destAbs);
-
-            // create new DB row pointing to the copied file
-            Attachment::create([
-                'file'               => $destDirRel . '/' . $newName, // relative path from public/
-                'attachment_type_id' => $a->attachment_type_id,
-                'applicant_id'       => $newApplicantId,
-            ]);
-        }
     }
 
 

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ApplicationPostgraduateController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\HomeController;
@@ -208,3 +209,8 @@ Route::prefix('setting')->name('setting.')->middleware('roles:admin,applicant')-
 Route::get('applicant/eligibility-form/{id}', [EligibilityVerificationController::class, 'create'])
     ->name('applicant.eligibility_master_form')
     ->middleware(['auth','roles:admin,applicant']);
+
+Route::get('applicant/application-postgraduate-form/{id}', [ApplicationPostgraduateController::class, 'create'])
+    ->name('applicant.application_postgraduate_master_form')
+    ->middleware(['auth','roles:admin,applicant']);
+

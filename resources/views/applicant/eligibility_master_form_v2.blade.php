@@ -260,7 +260,7 @@
     {{-- Basic Info Modal --}}
     <div class="modal fade" id="basicInfoModal" tabindex="-1" role="dialog" aria-labelledby="basicInfoLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg" role="document">
-            <form class="modal-content"  id="basicInfoForm"
+            <form class="modal-content"
                   method="POST"
                   action="{{ $basicInfo ? route('basic_info.update', $basicInfo->id) : route('basic_info.store') }}"
                   enctype="multipart/form-data">
@@ -379,95 +379,14 @@
                         {{-- g_incode & field_of_interest intentionally hidden per your comment --}}
                     </div>
 
-                    @php
-                        $preText = $basicInfo->pre_address ?? '';
-                        $perText = $basicInfo->per_address ?? '';
-
-                        // returns the value after "Label:" on the matching line
-                        function addr_pick($text, $label) {
-                            if (!$text) return '';
-                            foreach (preg_split("/\r\n|\n|\r/", $text) as $line) {
-                                [$k,$v] = array_pad(explode(':', $line, 2), 2, '');
-                                if (strcasecmp(trim($k), $label) === 0) {
-                                    return trim($v);
-                                }
-                            }
-                            return '';
-                        }
-                    @endphp
-
                     <div class="form-row">
-                        {{-- Present Address --}}
-                        <div class="col-md-6">
-                            <label class="mb-2"><b>Present Address</b></label>
-
-                            <div class="form-group mb-2">
-                                <small>Holding No</small>
-                                <input type="text" name="pre_holding_no"    class="form-control"
-                                       value="{{ old('pre_holding_no',    addr_pick($preText, 'Holding No')) }}">
-                            </div>
-                            <div class="form-group mb-2">
-                                <small>Village / Road No</small>
-                                <input type="text" name="pre_village_road"  class="form-control"
-                                       value="{{ old('pre_village_road',  addr_pick($preText, 'Village/Road')) }}">
-                            </div>
-                            <div class="form-group mb-2">
-                                <small>Post Office</small>
-
-                                <input type="text" name="pre_post_office"   class="form-control"
-                                       value="{{ old('pre_post_office',   addr_pick($preText, 'Post Office')) }}">
-                            </div>
-                            <div class="form-group mb-2">
-                                <small>Upazila / Thana</small>
-                                <input type="text" name="pre_upazila_thana" class="form-control"
-                                       value="{{ old('pre_upazila_thana', addr_pick($preText, 'Upazila/Thana')) }}">
-                            </div>
-                            <div class="form-group mb-2">
-                                <small>District</small>
-                                <input type="text" name="pre_district"      class="form-control"
-                                       value="{{ old('pre_district',      addr_pick($preText, 'District')) }}">
-                            </div>
-
-                            {{-- Hidden field that actually gets submitted (required as before) --}}
-                            <input type="hidden" name="pre_address" required>
-
+                        <div class="form-group col-md-6">
+                            <label>Present Address</label>
+                            <textarea name="pre_address" class="form-control" rows="2" required>{{ old('pre_address', $basicInfo->pre_address ?? '') }}</textarea>
                         </div>
-
-                        {{-- Permanent Address --}}
-                        <div class="col-md-6">
-                            <label class="mb-2"><b>Permanent Address</b></label>
-
-                            <div class="form-group mb-2">
-                                <small>Holding No</small>
-                                <input type="text" name="per_holding_no"    class="form-control"
-                                       value="{{ old('per_holding_no',    addr_pick($perText, 'Holding No')) }}">
-                            </div>
-                            <div class="form-group mb-2">
-                                <small>Village / Road No</small>
-                                <input type="text" name="per_village_road"  class="form-control"
-                                       value="{{ old('per_village_road',  addr_pick($perText, 'Village/Road')) }}">
-                            </div>
-                            <div class="form-group mb-2">
-                                <small>Post Office</small>
-                                <input type="text" name="per_post_office"   class="form-control"
-                                       value="{{ old('per_post_office',   addr_pick($perText, 'Post Office')) }}">
-
-                            </div>
-                            <div class="form-group mb-2">
-                                <small>Upazila / Thana</small>
-                                <input type="text" name="per_upazila_thana" class="form-control"
-                                       value="{{ old('per_upazila_thana', addr_pick($perText, 'Upazila/Thana')) }}">
-
-                            </div>
-                            <div class="form-group mb-2">
-                                <small>District</small>
-                                <input type="text" name="per_district"      class="form-control"
-                                       value="{{ old('per_district',      addr_pick($perText, 'District')) }}">
-                            </div>
-
-                            {{-- Hidden field that actually gets submitted (required as before) --}}
-                            <input type="hidden" name="per_address" required>
-
+                        <div class="form-group col-md-6">
+                            <label>Permanent Address</label>
+                            <textarea name="per_address" class="form-control" rows="2" required>{{ old('per_address', $basicInfo->per_address ?? '') }}</textarea>
                         </div>
                     </div>
                 </div>
@@ -698,40 +617,6 @@
 
             $('#educationModal').modal('show');
         });
-    </script>
-
-    <script>
-        (function () {
-            function buildAddress(prefix) {
-                const get = (n) => (document.querySelector(`[name="${prefix}_${n}"]`)?.value || '').trim();
-                const parts = [];
-
-                const mapping = [
-                    ['holding_no',    'Holding No'],
-                    ['village_road',  'Village/Road'],
-                    ['post_office',   'Post Office'],
-                    ['upazila_thana', 'Upazila/Thana'],
-                    ['district',      'District'],
-                ];
-
-                mapping.forEach(([key, label]) => {
-                    const v = get(key);
-                    if (v) parts.push(`${label}: ${v}`);
-                });
-
-                const hidden = document.querySelector(`[name="${prefix}_address"]`);
-                if (hidden) hidden.value = parts.join('\n');
-            }
-
-            // Compose on submit of the Basic Info form
-            const basicForm = document.getElementById('basicInfoForm');
-            if (basicForm) {
-                basicForm.addEventListener('submit', function () {
-                    buildAddress('pre'); // fills hidden pre_address
-                    buildAddress('per'); // fills hidden per_address
-                });
-            }
-        })();
     </script>
 
 @endsection

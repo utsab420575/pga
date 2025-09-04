@@ -69,6 +69,7 @@ class BasicInfoController extends Controller
     public function update(Request $request, $id)
     {
 
+        //return $request;
         $item = BasicInfo::findOrFail($id);
         $data = $request->validate([
             'full_name_block_letter' => 'required|string|max:255',
