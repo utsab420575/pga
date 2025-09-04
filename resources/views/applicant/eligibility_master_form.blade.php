@@ -171,6 +171,7 @@
                         <div class="card-body">
                             <div class="row">
                                 @foreach($attachmentTypes as $type)
+                                    @continue(in_array($type->id, [5, 7, 8, 9]))
                                     @php
                                         $uploaded = $attachments->where('attachment_type_id', $type->id);
                                     @endphp
@@ -178,9 +179,41 @@
                                         <div class="card mb-3" id="doc-{{ $type->id }}">
                                             <div class="card-header d-flex justify-content-between align-items-center">
                                                 <span>{{ $type->title }}</span>
-                                                @if($type->required)
-                                                    <span class="badge badge-danger">required</span>
-                                                @endif
+                                                <div class="d-flex align-items-center">
+                                                    <button type="button" class="btn btn-sm btn-info mr-2"
+                                                            data-toggle="popover"
+                                                            data-html="true"
+                                                            title="Instructions"
+                                                            data-content="
+                                                                @if($type->id == 1)
+                                                                    1. Attested SSC Certificate <br>
+                                                                    2. Attested Diploma Certificate <br>
+                                                                    3. Attested BSc Certificate
+                                                                @elseif($type->id == 2)
+                                                                    1. Attested SSC Mark-sheet <br>
+                                                                    2. Attested Diploma Mark-sheet <br>
+                                                                    3. Attested BSc Mark-sheet
+                                                                @elseif($type->id == 3)
+                                                                     1. Attested SSC Transcript/Grade-sheet <br>
+                                                                    2. Attested Diploma Transcript/Grade-sheet <br>
+                                                                    3. Attested BSc Transcript/Grade-sheet
+                                                                @elseif($type->id == 4)
+                                                                    1.Attested Testimonial
+                                                                @elseif($type->id == 6)
+                                                                    Recent photo  (max 500KB)
+                                                                @elseif($type->id == 10)
+                                                                    Signature  (max 500KB)
+                                                                @else
+                                                                    Upload relevant document
+                                                                @endif
+                                                            ">
+                                                        ?
+                                                    </button>
+
+                                                    @if($type->required)
+                                                        <span class="badge badge-danger">required</span>
+                                                    @endif
+                                                </div>
                                             </div>
                                             <div class="card-body">
 
@@ -732,6 +765,13 @@
                 });
             }
         })();
+    </script>
+
+    {{--for showing which data should upload--}}
+    <script>
+        $(function () {
+            $('[data-toggle="popover"]').popover();
+        });
     </script>
 
 @endsection

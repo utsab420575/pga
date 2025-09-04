@@ -28,7 +28,8 @@ class ThesisController extends Controller
         ]);
 
         Thesis::create($data);
-        return redirect()->route('thesis.all')->with('success', 'Thesis created.');
+        return redirect()->back()->with('success','Thesis added successfully');
+        //return redirect()->route('thesis.all')->with('success', 'Thesis created.');
     }
 
     public function show($id)
@@ -54,13 +55,15 @@ class ThesisController extends Controller
         ]);
 
         $item->update($data);
-        return redirect()->route('thesis.all')->with('success', 'Thesis updated.');
+        return redirect()->back()->with('success','Thesis updated successfully');
+        //return redirect()->route('thesis.all')->with('success', 'Thesis updated.');
     }
 
     public function destroy($id)
     {
         $item = Thesis::findOrFail($id);
         $item->delete();
+        return redirect()->back()->with('success','Thesis deleted successfully');
         return redirect()->route('thesis.all')->with('success', 'Thesis deleted.');
     }
 }

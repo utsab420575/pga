@@ -95,26 +95,38 @@ class AttachmentController extends Controller
             $attachmentTypeId = $request->attachment_type_id;
             $extension = strtolower($file->getClientOriginalExtension());
 
-            // Extra validation for type 4 (photo 300x300)
-            if ($attachmentTypeId == 4) {
+            // Extra validation for type 6 (photo 300x300, max 500KB)
+            if ($attachmentTypeId == 6) {
                 if (!in_array($extension, ['jpg', 'jpeg', 'png'])) {
                     return back()->withErrors(['files' => 'Only JPG/PNG allowed']);
                 }
-                [$width, $height] = getimagesize($file);
-                if ($width != 300 || $height != 300) {
-                    return back()->withErrors(['files' => 'Image must be 300x300 pixels']);
+
+                // Size check (max 500KB)
+                if ($file->getSize() > 512000) {
+                    return back()->withErrors(['files' => 'Image size must not exceed 500KB']);
                 }
+
+               /* [$width, $height] = getimagesize($file);
+                if ($width != 300 || $height != 300) {
+                    return back()->withErrors(['files' => 'Image must be exactly 300x300 pixels']);
+                }*/
             }
 
-            // Extra validation for type 8 (signature 250x50)
-            if ($attachmentTypeId == 8) {
+            // Extra validation for type 10 (signature 250x50, max 500KB)
+            if ($attachmentTypeId == 10) {
                 if (!in_array($extension, ['jpg', 'jpeg', 'png'])) {
                     return back()->withErrors(['files' => 'Only JPG/PNG allowed']);
                 }
-                [$width, $height] = getimagesize($file);
-                if ($width != 250 || $height != 50) {
-                    return back()->withErrors(['files' => 'Image must be 250x50 pixels']);
+
+                // Size check (max 500KB)
+                if ($file->getSize() > 512000) {
+                    return back()->withErrors(['files' => 'Image size must not exceed 500KB']);
                 }
+
+              /*  [$width, $height] = getimagesize($file);
+                if ($width != 250 || $height != 50) {
+                    return back()->withErrors(['files' => 'Image must be exactly 250x50 pixels']);
+                }*/
             }
         }
 

@@ -338,16 +338,19 @@ class HomeController extends Controller
                 continue;
             }
 
-            $ext      = strtolower(pathinfo($srcAbs, PATHINFO_EXTENSION));
-            $base     = pathinfo($srcAbs, PATHINFO_FILENAME);
-            // make a safe base (no spaces/specials)
-            $safeBase = preg_replace('/[^A-Za-z0-9_\-]/', '_', $base);
+            $ext   = strtolower(pathinfo($srcAbs, PATHINFO_EXTENSION));
+            $base  = pathinfo($srcAbs, PATHINFO_FILENAME);
+            $parts = explode('_', $base);
 
-            // new filename pattern: newApplicantId_typeId_timestamp_originalBase.ext
-            $newName  = $newApplicantId . '_' .
-                $a->attachment_type_id . '_' .
-                now()->format('Ymd_His_u') . '_' .
-                $safeBase . '.' . $ext;
+            // drop first 5 tokens: [oldId, type, YYYYMMDD, HHMMSS, usec]
+            $tailParts = count($parts) > 5 ? array_slice($parts, 5) : $parts;
+            $tailSafe  = preg_replace('/[^A-Za-z0-9_\-]/', '_', implode('_', $tailParts));
+
+            $newName = $newApplicantId . '_' . $a->attachment_type_id . '_' . now()->format('Ymd_His_u');
+            if ($tailSafe !== '') {
+                $newName .= '_' . $tailSafe;
+            }
+            $newName .= '.' . $ext;
 
             $destAbs = $destDirAbs . DIRECTORY_SEPARATOR . $newName;
 

@@ -29,6 +29,7 @@ class PublicationController extends Controller
         ]);
 
         Publication::create($data);
+        return redirect()->back()->with('success','Publication added successfully');
         return redirect()->route('publication.all')->with('success', 'Publication created.');
     }
 
@@ -56,6 +57,7 @@ class PublicationController extends Controller
         ]);
 
         $item->update($data);
+        return redirect()->back()->with('success','Publication updated successfully');
         return redirect()->route('publication.all')->with('success', 'Publication updated.');
     }
 
@@ -63,6 +65,7 @@ class PublicationController extends Controller
     {
         $item = Publication::findOrFail($id);
         $item->delete();
+        return redirect()->back()->with('success','Publication deleted successfully');
         return redirect()->route('publication.all')->with('success', 'Publication deleted.');
     }
 }

@@ -30,6 +30,7 @@ class JobExperienceController extends Controller
         ]);
 
         JobExperience::create($data);
+        return redirect()->back()->with('success', 'Job experience created.');
         return redirect()->route('job_experience.all')->with('success', 'Job experience created.');
     }
 
@@ -58,6 +59,7 @@ class JobExperienceController extends Controller
         ]);
 
         $item->update($data);
+        return redirect()->back()->with('success', 'Job experience updated.');
         return redirect()->route('job_experience.all')->with('success', 'Job experience updated.');
     }
 
@@ -65,6 +67,7 @@ class JobExperienceController extends Controller
     {
         $item = JobExperience::findOrFail($id);
         $item->delete();
+        return redirect()->back()->with('success', 'Job experience deleted.');
         return redirect()->route('job_experience.all')->with('success', 'Job experience deleted.');
     }
 }

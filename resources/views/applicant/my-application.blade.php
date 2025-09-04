@@ -13,11 +13,11 @@
 
         @if(session('Status'))
         <p class="alert alert-info">{{session('Status')}}</p>
-        @endif 
+        @endif
             <div class="card">
                 <div class="card-header"><b>{{ __('My Applications') }}</b></div>
                 <div class="card-body">
-              
+
 
                     <table class="table table-striped">
                       <thead>
@@ -44,20 +44,37 @@
                               <td>{{$application->applicationtype->type}}</td>
                               <td>{{$application->roll}}</td>
                               <td>{{$application->applicationtype->fee}}</td>
-                              <td>@if($application->payment_status === 0)
+                              <td>@if($application->payment_status == 0)
                                 <span style="color:red"><b>Unpaid</b></span>
                                 @else
                                 <span style="color:green">Paid<br>TRXID: <b>{{$application->payment->trxid}}</b></span>
                                 @endif
                               </td>
-                              <td>
-                                @if($application->edit_per === 1 || $application->payment_status === 0)
-                                <a href="{{ URL('edit-application')}}/{{$application->id}}"><button type="button" class="btn btn-danger">Edit</button></a>
-                                @endif
-                              </td>
+                                <td>
+                                    {{-- Edit --}}
+                                    @if($application->edit_per == 1 || $application->payment_status == 0)
+                                        <a href="{{ url('edit-application/'.$application->id) }}"
+                                           class="btn btn-warning"
+                                           target="_blank" rel="noopener noreferrer">
+                                            Edit
+                                        </a>
+                                    @endif
+
+                                    {{-- Open the correct input form after payment --}}
+                                    @if($application->payment_status == 1 && in_array((int)$application->applicationtype_id, [1, 2], true))
+                                        <a href="{{ (int)$application->applicationtype_id == 1
+                                                    ? url('applicant/application-postgraduate-form/'.$application->id)
+                                                    : url('applicant/eligibility-form/'.$application->id) }}"
+                                           class="btn btn-success"
+                                           target="_blank" rel="noopener noreferrer">
+                                            {{ (int)$application->applicationtype_id === 1 ? 'Fill Application Form' : 'Fill Eligibility Form' }}
+                                        </a>
+                                    @endif
+                                </td>
+
                             </tr>
                         @endforeach
-                        
+
                       </tbody>
                     </table>
 

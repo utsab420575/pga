@@ -32,6 +32,7 @@ class ReferenceController extends Controller
         ]);
 
         Reference::create($data);
+        return redirect()->back()->with('success','Reference created successfully');
         return redirect()->route('reference.all')->with('success', 'Reference created.');
     }
 
@@ -62,6 +63,7 @@ class ReferenceController extends Controller
         ]);
 
         $item->update($data);
+        return redirect()->back()->with('success','Reference updated successfully');
         return redirect()->route('reference.all')->with('success', 'Reference updated.');
     }
 
@@ -69,6 +71,7 @@ class ReferenceController extends Controller
     {
         $item = Reference::findOrFail($id);
         $item->delete();
+        return redirect()->back()->with('success','Reference deleted successfully');
         return redirect()->route('reference.all')->with('success', 'Reference deleted.');
     }
 }
