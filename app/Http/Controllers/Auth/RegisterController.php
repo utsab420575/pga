@@ -8,6 +8,7 @@ use App\Providers\RouteServiceProvider;
 
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class RegisterController extends Controller
@@ -74,5 +75,16 @@ class RegisterController extends Controller
             'phone_verified' => 0,
             'password' => Hash::make($data['password']),
         ]);
+    }
+
+
+    // 👇 This runs after registration & login
+    protected function registered(Request $request, $user)
+    {
+        if ((int) $user->phone_verified === 0) {
+            return redirect('/phone-verification'); // or ->route('phone.verification')
+        }
+
+        return redirect(RouteServiceProvider::HOME);
     }
 }

@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('css')
-<script src="{{ asset('public/js/jquery-3.1.1.min.js') }}"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 @endsection
 @section('content')
 <div class="container">
@@ -16,7 +16,7 @@
 
         @if(session('Status'))
         <p class="alert alert-info">{{session('Status')}}</p>
-        @endif 
+        @endif
 
             <div class="card">
 
@@ -55,8 +55,8 @@
                                         <button type="button" onclick="phoneAuth();">Send Code</button>
                                     </div>
                                  </div>
-                                 
-                            </div>   
+
+                            </div>
                         </div>
                         <br><br>
                         <div class="card">
@@ -80,13 +80,13 @@
                                 </div>
                                 <div class="form-group row">
                                     <label for="email" class="col-md-4 col-form-label text-md-right"></label>
-                                    
+
                                     <div class="col-md-6">
                                         <button type="button" onclick="codeverify();">Verify Code & Next</button>
                                     </div>
                                  </div>
-                                 
-                            </div>   
+
+                            </div>
                         </div>
 
                     </form>
@@ -124,7 +124,7 @@
     }
     function phoneAuth() {
         //get the number
-        
+
         var number=document.getElementById('phone').value;
         if(number=='')
         {
@@ -147,13 +147,13 @@
         });
     }
     function codeverify() {
-        
+
         var code=document.getElementById('verificationCode').value;
         if(code==''){
             alert("Please enter verification code");
             return false;
         }
-            
+
         if(check==0)
         {
             alert("Please try to get the code again.");

@@ -170,8 +170,8 @@
                         <div class="card-header">Required Documents (which must be attached here with) :</div>
                         <div class="card-body">
                             <div class="row">
-                                @foreach($attachmentTypes as $type)
-                                    @continue(in_array($type->id, [5, 7, 8, 9]))
+                                @foreach($attachmentTypes->sortBy('id') as $type)
+                                    @continue(in_array($type->id, [4]))
                                     @php
                                         $uploaded = $attachments->where('attachment_type_id', $type->id);
                                     @endphp
@@ -190,17 +190,26 @@
                                                                     2. Attested Diploma Certificate <br>
                                                                     3. Attested BSc Certificate
                                                                 @elseif($type->id == 2)
-                                                                    1. Attested SSC Mark-sheet <br>
-                                                                    2. Attested Diploma Mark-sheet <br>
-                                                                    3. Attested BSc Mark-sheet
-                                                                @elseif($type->id == 3)
                                                                      1. Attested SSC Transcript/Grade-sheet <br>
                                                                     2. Attested Diploma Transcript/Grade-sheet <br>
                                                                     3. Attested BSc Transcript/Grade-sheet
+
+                                                                @elseif($type->id == 3)
+                                                                    1. Attested SSC Mark-sheet <br>
+                                                                    2. Attested Diploma Mark-sheet <br>
+                                                                    3. Attested BSc Mark-sheet
                                                                 @elseif($type->id == 4)
-                                                                    1.Attested Testimonial
+                                                                   1.Attested Testimonial
+                                                                @elseif($type->id == 5)
+                                                                    1.Detailed Syllabus mentioning all the contents
                                                                 @elseif($type->id == 6)
                                                                     Recent photo  (max 500KB)
+                                                                @elseif($type->id == 7)
+                                                                    1.Attested copy of National ID Card/Birth Certificate
+                                                                @elseif($type->id == 8)
+                                                                    1.Attested copy of Passport(Proof of valid Visa for staying abroad to achieve foreign degree)
+                                                                @elseif($type->id == 9)
+                                                                    1.Document in support of credit and courses waived/transferred(if any)
                                                                 @elseif($type->id == 10)
                                                                     Signature  (max 500KB)
                                                                 @else
@@ -673,9 +682,9 @@
 
 
 @section('script')
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+   {{-- <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.3/dist/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/js/bootstrap.min.js"></script>--}}
 
 
    {{-- sweealert--}}
@@ -766,6 +775,8 @@
             }
         })();
     </script>
+
+
 
     {{--for showing which data should upload--}}
     <script>

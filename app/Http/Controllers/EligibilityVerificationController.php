@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Applicant;
 use App\Models\AttachmentType;
+use App\Models\Setting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 class EligibilityVerificationController extends Controller
 {
@@ -34,6 +36,18 @@ class EligibilityVerificationController extends Controller
             }
         }
 
+
+        // 🔒 Deadline check from settings
+        $setting = Setting::query()->orderByDesc('id')->first(); // or where('session', current)
+
+        if ($setting && $setting->eligibility_last_date) {
+            $deadline = Carbon::parse($setting->eligibility_last_date)->endOfDay();
+
+            if (now()->gt($deadline)) {
+                // You can include the date to be clear
+                return back()->withErrors('Application date is over. Deadline was: '.$deadline->toDateString());
+            }
+        }
 
         return view('applicant.eligibility_master_form', [
             'applicant'          => $applicant,

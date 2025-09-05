@@ -353,7 +353,7 @@
                     <div class="card-header">Required Documents (which must be attached here with):</div>
                     <div class="card-body">
                         <div class="row">
-                            @foreach($attachmentTypes as $type)
+                            @foreach($attachmentTypes->sortBy('id') as $type)
                                 @continue(in_array($type->id, [5, 7, 8, 9]))
 
                                 @php $uploaded = $attachments->where('attachment_type_id', $type->id); @endphp
@@ -373,13 +373,14 @@
                                                                     2. Attested Diploma Certificate <br>
                                                                     3. Attested BSc Certificate
                                                                 @elseif($type->id == 2)
-                                                                    1. Attested SSC Mark-sheet <br>
-                                                                    2. Attested Diploma Mark-sheet <br>
-                                                                    3. Attested BSc Mark-sheet
-                                                                @elseif($type->id == 3)
                                                                      1. Attested SSC Transcript/Grade-sheet <br>
                                                                     2. Attested Diploma Transcript/Grade-sheet <br>
                                                                     3. Attested BSc Transcript/Grade-sheet
+
+                                                                @elseif($type->id == 3)
+                                                                    1. Attested SSC Mark-sheet <br>
+                                                                    2. Attested Diploma Mark-sheet <br>
+                                                                    3. Attested BSc Mark-sheet
                                                                 @elseif($type->id == 4)
                                                                     1.Attested Testimonial
                                                                 @elseif($type->id == 6)

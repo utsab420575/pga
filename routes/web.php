@@ -48,6 +48,10 @@ Route::post('phone-verification-submit', [HomeController::class, 'phone_verifica
     ->middleware('roles:applicant')
     ->name('phone-verification-submit');
 
+Route::post('phone-verify-submit', [HomeController::class, 'phone_verify_submit'])
+    ->middleware('roles:applicant')
+    ->name('phone-verify-submit');
+
 Route::get('apply-now', [HomeController::class, 'apply_now'])
     ->middleware('roles:applicant')
     ->name('apply-now');

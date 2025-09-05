@@ -6,7 +6,7 @@ use App\Models\Attachment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
-class AttachmentController extends Controller
+class AttachmentController_v2 extends Controller
 {
     public function index()
     {
@@ -84,46 +84,51 @@ class AttachmentController extends Controller
 
     public function upload(Request $request)
     {
-        // Basic fields
         $request->validate([
+            'files.*' => 'required|mimes:jpg,jpeg,png,pdf|max:2048',
             'attachment_type_id' => 'required|exists:attachment_types,id',
-            'applicant_id'       => 'required|exists:applicants,id',
-            'files'              => 'required|array',
-            'files.*'            => 'file', // further constrained below
+            'applicant_id' => 'required|exists:applicants,id',
         ]);
 
-        $typeId = (int) $request->attachment_type_id;
+        //extra valiation for type 4(passport size picture) and 8(signature)
+        foreach ($request->file('files') as $file) {
+            $attachmentTypeId = $request->attachment_type_id;
+            $extension = strtolower($file->getClientOriginalExtension());
 
-        // Build per-file validation rules based on type
-        $perFileRules = [];
-        $perFileMessages = [];
+            // Extra validation for type 6 (photo 300x300, max 500KB)
+            if ($attachmentTypeId == 6) {
+                if (!in_array($extension, ['jpg', 'jpeg', 'png'])) {
+                    return back()->withErrors(['files' => 'Only JPG/PNG allowed']);
+                }
 
-        if (in_array($typeId, [6, 10], true)) {
-            // 6: photo (<= 500KB), 10: signature (<= 500KB)
-            // allow only images
-            $perFileRules['files.*'] = 'mimes:jpg,jpeg,png|max:500';
+                // Size check (max 500KB)
+                if ($file->getSize() > 512000) {
+                    return back()->withErrors(['files' => 'Image size must not exceed 500KB']);
+                }
 
-            // Optional: dimension checks (uncomment if you want exact sizes)
-            //  - type 6: exactly 300x300
-            //  - type 10: exactly 250x50
-            // You can enforce with getimagesize below after validation.
-            $perFileMessages = [
-                'files.*.mimes' => 'Only JPG/PNG images are allowed for this attachment type.',
-                'files.*.max'   => 'Each image must not exceed 500KB.',
-            ];
-        } else {
-            // All other types: PDF only, <= 2MB
-            $perFileRules['files.*'] = 'mimes:pdf|max:2048';
-            $perFileMessages = [
-                'files.*.mimes' => 'Only PDF files are allowed for this attachment type.',
-                'files.*.max'   => 'Each PDF must not exceed 2MB.',
-            ];
+               /* [$width, $height] = getimagesize($file);
+                if ($width != 300 || $height != 300) {
+                    return back()->withErrors(['files' => 'Image must be exactly 300x300 pixels']);
+                }*/
+            }
+
+            // Extra validation for type 10 (signature 250x50, max 500KB)
+            if ($attachmentTypeId == 10) {
+                if (!in_array($extension, ['jpg', 'jpeg', 'png'])) {
+                    return back()->withErrors(['files' => 'Only JPG/PNG allowed']);
+                }
+
+                // Size check (max 500KB)
+                if ($file->getSize() > 512000) {
+                    return back()->withErrors(['files' => 'Image size must not exceed 500KB']);
+                }
+
+              /*  [$width, $height] = getimagesize($file);
+                if ($width != 250 || $height != 50) {
+                    return back()->withErrors(['files' => 'Image must be exactly 250x50 pixels']);
+                }*/
+            }
         }
-
-        // Validate files with the dynamic rules
-        validator($request->all(), $perFileRules, $perFileMessages)->validate();
-
-
 
         $today = now()->format('Y-m-d'); // folder name: 2025-09-04
         $uploadPath = public_path("attachments/{$today}");

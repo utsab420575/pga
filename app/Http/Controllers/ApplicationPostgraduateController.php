@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Applicant;
 use App\Models\AttachmentType;
+use App\Models\Setting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 class ApplicationPostgraduateController extends Controller
 {
@@ -32,6 +34,19 @@ class ApplicationPostgraduateController extends Controller
                 return back()->withErrors('This page is available only for paid Admission applications.');
             }
         }
+
+        // 🔒 Deadline check from settings
+        $setting = Setting::query()->orderByDesc('id')->first(); // or where('session', current)
+
+        if ($setting && $setting->end_date) {
+            $deadline = Carbon::parse($setting->end_date)->endOfDay();
+
+            if (now()->gt($deadline)) {
+                // You can include the date to be clear
+                return back()->withErrors('Application date is over. Deadline was: '.$deadline->toDateString());
+            }
+        }
+
 
         return view('applicant.application_postgraduate_master_form', [
             'applicant'          => $applicant,

@@ -71,7 +71,7 @@ class HomeController extends Controller
 
     }
 
-    public function phone_verification()
+   /* public function phone_verification()
     {
         return view('applicant.phone-verification');
     }
@@ -87,6 +87,44 @@ class HomeController extends Controller
         $user->phone=$request->phone;
         $user->phone_verified=1;
         $user->save();
+    }*/
+
+
+    public function phone_verification()
+    {
+        return view('applicant.phone');
+    }
+
+    public function phone_verification_submit(Request $request)
+    {
+        $this->validate($request,[
+
+            'phone' => ['required','unique:users,phone'],
+        ]);
+
+        $user= User::find(Auth::user()->id);
+        $user->phone=$request->phone;
+        $user->phone_verified=1;
+        $user->save();
+    }
+
+    public function phone_verify_submit(Request $request)
+    {
+
+        //return 'hi';
+        $request->validate([
+            'phone' => ['required', 'unique:users,phone'],
+            'phone_ren' => ['required', 'same:phone'],
+        ], [
+            'phone_ren.same' => 'Phone number not matched',
+        ]);
+
+        $user= User::find(Auth::user()->id);
+        $user->phone=$request->phone;
+        $user->phone_verified=1;
+        $user->save();
+
+        return view('home');
     }
 
     public function apply_now()
