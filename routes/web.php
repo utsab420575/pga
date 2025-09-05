@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ApplicationPostgraduateController;
+use App\Http\Controllers\PaymentController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\HomeController;
@@ -218,3 +219,6 @@ Route::get('applicant/application-postgraduate-form/{id}', [ApplicationPostgradu
     ->name('applicant.application_postgraduate_master_form')
     ->middleware(['auth','roles:admin,applicant']);
 
+Route::post('bkash_pull', [PaymentController::class, 'bkash_pull'])->name('bkash_pull');
+Route::post('bkash_push', [PaymentController::class, 'bkash_push'])->name('bkash_push');
+Route::post('bkash_check', [PaymentController::class, 'bkash_check'])->name('bkash_check');
