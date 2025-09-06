@@ -250,41 +250,6 @@
 
 
 
-                    {{-- CARD: Final Submit --}}
-                    <div class="card mt-4">
-                        <div class="card-header">
-                            <b>Final Submit</b>
-                        </div>
-                        <div class="card-body">
-                            @if($applicant->final_submit == 1)
-                                <div class="alert alert-success d-flex align-items-center">
-                                    <i class="fas fa-check-circle fa-2x mr-2"></i>
-                                    <div>
-                                        <strong>Successfully submitted your data.</strong><br>
-                                        Application is submitted successfully.
-                                    </div>
-                                </div>
-                            @else
-                                <form method="POST" action="{{ route('final.submit.eligibility', $applicant->id) }}">
-                                    @csrf
-
-                                    <div class="form-check mb-3">
-                                        <input class="form-check-input" type="checkbox" id="confirmCheckbox" name="confirm" required>
-                                        <label class="form-check-label" for="confirmCheckbox">
-                                            I confirm that I have submitted all of the required documents and information.
-                                        </label>
-                                    </div>
-
-                                    <button type="submit" class="btn btn-success"
-                                            onclick="return confirm('Are you sure? After final submission, you may not be able to edit further.')">
-                                        Final Submit
-                                    </button>
-                                </form>
-                            @endif
-                        </div>
-                    </div>
-
-
                     {{--empty div--}}
                 <div class=" mt-5 mb-5"></div>
 

@@ -40,7 +40,7 @@ class LoginController extends Controller
     protected function authenticated(Request $request, $user)
     {
         if ($user->user_type === 'applicant' && (int) $user->phone_verified === 0) {
-            return redirect('/phone-verification');
+            return redirect('/verify-mobile');
         }
     }
 }

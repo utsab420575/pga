@@ -2,8 +2,11 @@
 // app/Http/Controllers/ReferenceController.php
 namespace App\Http\Controllers;
 
+use App\Models\Applicant;
 use App\Models\Reference;
+use App\Models\Setting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ReferenceController extends Controller
 {
@@ -20,6 +23,21 @@ class ReferenceController extends Controller
 
     public function store(Request $request)
     {
+        $applicant = Applicant::findOrFail($request->applicant_id);
+
+        // ✅ Four Conditions
+        if (Auth::user()->user_type === 'applicant' && $applicant->user_id !== Auth::id()) {
+            return back()->withErrors('Forbidden.');
+        }
+        if ($applicant->final_submit == 1) {
+            return back()->withErrors('Final submission already done. Cannot update.');
+        }
+        $setting = Setting::latest()->first();;
+        $lastDate = $applicant->applicationtype_id == 1 ? $setting?->end_date : $setting?->eligibility_last_date;
+        if ($lastDate && now()->toDateString() > \Carbon\Carbon::parse($lastDate)->toDateString()) {
+            return back()->withErrors('Submission deadline has passed. Cannot update.');
+        }
+
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'designation' => 'nullable|string|max:255',
@@ -50,6 +68,21 @@ class ReferenceController extends Controller
 
     public function update(Request $request, $id)
     {
+        $applicant = Applicant::findOrFail($request->applicant_id);
+
+        // ✅ Four Conditions
+        if (Auth::user()->user_type === 'applicant' && $applicant->user_id !== Auth::id()) {
+            return back()->withErrors('Forbidden.');
+        }
+        if ($applicant->final_submit == 1) {
+            return back()->withErrors('Final submission already done. Cannot update.');
+        }
+        $setting = Setting::latest()->first();;
+        $lastDate = $applicant->applicationtype_id == 1 ? $setting?->end_date : $setting?->eligibility_last_date;
+        if ($lastDate && now()->toDateString() > \Carbon\Carbon::parse($lastDate)->toDateString()) {
+            return back()->withErrors('Submission deadline has passed. Cannot update.');
+        }
+
         $item = Reference::findOrFail($id);
         $data = $request->validate([
             'name' => 'required|string|max:255',
@@ -70,6 +103,26 @@ class ReferenceController extends Controller
     public function destroy($id)
     {
         $item = Reference::findOrFail($id);
+
+        // 2. Load related applicant
+        $applicant = Applicant::findOrFail($item->applicant_id);
+
+        // 3. Apply the four conditions
+        if (Auth::user()->user_type === 'applicant' && $applicant->user_id !== Auth::id()) {
+            return back()->withErrors('Forbidden.');
+        }
+
+        if ($applicant->final_submit == 1) {
+            return back()->withErrors('Final submission already done. Cannot delete.');
+        }
+
+        $setting = Setting::latest()->first();
+        $lastDate = $applicant->applicationtype_id == 1 ? $setting?->end_date : $setting?->eligibility_last_date;
+        if ($lastDate && now()->toDateString() > \Carbon\Carbon::parse($lastDate)->toDateString()) {
+            return back()->withErrors('Submission deadline has passed. Cannot delete.');
+        }
+
+
         $item->delete();
         return redirect()->back()->with('success','Reference deleted successfully');
         return redirect()->route('reference.all')->with('success', 'Reference deleted.');

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ApplicationPostgraduateController;
+use App\Http\Controllers\FinalSubmitController;
 use App\Http\Controllers\PaymentController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
@@ -41,17 +42,7 @@ Auth::routes();
 
 Route::get('/home', [HomeController::class, 'index'])->name('home');
 
-Route::get('phone-verification', [HomeController::class, 'phone_verification'])
-    ->middleware('roles:applicant')
-    ->name('phone-verification');
 
-Route::post('phone-verification-submit', [HomeController::class, 'phone_verification_submit'])
-    ->middleware('roles:applicant')
-    ->name('phone-verification-submit');
-
-Route::post('phone-verify-submit', [HomeController::class, 'phone_verify_submit'])
-    ->middleware('roles:applicant')
-    ->name('phone-verify-submit');
 
 Route::get('apply-now', [HomeController::class, 'apply_now'])
     ->middleware('roles:applicant')
@@ -227,6 +218,37 @@ Route::delete('/attachments/{attachment}/ajax-delete', [AttachmentController::cl
     ->name('attachments.ajaxDelete')
     ->middleware(['auth','roles:admin,applicant']);
 
+
+//not working
 Route::post('bkash_pull', [PaymentController::class, 'bkash_pull'])->name('bkash_pull');
 Route::post('bkash_push', [PaymentController::class, 'bkash_push'])->name('bkash_push');
 Route::post('bkash_check', [PaymentController::class, 'bkash_check'])->name('bkash_check');
+
+// mobile number verification(working)
+Route::get('/verify-mobile', [HomeController::class, 'verify_mobile'])->name('verify-mobile');
+Route::post('/verify-mobile-submit', [HomeController::class, 'verify_mobile_submit'])->name('verify-mobile-submit');
+
+Route::post('/sentverifyotp', [HomeController::class, 'sentverifyotp'])->name('sentverifyotp');
+
+//no need
+/*Route::get('phone-verification', [HomeController::class, 'phone_verification'])
+    ->middleware('roles:applicant')
+    ->name('phone-verification');
+
+Route::post('phone-verification-submit', [HomeController::class, 'phone_verification_submit'])
+    ->middleware('roles:applicant')
+    ->name('phone-verification-submit');
+
+Route::post('phone-verify-submit', [HomeController::class, 'phone_verify_submit'])
+    ->middleware('roles:applicant')
+    ->name('phone-verify-submit');*/
+
+
+Route::post('/final-submit/eligibility/{applicant}', [FinalSubmitController::class, 'submitEligibility'])
+    ->name('final.submit.eligibility')
+    ->middleware('roles:applicant');
+
+Route::post('/final-submit/application/{applicant}', [FinalSubmitController::class, 'submitApplication'])
+    ->name('final.submit.application')
+    ->middleware('roles:applicant');
+

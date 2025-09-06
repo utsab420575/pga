@@ -1,10 +1,11 @@
 <?php
-// app/Http/Controllers/AttachmentController.php
+
 namespace App\Http\Controllers;
 
 use App\Models\Applicant;
 use App\Models\Attachment;
 use App\Models\AttachmentType;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -30,6 +31,21 @@ class AttachmentController extends Controller
             'applicant_id' => 'required|exists:applicants,id',
         ]);
 
+        $applicant = Applicant::findOrFail($request->applicant_id);
+
+        // ✅ Four Conditions
+        if (Auth::user()->user_type === 'applicant' && $applicant->user_id !== Auth::id()) {
+            return back()->withErrors('Forbidden.');
+        }
+        if ($applicant->final_submit == 1) {
+            return back()->withErrors('Final submission already done. Cannot upload.');
+        }
+        $setting = Setting::latest()->first();;
+        $lastDate = $applicant->applicationtype_id == 1 ? $setting?->end_date : $setting?->eligibility_last_date;
+        if ($lastDate && now()->toDateString() > \Carbon\Carbon::parse($lastDate)->toDateString()) {
+            return back()->withErrors('Submission deadline has passed. Cannot upload.');
+        }
+
         if ($request->hasFile('file')) {
             $data['file'] = $request->file('file')->store('attachments', 'public');
         }
@@ -53,6 +69,22 @@ class AttachmentController extends Controller
     public function update(Request $request, $id)
     {
         $item = Attachment::findOrFail($id);
+
+        $applicant = Applicant::findOrFail($request->applicant_id);
+
+        // ✅ Four Conditions
+        if (Auth::user()->user_type === 'applicant' && $applicant->user_id !== Auth::id()) {
+            return back()->withErrors('Forbidden.');
+        }
+        if ($applicant->final_submit == 1) {
+            return back()->withErrors('Final submission already done. Cannot update.');
+        }
+        $setting = Setting::latest()->first();;
+        $lastDate = $applicant->applicationtype_id == 1 ? $setting?->end_date : $setting?->eligibility_last_date;
+        if ($lastDate && now()->toDateString() > \Carbon\Carbon::parse($lastDate)->toDateString()) {
+            return back()->withErrors('Submission deadline has passed. Cannot update.');
+        }
+
         $data = $request->validate([
             'file' => 'nullable|file|max:5120',
             'attachment_type_id' => 'required|exists:attachment_types,id',
@@ -70,189 +102,98 @@ class AttachmentController extends Controller
     public function destroy($id)
     {
         $item = Attachment::findOrFail($id);
+        $applicant = Applicant::findOrFail($item->applicant_id);
+
+        // ✅ Four Conditions
+        if (Auth::user()->user_type === 'applicant' && $applicant->user_id !== Auth::id()) {
+            return back()->withErrors('Forbidden.');
+        }
+        if ($applicant->final_submit == 1) {
+            return back()->withErrors('Final submission already done. Cannot delete.');
+        }
+        $setting = Setting::latest()->first();;
+        $lastDate = $applicant->applicationtype_id == 1 ? $setting?->end_date : $setting?->eligibility_last_date;
+        if ($lastDate && now()->toDateString() > \Carbon\Carbon::parse($lastDate)->toDateString()) {
+            return back()->withErrors('Submission deadline has passed. Cannot delete.');
+        }
 
         // full path in public folder
         $filePath = public_path($item->file);
-
-        // delete file if exists
         if (file_exists($filePath)) {
             unlink($filePath);
         }
 
-        // delete DB record
         $item->delete();
-
         return redirect()->back()->with('success', 'Deleted successfully');
     }
 
-
-    //no need this upload() ; this is handle by ajax upload , delete
-   /* public function upload(Request $request)
-    {
-        // Basic fields
-        $request->validate([
-            'attachment_type_id' => 'required|exists:attachment_types,id',
-            'applicant_id'       => 'required|exists:applicants,id',
-            'files'              => 'required|array',
-            'files.*'            => 'file', // further constrained below
-        ]);
-
-        $typeId = (int) $request->attachment_type_id;
-
-        // Build per-file validation rules based on type
-        $perFileRules = [];
-        $perFileMessages = [];
-
-        if (in_array($typeId, [6, 10], true)) {
-            // 6: photo (<= 500KB), 10: signature (<= 500KB)
-            // allow only images
-            $perFileRules['files.*'] = 'mimes:jpg,jpeg,png|max:500';
-
-            // Optional: dimension checks (uncomment if you want exact sizes)
-            //  - type 6: exactly 300x300
-            //  - type 10: exactly 250x50
-            // You can enforce with getimagesize below after validation.
-            $perFileMessages = [
-                'files.*.mimes' => 'Only JPG/PNG images are allowed for this attachment type.',
-                'files.*.max'   => 'Each image must not exceed 500KB.',
-            ];
-        } else {
-            // All other types: PDF only, <= 2MB
-            $perFileRules['files.*'] = 'mimes:pdf|max:2048';
-            $perFileMessages = [
-                'files.*.mimes' => 'Only PDF files are allowed for this attachment type.',
-                'files.*.max'   => 'Each PDF must not exceed 2MB.',
-            ];
-        }
-
-        // Validate files with the dynamic rules
-        validator($request->all(), $perFileRules, $perFileMessages)->validate();
-
-
-
-        $today = now()->format('Y-m-d'); // folder name: 2025-09-04
-        $uploadPath = public_path("attachments/{$today}");
-
-        // make directory if not exists
-        if (!file_exists($uploadPath)) {
-            mkdir($uploadPath, 0777, true);
-        }
-
-        foreach ($request->file('files') as $file) {
-            $extension = $file->getClientOriginalExtension();
-            $originalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-            $filename = $request->applicant_id . '_' .
-                $request->attachment_type_id . '_' .
-                now()->format('Ymd_His_u') . '_' .
-                preg_replace('/[^A-Za-z0-9_-]/', '', $originalName) . // remove spaces/special chars
-                '.' . $extension;
-
-            // move file to public folder
-            $file->move($uploadPath, $filename);
-
-            // save path in DB (relative to public)
-            $dbPath = "attachments/{$today}/{$filename}";
-
-            Attachment::create([
-                'file' => $dbPath,
-                'attachment_type_id' => $request->attachment_type_id,
-                'applicant_id' => $request->applicant_id,
-            ]);
-        }
-
-        return back()->with('success', 'Files uploaded successfully.');
-    }*/
-
-
     /**
      * AJAX single-file upload
-     * Expects: attachment_type_id, applicant_id, file (single), optional title
-     * Returns JSON: { id, type_id, type_title, title, url, is_image }
      */
     public function ajaxUpload(Request $request)
     {
-
-        //return $request;
-        // 1. Basic validation for incoming fields
         $request->validate([
-            'attachment_type_id' => 'required|exists:attachment_types,id', // must exist in DB
-            'applicant_id'       => 'required|exists:applicants,id',       // must exist in DB
-            'file'               => 'required|file',                       // single file required
-            'title'              => 'nullable|string|max:255',             // optional title
+            'attachment_type_id' => 'required|exists:attachment_types,id',
+            'applicant_id'       => 'required|exists:applicants,id',
+            'file'               => 'required|file',
+            'title'              => 'nullable|string|max:255',
         ]);
 
-        $typeId     = (int) $request->attachment_type_id;
-        $applicant  = Applicant::findOrFail($request->applicant_id);
+        $typeId    = (int) $request->attachment_type_id;
+        $applicant = Applicant::findOrFail($request->applicant_id);
 
-        // 2. Authorization check
-        // Applicants can only upload for themselves
-        // Admins can upload for any applicant
+        // ✅ Four Conditions
         if (Auth::user()->user_type === 'applicant' && $applicant->user_id !== Auth::id()) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
+        if ($applicant->final_submit == 1) {
+            return response()->json(['message' => 'Final submission already done. You cannot upload new files.'], 403);
+        }
+        $setting = Setting::latest()->first();;
+        $lastDate = $applicant->applicationtype_id == 1 ? $setting?->end_date : $setting?->eligibility_last_date;
+        if ($lastDate && now()->toDateString() > \Carbon\Carbon::parse($lastDate)->toDateString()) {
+            return response()->json(['message' => 'Submission deadline has passed. You cannot upload new files.'], 403);
+        }
 
-        // 3. Per-type validation rules (match your existing `upload` method)
+        // File validation
         if (in_array($typeId, [1, 2], true)) {
-            // For type 6 (photo) or type 10 (signature)
-            // Only allow image files, max size 500 KB
             $request->validate([
                 'file' => 'mimes:jpg,jpeg,png,webp,gif|max:500',
-            ], [
-                'file.mimes' => 'Only image files (JPG/PNG/WEBP/GIF) are allowed for this type.',
-                'file.max'   => 'Image must not exceed 500KB.',
             ]);
         } else {
-            // For all other types: PDF only, max size 10 MB
             $request->validate([
                 'file' => 'mimes:pdf|max:10240',
-            ], [
-                'file.mimes' => 'Only PDF files are allowed for this attachment type.',
-                'file.max'   => 'PDF must not exceed 10MB.',
             ]);
         }
 
-        // 4. Build a safe file name and target directory
-        $file          = $request->file('file'); // UploadedFile instance
-        $extension     = strtolower($file->getClientOriginalExtension()); // e.g. pdf, jpg
+        // File handling
+        $file          = $request->file('file');
+        $extension     = strtolower($file->getClientOriginalExtension());
         $originalName  = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-        $safeBase      = preg_replace('/[^A-Za-z0-9_-]/', '', $originalName); // strip special chars
-        $today         = now()->format('Y-m-d'); // e.g. 2025-09-06
-        $uploadPath    = public_path("attachments/{$today}"); // public/attachments/2025-09-06
+        $safeBase      = preg_replace('/[^A-Za-z0-9_-]/', '', $originalName);
+        $today         = now()->format('Y-m-d');
+        $uploadPath    = public_path("attachments/{$today}");
 
-        // Ensure folder exists
         if (!is_dir($uploadPath)) {
             mkdir($uploadPath, 0777, true);
         }
 
-        // Construct filename pattern: applicantId_typeId_timestamp_originalname.ext
-        $filename = $applicant->id . '_' .
-            $typeId . '_' .
-            now()->format('Ymd_His_u') . '_' .
-            $safeBase . '.' . $extension;
-
-        // 5. Move file from temp to our uploads folder
+        $filename = $applicant->id . '_' . $typeId . '_' . now()->format('Ymd_His_u') . '_' . $safeBase . '.' . $extension;
         $file->move($uploadPath, $filename);
 
-        // Store relative DB path (used with asset())
         $dbPath = "attachments/{$today}/{$filename}";
 
-        // 6. Save in DB
         $attachment = new Attachment();
         $attachment->file = $dbPath;
         $attachment->attachment_type_id = $typeId;
         $attachment->applicant_id = $applicant->id;
-        // If your attachments table has a `title` column, save it
         if ($attachment->isFillable('title')) {
-            // use given title if not empty, else fallback to type title
             $attachment->title = $request->input('title') ?: optional(AttachmentType::find($typeId))->title;
         }
         $attachment->save();
 
-        // 7. Build JSON response for the front-end
-        $type = AttachmentType::find($typeId); // get type info
-        $url  = asset($attachment->file);      // full URL to file
-
-        // Check if file is an image (for preview vs. "View" link)
+        $type = AttachmentType::find($typeId);
+        $url  = asset($attachment->file);
         $isImage = Str::endsWith($dbPath, ['.jpg', '.jpeg', '.png', '.webp', '.gif']);
 
         return response()->json([
@@ -265,39 +206,35 @@ class AttachmentController extends Controller
         ]);
     }
 
-
     /**
      * AJAX delete attachment
-     * Route model bound: {attachment}
-     */
-    /**
-     * AJAX delete attachment
-     * Route model bound: {attachment}
      */
     public function ajaxDelete(Attachment $attachment, Request $request)
     {
-        // 1. Load applicant for authorization
         $applicant = Applicant::find($attachment->applicant_id);
         if (!$applicant) {
             return response()->json(['message' => 'Not found.'], 404);
         }
 
-        // Applicants can only delete their own attachments
+        // ✅ Four Conditions
         if (Auth::user()->user_type === 'applicant' && $applicant->user_id !== Auth::id()) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
-
-        // 2. Delete the physical file if it exists
-        $fullPath = public_path($attachment->file);
-        if (is_file($fullPath)) {
-            @unlink($fullPath); // suppress errors with @
+        if ($applicant->final_submit == 1) {
+            return response()->json(['message' => 'Final submission already done. You cannot delete files.'], 403);
+        }
+        $setting = Setting::latest()->first();;
+        $lastDate = $applicant->applicationtype_id == 1 ? $setting?->end_date : $setting?->eligibility_last_date;
+        if ($lastDate && now()->toDateString() > \Carbon\Carbon::parse($lastDate)->toDateString()) {
+            return response()->json(['message' => 'Submission deadline has passed. You cannot delete files.'], 403);
         }
 
-        // 3. Delete the DB row
-        $attachment->delete();
+        $fullPath = public_path($attachment->file);
+        if (is_file($fullPath)) {
+            @unlink($fullPath);
+        }
 
-        // 4. Return success JSON for JS to update the table
+        $attachment->delete();
         return response()->json(['ok' => true]);
     }
-
 }

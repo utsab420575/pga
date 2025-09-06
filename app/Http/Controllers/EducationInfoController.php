@@ -2,8 +2,11 @@
 // app/Http/Controllers/EducationInfoController.php
 namespace App\Http\Controllers;
 
+use App\Models\Applicant;
 use App\Models\EducationInfo;
+use App\Models\Setting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class EducationInfoController extends Controller
 {
@@ -20,6 +23,21 @@ class EducationInfoController extends Controller
 
     public function store(Request $request)
     {
+        $applicant = Applicant::findOrFail($request->applicant_id);
+
+        // ✅ Four Conditions
+        if (Auth::user()->user_type === 'applicant' && $applicant->user_id !== Auth::id()) {
+            return back()->withErrors('Forbidden.');
+        }
+        if ($applicant->final_submit == 1) {
+            return back()->withErrors('Final submission already done. Cannot update.');
+        }
+        $setting = Setting::latest()->first();;
+        $lastDate = $applicant->applicationtype_id == 1 ? $setting?->end_date : $setting?->eligibility_last_date;
+        if ($lastDate && now()->toDateString() > \Carbon\Carbon::parse($lastDate)->toDateString()) {
+            return back()->withErrors('Submission deadline has passed. Cannot update.');
+        }
+
         $data = $request->validate([
             'degree' => 'required|string|max:255',
             'institute' => 'required|string|max:255',
@@ -58,6 +76,21 @@ class EducationInfoController extends Controller
 
     public function update(Request $request, $id)
     {
+        $applicant = Applicant::findOrFail($request->applicant_id);
+
+        // ✅ Four Conditions
+        if (Auth::user()->user_type === 'applicant' && $applicant->user_id !== Auth::id()) {
+            return back()->withErrors('Forbidden.');
+        }
+        if ($applicant->final_submit == 1) {
+            return back()->withErrors('Final submission already done. Cannot update.');
+        }
+        $setting = Setting::latest()->first();;
+        $lastDate = $applicant->applicationtype_id == 1 ? $setting?->end_date : $setting?->eligibility_last_date;
+        if ($lastDate && now()->toDateString() > \Carbon\Carbon::parse($lastDate)->toDateString()) {
+            return back()->withErrors('Submission deadline has passed. Cannot update.');
+        }
+
         $item = EducationInfo::findOrFail($id);
         $data = $request->validate([
             'degree' => 'required|string|max:255',
@@ -75,6 +108,24 @@ class EducationInfoController extends Controller
     public function destroy($id)
     {
         $item = EducationInfo::findOrFail($id);
+        // 2. Load related applicant
+        $applicant = Applicant::findOrFail($item->applicant_id);
+
+        // 3. Apply the four conditions
+        if (Auth::user()->user_type === 'applicant' && $applicant->user_id !== Auth::id()) {
+            return back()->withErrors('Forbidden.');
+        }
+
+        if ($applicant->final_submit == 1) {
+            return back()->withErrors('Final submission already done. Cannot delete.');
+        }
+
+        $setting = Setting::latest()->first();
+        $lastDate = $applicant->applicationtype_id == 1 ? $setting?->end_date : $setting?->eligibility_last_date;
+        if ($lastDate && now()->toDateString() > \Carbon\Carbon::parse($lastDate)->toDateString()) {
+            return back()->withErrors('Submission deadline has passed. Cannot delete.');
+        }
+
         $item->delete();
         return redirect()->back()->with('success','Education Information Deleted successfully');
     }

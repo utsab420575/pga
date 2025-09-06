@@ -82,7 +82,7 @@ class RegisterController extends Controller
     protected function registered(Request $request, $user)
     {
         if ((int) $user->phone_verified === 0) {
-            return redirect('/phone-verification'); // or ->route('phone.verification')
+            return redirect('/verify-mobile'); // or ->route('phone.verification')
         }
 
         return redirect(RouteServiceProvider::HOME);

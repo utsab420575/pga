@@ -67,7 +67,7 @@
                                                     : url('applicant/eligibility-form/'.$application->id) }}"
                                            class="btn btn-success"
                                            target="_blank" rel="noopener noreferrer">
-                                            {{ (int)$application->applicationtype_id === 1 ? 'Fill Application Form' : 'Fill Eligibility Form' }}
+                                            {{ (int)$application->applicationtype_id === 1 ? 'Submit Admission Form' : 'Submit Eligibility Form' }}
                                         </a>
                                     @endif
                                 </td>

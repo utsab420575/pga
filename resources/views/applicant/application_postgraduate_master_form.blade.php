@@ -431,8 +431,41 @@
                     </div>
                 </div>
 
+                {{-- CARD: Final Submit --}}
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <b>Final Submit</b>
+                    </div>
+                    <div class="card-body">
+                        @if($applicant->final_submit == 1)
+                            <div class="alert alert-success d-flex align-items-center">
+                                <i class="fas fa-check-circle fa-2x mr-2"></i>
+                                <div>
+                                    <strong>Successfully submitted your data.</strong><br>
+                                    Application is submitted successfully.
+                                </div>
+                            </div>
+                        @else
+                            <form method="POST" action="{{ route('final.submit.application', $applicant->id) }}">
+                                @csrf
 
-                    {{-- spacer --}}
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="confirmCheckbox" name="confirm" required>
+                                    <label class="form-check-label" for="confirmCheckbox">
+                                        I confirm that I have submitted all of the required documents and information.
+                                    </label>
+                                </div>
+
+                                <button type="submit" class="btn btn-success"
+                                        onclick="return confirm('Are you sure? After final submission, you may not be able to edit further.')">
+                                    Final Submit
+                                </button>
+                            </form>
+                        @endif
+                    </div>
+                </div>
+
+                {{-- spacer --}}
                 <div class="my-5"></div>
 
             </div>
@@ -466,7 +499,7 @@
                             <label>Full Name</label><span class="text-danger">*</span>
                             <input type="text" name="full_name" class="form-control"
                                    maxlength="255"
-                                   value="{{ old('full_name', $basicInfo->full_name ?? '') }}">
+                                   value="{{ old('full_name', $basicInfo->full_name ?? '') }}" required>
                         </div>
                         <div class="form-group col-md-6">
                             <label>Applicant's Name (In Block Letter)</label><span class="text-danger">*</span>
@@ -474,7 +507,7 @@
                                    style="text-transform:uppercase"
                                    oninput="this.value=this.value.toUpperCase();"
                                    maxlength="255"
-                                   value="{{ old('full_name_block_letter', $basicInfo->full_name_block_letter ?? '') }}">
+                                   value="{{ old('full_name_block_letter', $basicInfo->full_name_block_letter ?? '') }}" required>
                         </div>
                     </div>
 
@@ -483,7 +516,7 @@
                             <label>Name (Bangla)</label><span class="text-danger">*</span>
                             <input type="text" name="bn_name" class="form-control"
                                    maxlength="255"
-                                   value="{{ old('bn_name', $basicInfo->bn_name ?? '') }}">
+                                   value="{{ old('bn_name', $basicInfo->bn_name ?? '') }}" required>
                         </div>
                     </div>
 
@@ -492,18 +525,18 @@
                         <div class="form-group col-md-4">
                             <label>Father's Name</label><span class="text-danger">*</span>
                             <input type="text" name="f_name" class="form-control"
-                                   value="{{ old('f_name', $basicInfo->f_name ?? '') }}">
+                                   value="{{ old('f_name', $basicInfo->f_name ?? '') }}" required>
                         </div>
                         <div class="form-group col-md-4">
                             <label>Mother's Name</label><span class="text-danger">*</span>
                             <input type="text" name="m_name" class="form-control"
-                                   value="{{ old('m_name', $basicInfo->m_name ?? '') }}">
+                                   value="{{ old('m_name', $basicInfo->m_name ?? '') }}" required>
                         </div>
                         <div class="form-group col-md-4">
-                            <label>Guardian's Income</label><span class="text-danger">*</span>
+                            <label>Guardian's Annual Income</label><span class="text-danger">*</span>
                             <input type="number" name="g_income" class="form-control"
                                    step="0.01" min="0"
-                                   value="{{ old('g_income', $basicInfo->g_income ?? '') }}">
+                                   value="{{ old('g_income', $basicInfo->g_income ?? '') }}" required>
                         </div>
                     </div>
 
@@ -512,17 +545,17 @@
                         <div class="form-group col-md-4">
                             <label>National ID</label><span class="text-danger">*</span>
                             <input type="text" name="nid" class="form-control"
-                                   value="{{ old('nid', $basicInfo->nid ?? '') }}">
+                                   value="{{ old('nid', $basicInfo->nid ?? '') }}" required>
                         </div>
                         <div class="form-group col-md-4">
                             <label>Nationality</label><span class="text-danger">*</span>
                             <input type="text" name="nationality" class="form-control"
-                                   value="{{ old('nationality', $basicInfo->nationality ?? '') }}">
+                                   value="{{ old('nationality', $basicInfo->nationality ?? '') }}" required>
                         </div>
                         <div class="form-group col-md-4">
                             <label>DOB</label><span class="text-danger">*</span>
                             <input type="date" name="dob" class="form-control"
-                                   value="{{ old('dob', optional($basicInfo->dob ?? null)->format('Y-m-d')) }}">
+                                   value="{{ old('dob', optional($basicInfo->dob ?? null)->format('Y-m-d')) }}" required>
                         </div>
                     </div>
 
@@ -553,7 +586,7 @@
                         <div class="form-group col-md-4">
                             <label>Marital Status</label><span class="text-danger">*</span>
                             @php $msOld = old('marital_status', $basicInfo->marital_status ?? ''); @endphp
-                            <select name="marital_status" class="form-control">
+                            <select name="marital_status" class="form-control" required>
                                 <option value="">--select--</option>
                                 <option value="Single"   {{ $msOld==='Single'?'selected':'' }}>Single</option>
                                 <option value="Married"  {{ $msOld==='Married'?'selected':'' }}>Married</option>
@@ -569,7 +602,7 @@
                             <label>Field of Interest</label><span class="text-danger">*</span>
                             <input type="text" name="field_of_interest" class="form-control"
                                    maxlength="255"
-                                   value="{{ old('field_of_interest', $basicInfo->field_of_interest ?? '') }}">
+                                   value="{{ old('field_of_interest', $basicInfo->field_of_interest ?? '') }}" required>
                         </div>
                     </div>
 
@@ -593,27 +626,27 @@
                             <div class="form-group mb-2">
                                 <small>Holding No</small>
                                 <input type="text" name="pre_holding_no" class="form-control"
-                                       value="{{ old('pre_holding_no', addr_pick($preText, 'Holding No')) }}">
+                                       value="{{ old('pre_holding_no', addr_pick($preText, 'Holding No')) }}" required>
                             </div>
                             <div class="form-group mb-2">
                                 <small>Village / Road No</small>
                                 <input type="text" name="pre_village_road" class="form-control"
-                                       value="{{ old('pre_village_road', addr_pick($preText, 'Village/Road')) }}">
+                                       value="{{ old('pre_village_road', addr_pick($preText, 'Village/Road')) }}" required>
                             </div>
                             <div class="form-group mb-2">
                                 <small>Post Office</small>
                                 <input type="text" name="pre_post_office" class="form-control"
-                                       value="{{ old('pre_post_office', addr_pick($preText, 'Post Office')) }}">
+                                       value="{{ old('pre_post_office', addr_pick($preText, 'Post Office')) }}" required>
                             </div>
                             <div class="form-group mb-2">
                                 <small>Upazila / Thana</small>
                                 <input type="text" name="pre_upazila_thana" class="form-control"
-                                       value="{{ old('pre_upazila_thana', addr_pick($preText, 'Upazila/Thana')) }}">
+                                       value="{{ old('pre_upazila_thana', addr_pick($preText, 'Upazila/Thana')) }}" required>
                             </div>
                             <div class="form-group mb-2">
                                 <small>District</small>
                                 <input type="text" name="pre_district" class="form-control"
-                                       value="{{ old('pre_district', addr_pick($preText, 'District')) }}">
+                                       value="{{ old('pre_district', addr_pick($preText, 'District')) }}" required>
                             </div>
                             <input type="hidden" name="pre_address">
                         </div>
@@ -623,27 +656,27 @@
                             <div class="form-group mb-2">
                                 <small>Holding No</small>
                                 <input type="text" name="per_holding_no" class="form-control"
-                                       value="{{ old('per_holding_no', addr_pick($perText, 'Holding No')) }}">
+                                       value="{{ old('per_holding_no', addr_pick($perText, 'Holding No')) }}" required>
                             </div>
                             <div class="form-group mb-2">
                                 <small>Village / Road No</small>
                                 <input type="text" name="per_village_road" class="form-control"
-                                       value="{{ old('per_village_road', addr_pick($perText, 'Village/Road')) }}">
+                                       value="{{ old('per_village_road', addr_pick($perText, 'Village/Road')) }}" required>
                             </div>
                             <div class="form-group mb-2">
                                 <small>Post Office</small>
                                 <input type="text" name="per_post_office" class="form-control"
-                                       value="{{ old('per_post_office', addr_pick($perText, 'Post Office')) }}">
+                                       value="{{ old('per_post_office', addr_pick($perText, 'Post Office')) }}" required>
                             </div>
                             <div class="form-group mb-2">
                                 <small>Upazila / Thana</small>
                                 <input type="text" name="per_upazila_thana" class="form-control"
-                                       value="{{ old('per_upazila_thana', addr_pick($perText, 'Upazila/Thana')) }}">
+                                       value="{{ old('per_upazila_thana', addr_pick($perText, 'Upazila/Thana')) }}" required>
                             </div>
                             <div class="form-group mb-2">
                                 <small>District</small>
                                 <input type="text" name="per_district" class="form-control"
-                                       value="{{ old('per_district', addr_pick($perText, 'District')) }}">
+                                       value="{{ old('per_district', addr_pick($perText, 'District')) }}" required>
                             </div>
                             <input type="hidden" name="per_address">
                         </div>
@@ -680,7 +713,7 @@
                         <div class="form-group col-md-6"><label>Year of Passing</label><span class="text-danger">*</span><input type="number" name="year_of_passing" class="form-control" min="1900" max="2100" required></div>
                         <div class="form-group col-md-6"><label>Field</label><span class="text-danger">*</span><input type="text" name="field" class="form-control"></div>
                     </div>
-                    <div class="form-group"><label>CGPA</label><span class="text-danger">*</span><input type="number" step="0.01" name="cgpa" class="form-control"></div>
+                    <div class="form-group"><label>CGPA</label><span class="text-danger">*</span><input type="number" step="0.01" name="cgpa" class="form-control" required></div>
                 </div>
 
                 <div class="modal-footer">
@@ -715,14 +748,14 @@
                     <div class="form-group">
                         <label>Institute</label><span class="text-danger">*</span>
                         <input type="text" name="institute" class="form-control"
-                               value="{{ old('institute') }}">
+                               value="{{ old('institute') }}" required>
                     </div>
 
                     <div class="form-group">
                         <label>Period</label><span class="text-danger">*</span>
                         <input type="text" name="period" class="form-control"
                                placeholder="e.g. 2019–2021 or Jan 2020 - Dec 2021"
-                               value="{{ old('period') }}">
+                               value="{{ old('period') }}" required>
                     </div>
                 </div>
 
@@ -756,19 +789,19 @@
 
                     <div class="form-group">
                         <label>Authors</label><span class="text-danger">*</span>
-                        <input type="text" name="authors" class="form-control" value="{{ old('authors') }}" placeholder="e.g., A. Rahman, B. Akter">
+                        <input type="text" name="authors" class="form-control" value="{{ old('authors') }}" placeholder="e.g., A. Rahman, B. Akter" required>
                     </div>
 
                     <div class="form-group">
 
                             <label>Year</label><span class="text-danger">*</span>
-                            <input type="number" name="year_of_publication" class="form-control" min="1900" max="2100" value="{{ old('year_of_publication') }}">
+                            <input type="number" name="year_of_publication" class="form-control" min="1900" max="2100" value="{{ old('year_of_publication') }}" required>
 
                     </div>
                     <div class="form-group">
 
                         <label>Details</label><span class="text-danger">*</span>
-                        <textarea name="details" class="form-control" rows="2" placeholder="Journal/Conference, DOI, volume/issue, pages...">{{ old('details') }}</textarea>
+                        <textarea name="details" class="form-control" rows="2" placeholder="Journal/Conference, DOI, volume/issue, pages..." required>{{ old('details') }}</textarea>
 
                     </div>
                 </div>
@@ -803,23 +836,23 @@
 
                     <div class="form-group">
                         <label>Designation</label><span class="text-danger">*</span>
-                        <input type="text" name="designation" class="form-control" value="{{ old('designation') }}">
+                        <input type="text" name="designation" class="form-control" value="{{ old('designation') }}" required>
                     </div>
 
                     <div class="form-row">
                         <div class="form-group col-md-6">
                             <label>From</label><span class="text-danger">*</span>
-                            <input type="date" name="from" class="form-control" value="{{ old('from') }}">
+                            <input type="date" name="from" class="form-control" value="{{ old('from') }}" required>
                         </div>
                         <div class="form-group col-md-6">
                             <label>To</label><span class="text-danger">*</span>
-                            <input type="date" name="to" class="form-control" value="{{ old('to') }}">
+                            <input type="date" name="to" class="form-control" value="{{ old('to') }}" required>
                         </div>
                     </div>
 
                     <div class="form-group">
                         <label>Details</label><span class="text-danger">*</span>
-                        <textarea name="details" class="form-control" rows="3">{{ old('details') }}</textarea>
+                        <textarea name="details" class="form-control" rows="3" required>{{ old('details') }}</textarea>
                     </div>
                 </div>
 
@@ -852,35 +885,35 @@
 
                     <div class="form-group">
                         <label>Designation and Affiliation</label><span class="text-danger">*</span>
-                        <textarea name="designation" class="form-control" rows="2">{{ old('designation') }}</textarea>
+                        <textarea name="designation" class="form-control" rows="2" required>{{ old('designation') }}</textarea>
                     </div>
 
                     <div class="form-group">
                         <label>Institute</label><span class="text-danger">*</span>
-                        <input type="text" name="institute" class="form-control" value="{{ old('institute') }}">
+                        <input type="text" name="institute" class="form-control" value="{{ old('institute') }}" required>
                     </div>
 
                     <div class="form-row">
                         <div class="form-group col-md-6">
                             <label>Email</label><span class="text-danger">*</span>
-                            <input type="email" name="email" class="form-control" value="{{ old('email') }}">
+                            <input type="email" name="email" class="form-control" value="{{ old('email') }}" required>
                         </div>
                         <div class="form-group col-md-6">
                             <label>Phone</label><span class="text-danger">*</span>
-                            <input type="text" name="phone" class="form-control" value="{{ old('phone') }}">
+                            <input type="text" name="phone" class="form-control" value="{{ old('phone') }}" required>
                         </div>
                     </div>
 
 
                     <div class="form-group">
                         <label>Address</label><span class="text-danger">*</span>
-                        <textarea name="address" class="form-control" rows="2">{{ old('address') }}</textarea>
+                        <textarea name="address" class="form-control" rows="2" required>{{ old('address') }}</textarea>
                     </div>
 
 
                     <div class="form-group">
                         <label>Order No</label><span class="text-danger">*</span>
-                        <input type="number" name="order_no" class="form-control" min="1" max="2" value="{{ old('order_no', 1) }}">
+                        <input type="number" name="order_no" class="form-control" min="1" max="2" value="{{ old('order_no', 1) }}" required>
                     </div>
 
                 </div>
@@ -924,7 +957,7 @@
                     {{-- optional title input --}}
                     <div class="form-group">
                         <label>Title of File</label><span class="text-danger">*</span>
-                        <input type="text" name="title" class="form-control" maxlength="255" placeholder="e.g., Title">
+                        <input type="text" name="title" class="form-control" maxlength="255" placeholder="e.g., Title" required>
                     </div>
 
                     {{-- file chooser (single file only) --}}

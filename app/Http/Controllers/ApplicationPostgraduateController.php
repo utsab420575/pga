@@ -45,6 +45,8 @@ class ApplicationPostgraduateController extends Controller
                 // You can include the date to be clear
                 return back()->withErrors('Application date is over. Deadline was: '.$deadline->toDateString());
             }
+        }else{
+            return back()->withErrors('Setting Table Data Not Found');
         }
 
 

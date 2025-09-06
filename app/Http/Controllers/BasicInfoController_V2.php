@@ -2,13 +2,10 @@
 // app/Http/Controllers/BasicInfoController.php
 namespace App\Http\Controllers;
 
-use App\Models\Applicant;
 use App\Models\BasicInfo;
-use App\Models\Setting;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
-class BasicInfoController extends Controller
+class BasicInfoController_V2 extends Controller
 {
     public function index()
     {
@@ -23,21 +20,6 @@ class BasicInfoController extends Controller
 
     public function store(Request $request)
     {
-        $applicant = Applicant::findOrFail($request->applicant_id);
-
-        // ✅ Four Conditions
-        if (Auth::user()->user_type === 'applicant' && $applicant->user_id !== Auth::id()) {
-            return back()->withErrors('Forbidden.');
-        }
-        if ($applicant->final_submit == 1) {
-            return back()->withErrors('Final submission already done. Cannot update.');
-        }
-        $setting = Setting::latest()->first();;
-        $lastDate = $applicant->applicationtype_id == 1 ? $setting?->end_date : $setting?->eligibility_last_date;
-        if ($lastDate && now()->toDateString() > \Carbon\Carbon::parse($lastDate)->toDateString()) {
-            return back()->withErrors('Submission deadline has passed. Cannot update.');
-        }
-
         $data = $request->validate([
             'full_name_block_letter' => 'required|string|max:255',
             'f_name' => 'required|string|max:255',
@@ -87,23 +69,6 @@ class BasicInfoController extends Controller
     public function update(Request $request, $id)
     {
 
-        $applicant = Applicant::findOrFail($request->applicant_id);
-
-        // ✅ Four Conditions
-        if (Auth::user()->user_type === 'applicant' && $applicant->user_id !== Auth::id()) {
-            return back()->withErrors('Forbidden.');
-        }
-        if ($applicant->final_submit == 1) {
-            return back()->withErrors('Final submission already done. Cannot update.');
-        }
-        $setting = Setting::latest()->first();
-        //return $setting;
-        $lastDate = $applicant->applicationtype_id == 1 ? $setting?->end_date : $setting?->eligibility_last_date;
-        if ($lastDate && now()->toDateString() > \Carbon\Carbon::parse($lastDate)->toDateString()) {
-            return back()->withErrors('Submission deadline has passed. Cannot update.');
-        }
-
-
         //return $request;
         $item = BasicInfo::findOrFail($id);
         $data = $request->validate([
@@ -143,24 +108,6 @@ class BasicInfoController extends Controller
     public function destroy($id)
     {
         $item = BasicInfo::findOrFail($id);
-        // 2. Load related applicant
-        $applicant = Applicant::findOrFail($item->applicant_id);
-
-        // 3. Apply the four conditions
-        if (Auth::user()->user_type === 'applicant' && $applicant->user_id !== Auth::id()) {
-            return back()->withErrors('Forbidden.');
-        }
-
-        if ($applicant->final_submit == 1) {
-            return back()->withErrors('Final submission already done. Cannot delete.');
-        }
-
-        $setting = Setting::latest()->first();
-        $lastDate = $applicant->applicationtype_id == 1 ? $setting?->end_date : $setting?->eligibility_last_date;
-        if ($lastDate && now()->toDateString() > \Carbon\Carbon::parse($lastDate)->toDateString()) {
-            return back()->withErrors('Submission deadline has passed. Cannot delete.');
-        }
-
         $item->delete();
         return redirect()->route('basic_info.all')->with('success', 'Basic info deleted.');
     }
