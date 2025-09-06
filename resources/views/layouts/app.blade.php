@@ -120,6 +120,11 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <!-- Add Script Data(You can write it any javascript file and than just import this js) -->
 {{--this will be fire for any 'delete' class element[const target = event.target.closest('.delete');]--}}
+
+{{-- Toastr --}}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         document.addEventListener('click', function (event) {
@@ -151,6 +156,8 @@
         });
     });
 </script>
+
+
 
 @yield('script')
 </body>

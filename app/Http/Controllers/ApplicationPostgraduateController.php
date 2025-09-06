@@ -56,7 +56,7 @@ class ApplicationPostgraduateController extends Controller
             'eligibilityDegree'  => $applicant->eligibilityDegree,
             'educationInfos'     => $applicant->educationInfos,
             'attachments'        => $applicant->attachments,
-            'attachmentTypes'    => AttachmentType::orderBy('title')->get(),
+            'attachmentTypes'    => AttachmentType::orderBy('id')->get(),
 
             // new datasets
             'theses'             => $applicant->theses,

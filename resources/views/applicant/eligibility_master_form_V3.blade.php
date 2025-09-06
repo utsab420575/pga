@@ -61,7 +61,7 @@
                 </div>
 
                 {{-- CARD 2: Eligibility Degree --}}
-                <div class="card">
+                    <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <span><b>Eligibility Degree</b></span>
                             <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#eligibilityModal">
@@ -101,7 +101,8 @@
                         </div>
                     </div>
 
-                {{-- CARD 3: Education Info (you can add multiple) --}}
+
+                    {{-- CARD 3: Education Info (you can add multiple) --}}
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span><b>Education Info</b></span>
@@ -164,89 +165,127 @@
                     </div>
                 </div>
 
-
-                {{-- CARD 8: Attachments (by type, with previews) --}}
-                {{-- CARD X: Quick Upload (AJAX, single file, toaster feedback) --}}
-                @php
-                    // Filter out specific attachment types (like 5,7,8,9)
-                    // so they don’t appear in the quick upload selection.
-                    $selectableTypes = $attachmentTypes->reject(fn($t) => in_array($t->id, [4]));
-                @endphp
-
-                <div class="card">
-                    {{-- Card header with title and "Add" button (opens modal) --}}
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <span><b>Upload all necessary documents</b></span>
-                        <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#quickUploadModal">Add</button>
-                    </div>
-
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-sm table-bordered mb-0" id="quickUploadTable">
-                                <thead>
-                                <tr>
-                                    <th style="width: 14rem;">Type</th>   {{-- Shows attachment type --}}
-                                    <th>Title</th>                        {{-- File title --}}
-                                    <th style="width: 12rem;">File</th>   {{-- File preview or link --}}
-                                    <th style="width: 9rem;">Action</th>  {{-- Action buttons (delete, etc.) --}}
-                                </tr>
-                                </thead>
-                                <tbody id="quickUploadTbody">
-                                {{-- Loop through existing attachments and display them --}}
-                                @foreach(($attachments ?? collect())->sortBy('attachment_type_id') as $file)
+                {{-- CARD 4: Attachments --}}
+                    <div class="card">
+                        <div class="card-header">Required Documents (which must be attached here with) :</div>
+                        <div class="card-body">
+                            <div class="row">
+                                @foreach($attachmentTypes->sortBy('id') as $type)
+                                    @continue(in_array($type->id, [4]))
                                     @php
-                                        // Detect if file is an image (for inline preview)
-                                        $isImage = \Illuminate\Support\Str::endsWith(
-                                            strtolower($file->file),
-                                            ['.jpg','.jpeg','.png','.webp','.gif']
-                                        );
-
-                                        // Use the saved title if available; otherwise fallback to filename
-                                        $displayTitle = $file->title ?? basename($file->file);
-
-                                        // Get the type title from relation (if exists), otherwise show N/A
-                                        $typeTitle = optional($file->type)->title ?? 'N/A';
-
-                                        // Build the full file URL
-                                        $url = asset($file->file);
+                                        $uploaded = $attachments->where('attachment_type_id', $type->id);
                                     @endphp
+                                    <div class="col-md-12">
+                                        <div class="card mb-3" id="doc-{{ $type->id }}">
+                                            <div class="card-header d-flex justify-content-between align-items-center">
+                                                <span>{{ $type->title }}</span>
+                                                <div class="d-flex align-items-center">
+                                                    <button type="button" class="btn btn-sm btn-info mr-2"
+                                                            data-toggle="popover"
+                                                            data-html="true"
+                                                            title="Instructions"
+                                                            data-content="
+                                                                @if($type->id == 1)
+                                                                    1. Attested SSC Certificate <br>
+                                                                    2. Attested Diploma Certificate <br>
+                                                                    3. Attested BSc Certificate
+                                                                @elseif($type->id == 2)
+                                                                     1. Attested SSC Transcript/Grade-sheet <br>
+                                                                    2. Attested Diploma Transcript/Grade-sheet <br>
+                                                                    3. Attested BSc Transcript/Grade-sheet
 
-                                    <tr data-id="{{ $file->id }}">
-                                        {{-- File type --}}
-                                        <td>{{ $typeTitle }}</td>
+                                                                @elseif($type->id == 3)
+                                                                    1. Attested SSC Mark-sheet <br>
+                                                                    2. Attested Diploma Mark-sheet <br>
+                                                                    3. Attested BSc Mark-sheet
+                                                                @elseif($type->id == 4)
+                                                                   1.Attested Testimonial
+                                                                @elseif($type->id == 5)
+                                                                    1.Detailed Syllabus mentioning all the contents
+                                                                @elseif($type->id == 6)
+                                                                    Recent photo  (max 500KB)
+                                                                @elseif($type->id == 7)
+                                                                    1.Attested copy of National ID Card/Birth Certificate
+                                                                @elseif($type->id == 8)
+                                                                    1.Attested copy of Passport(Proof of valid Visa for staying abroad to achieve foreign degree)
+                                                                @elseif($type->id == 9)
+                                                                    1.Document in support of credit and courses waived/transferred(if any)
+                                                                @elseif($type->id == 10)
+                                                                    Signature  (max 500KB)
+                                                                @else
+                                                                    Upload relevant document
+                                                                @endif
+                                                            ">
+                                                        ?
+                                                    </button>
 
-                                        {{-- Title or filename --}}
-                                        <td>{{ $displayTitle }}</td>
+                                                    @if($type->required)
+                                                        <span class="badge badge-danger">required</span>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                            <div class="card-body">
 
-                                        {{-- Preview or link --}}
-                                        <td class="text-center">
-                                            @if($isImage)
-                                                {{-- Inline image preview for images --}}
-                                                <img src="{{ $url }}" alt="image"
-                                                     style="max-width: 120px; max-height: 80px; border:1px solid #ddd; border-radius:6px;">
-                                            @else
-                                                {{-- "View" button for non-images (opens file in new tab) --}}
-                                                <a href="{{ $url }}" target="_blank" class="btn btn-outline-info btn-sm">View</a>
-                                            @endif
-                                        </td>
+                                                {{-- Upload input (multiple) --}}
+                                                <form action="{{ route('attachments.upload') }}" method="POST" enctype="multipart/form-data">
+                                                    @csrf
+                                                    <input type="hidden" name="attachment_type_id" value="{{ $type->id }}">
+                                                    <input type="hidden" name="applicant_id" value="{{ $applicant->id }}">
 
-                                        {{-- Action buttons --}}
-                                        <td class="text-center">
-                                            {{-- Delete button triggers AJAX delete via route --}}
-                                            <button class="btn btn-danger btn-sm q-del"
-                                                    data-delete-url="{{ route('attachments.ajaxDelete', $file->id) }}">
-                                                Delete
-                                            </button>
-                                        </td>
-                                    </tr>
+                                                    <div class="d-flex align-items-center">
+                                                        <input type="file" name="files[]" class="form-control-file" accept="image/*,.pdf" multiple required>
+                                                        <button type="submit" class="btn btn-primary btn-sm ml-2">Upload</button>
+                                                    </div>
+                                                </form>
+
+                                                {{-- Preview all uploaded files --}}
+                                                @if($uploaded->count())
+                                                    <div class="mt-3">
+                                                        @foreach($uploaded as $file)
+                                                            <div class="d-inline-block text-center mr-3 mb-2">
+                                                                @if(Str::endsWith($file->file, ['.jpg','.jpeg','.png']))
+                                                                    <img src="{{ asset($file->file) }}" width="100"
+                                                                         style="border:1px solid #ccc; border-radius:5px; margin-bottom:10px; display:block;" class="border rounded d-block mb-1">
+                                                                @else
+                                                                    @php
+                                                                        // Build a display name from the stored file path
+                                                                        $url        = asset($file->file);
+                                                                        $filename   = basename($file->file);                           // e.g. 12_4_20250904_153012_123456_my_degree_certificate.pdf
+                                                                        $nameNoExt  = pathinfo($filename, PATHINFO_FILENAME);          // 12_4_20250904_153012_123456_my_degree_certificate
+                                                                        $parts      = explode('_', $nameNoExt);
+
+                                                                        // Our pattern: applicantId _ typeId _ YYYYMMDD _ HHMMSS _ micro _ original_slug
+                                                                        // So original starts from index 5; if not present, just use the whole base.
+                                                                        $origSlug   = count($parts) >= 6 ? implode('_', array_slice($parts, 5)) : $nameNoExt;
+
+                                                                        // Make it pretty for display
+                                                                        $displayName = str_replace('_', ' ', $origSlug);
+                                                                    @endphp
+
+                                                                    <a href="{{ asset($file->file) }}" target="_blank" class="btn btn-outline-info btn-sm"
+                                                                       style="margin-bottom:10px; display:inline-block;">View {{ $displayName }}</a>
+                                                                @endif
+
+                                                                <div>
+                                                                    <a href="{{ asset($file->file) }}" download  style="margin-right:5px;" class="btn btn-success btn-sm">Download</a>
+                                                                    <form action="{{ route('attachments.delete', $file->id) }}" method="POST" class="d-inline">
+                                                                        @csrf
+                                                                        @method('DELETE')
+                                                                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                                                    </form>
+                                                                </div>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                @endif
+
+                                            </div>
+                                        </div>
+                                    </div>
                                 @endforeach
-
-                                {{-- JS will dynamically append new rows here after successful upload --}}
-                                </tbody>
-                            </table>
+                            </div>
                         </div>
                     </div>
-                </div>
 
 
 

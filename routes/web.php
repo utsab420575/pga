@@ -219,6 +219,14 @@ Route::get('applicant/application-postgraduate-form/{id}', [ApplicationPostgradu
     ->name('applicant.application_postgraduate_master_form')
     ->middleware(['auth','roles:admin,applicant']);
 
+Route::post('/attachments/ajax-upload', [AttachmentController::class, 'ajaxUpload'])
+    ->name('attachments.ajaxUpload')
+    ->middleware(['auth','roles:admin,applicant']);
+
+Route::delete('/attachments/{attachment}/ajax-delete', [AttachmentController::class, 'ajaxDelete'])
+    ->name('attachments.ajaxDelete')
+    ->middleware(['auth','roles:admin,applicant']);
+
 Route::post('bkash_pull', [PaymentController::class, 'bkash_pull'])->name('bkash_pull');
 Route::post('bkash_push', [PaymentController::class, 'bkash_push'])->name('bkash_push');
 Route::post('bkash_check', [PaymentController::class, 'bkash_check'])->name('bkash_check');

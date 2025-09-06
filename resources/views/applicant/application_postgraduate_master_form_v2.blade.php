@@ -349,90 +349,112 @@
                 </div>
 
                 {{-- CARD 8: Attachments (by type, with previews) --}}
-                {{-- CARD X: Quick Upload (AJAX, single file, toaster feedback) --}}
-                @php
-                    // Filter out specific attachment types (like 5,7,8,9)
-                    // so they don’t appear in the quick upload selection.
-                    $selectableTypes = $attachmentTypes->reject(fn($t) => in_array($t->id, [5,7,8,9]));
-                @endphp
-
                 <div class="card">
-                    {{-- Card header with title and "Add" button (opens modal) --}}
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <span><b>Upload all necessary documents</b></span>
-                        <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#quickUploadModal">Add</button>
-                    </div>
-
+                    <div class="card-header">Required Documents (which must be attached here with):</div>
                     <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-sm table-bordered mb-0" id="quickUploadTable">
-                                <thead>
-                                <tr>
-                                    <th style="width: 14rem;">Type</th>   {{-- Shows attachment type --}}
-                                    <th>Title</th>                        {{-- File title --}}
-                                    <th style="width: 12rem;">File</th>   {{-- File preview or link --}}
-                                    <th style="width: 9rem;">Action</th>  {{-- Action buttons (delete, etc.) --}}
-                                </tr>
-                                </thead>
-                                <tbody id="quickUploadTbody">
-                                {{-- Loop through existing attachments and display them --}}
-                                @foreach(($attachments ?? collect())->sortBy('attachment_type_id') as $file)
-                                    @php
-                                        // Detect if file is an image (for inline preview)
-                                        $isImage = \Illuminate\Support\Str::endsWith(
-                                            strtolower($file->file),
-                                            ['.jpg','.jpeg','.png','.webp','.gif']
-                                        );
+                        <div class="row">
+                            @foreach($attachmentTypes->sortBy('id') as $type)
+                                @continue(in_array($type->id, [5, 7, 8, 9]))
 
-                                        // Use the saved title if available; otherwise fallback to filename
-                                        $displayTitle = $file->title ?? basename($file->file);
+                                @php $uploaded = $attachments->where('attachment_type_id', $type->id); @endphp
+                                <div class="col-md-12">
+                                    <div class="card mb-3" id="doc-{{ $type->id }}">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <span>{{ $type->title }}</span>
 
-                                        // Get the type title from relation (if exists), otherwise show N/A
-                                        $typeTitle = optional($file->type)->title ?? 'N/A';
+                                            <div class="d-flex align-items-center">
+                                                <button type="button" class="btn btn-sm btn-info mr-2"
+                                                        data-toggle="popover"
+                                                        data-html="true"
+                                                        title="Instructions"
+                                                        data-content="
+                                                                @if($type->id == 1)
+                                                                    1. Attested SSC Certificate <br>
+                                                                    2. Attested Diploma Certificate <br>
+                                                                    3. Attested BSc Certificate
+                                                                @elseif($type->id == 2)
+                                                                     1. Attested SSC Transcript/Grade-sheet <br>
+                                                                    2. Attested Diploma Transcript/Grade-sheet <br>
+                                                                    3. Attested BSc Transcript/Grade-sheet
 
-                                        // Build the full file URL
-                                        $url = asset($file->file);
-                                    @endphp
+                                                                @elseif($type->id == 3)
+                                                                    1. Attested SSC Mark-sheet <br>
+                                                                    2. Attested Diploma Mark-sheet <br>
+                                                                    3. Attested BSc Mark-sheet
+                                                                @elseif($type->id == 4)
+                                                                    1.Attested Testimonial
+                                                                @elseif($type->id == 6)
+                                                                    Recent photo  (max 500KB)
+                                                                @elseif($type->id == 10)
+                                                                    Signature  (max 500KB)
+                                                                @else
+                                                                    Upload relevant document
+                                                                @endif
+                                                            ">
+                                                    ?
+                                                </button>
 
-                                    <tr data-id="{{ $file->id }}">
-                                        {{-- File type --}}
-                                        <td>{{ $typeTitle }}</td>
+                                                @if($type->required)
+                                                    <span class="badge badge-danger">required</span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                        <div class="card-body">
+                                            <form action="{{ route('attachments.upload') }}" method="POST" enctype="multipart/form-data">
+                                                @csrf
+                                                <input type="hidden" name="attachment_type_id" value="{{ $type->id }}">
+                                                <input type="hidden" name="applicant_id" value="{{ $applicant->id }}">
+                                                <div class="d-flex align-items-center">
+                                                    <input type="file" name="files[]" class="form-control-file" accept="image/*,.pdf" multiple required>
+                                                    <button type="submit" class="btn btn-primary btn-sm ml-2">Upload</button>
+                                                </div>
+                                            </form>
 
-                                        {{-- Title or filename --}}
-                                        <td>{{ $displayTitle }}</td>
+                                            @if($uploaded->count())
+                                                <div class="mt-3">
+                                                    @foreach($uploaded as $file)
+                                                        <div class="d-inline-block text-center mr-3 mb-2">
+                                                            @if(Str::endsWith(strtolower($file->file), ['.jpg','.jpeg','.png','.webp']))
+                                                                <img src="{{ asset($file->file) }}" width="100"
+                                                                     style="border:1px solid #ccc;border-radius:5px;margin-bottom:10px;display:block;">
+                                                            @else
+                                                                @php
+                                                                    // Build a display name from the stored file path
+                                                                       $url        = asset($file->file);
+                                                                       $filename   = basename($file->file);                           // e.g. 12_4_20250904_153012_123456_my_degree_certificate.pdf
+                                                                       $nameNoExt  = pathinfo($filename, PATHINFO_FILENAME);          // 12_4_20250904_153012_123456_my_degree_certificate
+                                                                       $parts      = explode('_', $nameNoExt);
 
-                                        {{-- Preview or link --}}
-                                        <td class="text-center">
-                                            @if($isImage)
-                                                {{-- Inline image preview for images --}}
-                                                <img src="{{ $url }}" alt="image"
-                                                     style="max-width: 120px; max-height: 80px; border:1px solid #ddd; border-radius:6px;">
-                                            @else
-                                                {{-- "View" button for non-images (opens file in new tab) --}}
-                                                <a href="{{ $url }}" target="_blank" class="btn btn-outline-info btn-sm">View</a>
+                                                                       // Our pattern: applicantId _ typeId _ YYYYMMDD _ HHMMSS _ micro _ original_slug
+                                                                       // So original starts from index 5; if not present, just use the whole base.
+                                                                       $origSlug   = count($parts) >= 6 ? implode('_', array_slice($parts, 5)) : $nameNoExt;
+
+                                                                       // Make it pretty for display
+                                                                       $displayName = str_replace('_', ' ', $origSlug);
+                                                                @endphp
+                                                                <a href="{{ asset($file->file) }}" target="_blank" class="btn btn-outline-info btn-sm"
+                                                                   style="margin-bottom:10px;display:inline-block;">View {{ $displayName }}</a>
+                                                            @endif
+
+                                                            <div>
+                                                                <a href="{{ asset($file->file) }}" download class="btn btn-success btn-sm mr-1">Download</a>
+                                                                <a href="{{ route('attachments.delete', $file->id) }}"
+                                                                   class="btn btn-danger btn-sm delete-link">Delete</a>
+                                                            </div>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
                                             @endif
-                                        </td>
 
-                                        {{-- Action buttons --}}
-                                        <td class="text-center">
-                                            {{-- Delete button triggers AJAX delete via route --}}
-                                            <button class="btn btn-danger btn-sm q-del"
-                                                    data-delete-url="{{ route('attachments.ajaxDelete', $file->id) }}">
-                                                Delete
-                                            </button>
-                                        </td>
-                                    </tr>
-                                @endforeach
-
-                                {{-- JS will dynamically append new rows here after successful upload --}}
-                                </tbody>
-                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
                         </div>
                     </div>
                 </div>
 
-
-                    {{-- spacer --}}
+                {{-- spacer --}}
                 <div class="my-5"></div>
 
             </div>
@@ -463,13 +485,13 @@
                     {{-- Names --}}
                     <div class="form-row">
                         <div class="form-group col-md-6">
-                            <label>Full Name</label><span class="text-danger">*</span>
+                            <label>Full Name</label>
                             <input type="text" name="full_name" class="form-control"
                                    maxlength="255"
                                    value="{{ old('full_name', $basicInfo->full_name ?? '') }}">
                         </div>
                         <div class="form-group col-md-6">
-                            <label>Applicant's Name (In Block Letter)</label><span class="text-danger">*</span>
+                            <label>Applicant's Name (In Block Letter)</label>
                             <input type="text" name="full_name_block_letter" class="form-control text-uppercase"
                                    style="text-transform:uppercase"
                                    oninput="this.value=this.value.toUpperCase();"
@@ -480,7 +502,7 @@
 
                     <div class="form-row">
                         <div class="form-group col-md-12">
-                            <label>Name (Bangla)</label><span class="text-danger">*</span>
+                            <label>Name (Bangla)</label>
                             <input type="text" name="bn_name" class="form-control"
                                    maxlength="255"
                                    value="{{ old('bn_name', $basicInfo->bn_name ?? '') }}">
@@ -490,17 +512,17 @@
                     {{-- Parents & Income --}}
                     <div class="form-row">
                         <div class="form-group col-md-4">
-                            <label>Father's Name</label><span class="text-danger">*</span>
+                            <label>Father's Name</label>
                             <input type="text" name="f_name" class="form-control"
                                    value="{{ old('f_name', $basicInfo->f_name ?? '') }}">
                         </div>
                         <div class="form-group col-md-4">
-                            <label>Mother's Name</label><span class="text-danger">*</span>
+                            <label>Mother's Name</label>
                             <input type="text" name="m_name" class="form-control"
                                    value="{{ old('m_name', $basicInfo->m_name ?? '') }}">
                         </div>
                         <div class="form-group col-md-4">
-                            <label>Guardian's Income</label><span class="text-danger">*</span>
+                            <label>Guardian's Income</label>
                             <input type="number" name="g_income" class="form-control"
                                    step="0.01" min="0"
                                    value="{{ old('g_income', $basicInfo->g_income ?? '') }}">
@@ -510,17 +532,17 @@
                     {{-- IDs, Nationality, DOB --}}
                     <div class="form-row">
                         <div class="form-group col-md-4">
-                            <label>National ID</label><span class="text-danger">*</span>
+                            <label>National ID</label>
                             <input type="text" name="nid" class="form-control"
                                    value="{{ old('nid', $basicInfo->nid ?? '') }}">
                         </div>
                         <div class="form-group col-md-4">
-                            <label>Nationality</label><span class="text-danger">*</span>
+                            <label>Nationality</label>
                             <input type="text" name="nationality" class="form-control"
                                    value="{{ old('nationality', $basicInfo->nationality ?? '') }}">
                         </div>
                         <div class="form-group col-md-4">
-                            <label>DOB</label><span class="text-danger">*</span>
+                            <label>DOB</label>
                             <input type="date" name="dob" class="form-control"
                                    value="{{ old('dob', optional($basicInfo->dob ?? null)->format('Y-m-d')) }}">
                         </div>
@@ -529,7 +551,7 @@
                     {{-- Religion, Gender, Marital --}}
                     <div class="form-row">
                         <div class="form-group col-md-4">
-                            <label>Religion</label><span class="text-danger">*</span>
+                            <label>Religion</label>
                             @php $religionOld = strtolower(old('religion', $basicInfo->religion ?? '')); @endphp
                             <select name="religion" class="form-control">
                                 <option value="">--select--</option>
@@ -541,7 +563,7 @@
                             </select>
                         </div>
                         <div class="form-group col-md-4">
-                            <label>Gender</label><span class="text-danger">*</span>
+                            <label>Gender</label>
                             @php $genderOld = old('gender', $basicInfo->gender ?? ''); @endphp
                             <select name="gender" class="form-control">
                                 <option value="">--select--</option>
@@ -551,7 +573,7 @@
                             </select>
                         </div>
                         <div class="form-group col-md-4">
-                            <label>Marital Status</label><span class="text-danger">*</span>
+                            <label>Marital Status</label>
                             @php $msOld = old('marital_status', $basicInfo->marital_status ?? ''); @endphp
                             <select name="marital_status" class="form-control">
                                 <option value="">--select--</option>
@@ -566,7 +588,7 @@
                     {{-- Field of Interest --}}
                     <div class="form-row">
                         <div class="form-group col-md-12">
-                            <label>Field of Interest</label><span class="text-danger">*</span>
+                            <label>Field of Interest</label>
                             <input type="text" name="field_of_interest" class="form-control"
                                    maxlength="255"
                                    value="{{ old('field_of_interest', $basicInfo->field_of_interest ?? '') }}">
@@ -589,7 +611,7 @@
 
                     <div class="form-row">
                         <div class="col-md-6">
-                            <label class="mb-2"><b>Present Address</b></label><span class="text-danger">*</span>
+                            <label class="mb-2"><b>Present Address</b></label>
                             <div class="form-group mb-2">
                                 <small>Holding No</small>
                                 <input type="text" name="pre_holding_no" class="form-control"
@@ -619,7 +641,7 @@
                         </div>
 
                         <div class="col-md-6">
-                            <label class="mb-2"><b>Permanent Address</b></label><span class="text-danger">*</span>
+                            <label class="mb-2"><b>Permanent Address</b></label>
                             <div class="form-group mb-2">
                                 <small>Holding No</small>
                                 <input type="text" name="per_holding_no" class="form-control"
@@ -674,13 +696,13 @@
                 </div>
 
                 <div class="modal-body">
-                    <div class="form-group"><label>Degree</label><span class="text-danger">*</span><input type="text" name="degree" class="form-control" required></div>
-                    <div class="form-group"><label>Institute</label><span class="text-danger">*</span><input type="text" name="institute" class="form-control" required></div>
+                    <div class="form-group"><label>Degree</label><input type="text" name="degree" class="form-control" required></div>
+                    <div class="form-group"><label>Institute</label><input type="text" name="institute" class="form-control" required></div>
                     <div class="form-row">
-                        <div class="form-group col-md-6"><label>Year of Passing</label><span class="text-danger">*</span><input type="number" name="year_of_passing" class="form-control" min="1900" max="2100" required></div>
-                        <div class="form-group col-md-6"><label>Field</label><span class="text-danger">*</span><input type="text" name="field" class="form-control"></div>
+                        <div class="form-group col-md-6"><label>Year of Passing</label><input type="number" name="year_of_passing" class="form-control" min="1900" max="2100" required></div>
+                        <div class="form-group col-md-6"><label>Field</label><input type="text" name="field" class="form-control"></div>
                     </div>
-                    <div class="form-group"><label>CGPA</label><span class="text-danger">*</span><input type="number" step="0.01" name="cgpa" class="form-control"></div>
+                    <div class="form-group"><label>CGPA</label><input type="number" step="0.01" name="cgpa" class="form-control"></div>
                 </div>
 
                 <div class="modal-footer">
@@ -707,19 +729,19 @@
 
                 <div class="modal-body">
                     <div class="form-group">
-                        <label>Title </label><span class="text-danger">*</span>
+                        <label>Title <span class="text-danger">*</span></label>
                         <input type="text" name="title" class="form-control"
                                value="{{ old('title') }}" required>
                     </div>
 
                     <div class="form-group">
-                        <label>Institute</label><span class="text-danger">*</span>
+                        <label>Institute</label>
                         <input type="text" name="institute" class="form-control"
                                value="{{ old('institute') }}">
                     </div>
 
                     <div class="form-group">
-                        <label>Period</label><span class="text-danger">*</span>
+                        <label>Period</label>
                         <input type="text" name="period" class="form-control"
                                placeholder="e.g. 2019–2021 or Jan 2020 - Dec 2021"
                                value="{{ old('period') }}">
@@ -750,24 +772,24 @@
 
                 <div class="modal-body">
                     <div class="form-group">
-                        <label>Title </label><span class="text-danger">*</span>
+                        <label>Title <span class="text-danger">*</span></label>
                         <input type="text" name="title" class="form-control" value="{{ old('title') }}" required>
                     </div>
 
                     <div class="form-group">
-                        <label>Authors</label><span class="text-danger">*</span>
+                        <label>Authors</label>
                         <input type="text" name="authors" class="form-control" value="{{ old('authors') }}" placeholder="e.g., A. Rahman, B. Akter">
                     </div>
 
                     <div class="form-group">
 
-                            <label>Year</label><span class="text-danger">*</span>
+                            <label>Year</label>
                             <input type="number" name="year_of_publication" class="form-control" min="1900" max="2100" value="{{ old('year_of_publication') }}">
 
                     </div>
                     <div class="form-group">
 
-                        <label>Details</label><span class="text-danger">*</span>
+                        <label>Details</label>
                         <textarea name="details" class="form-control" rows="2" placeholder="Journal/Conference, DOI, volume/issue, pages...">{{ old('details') }}</textarea>
 
                     </div>
@@ -797,28 +819,28 @@
 
                 <div class="modal-body">
                     <div class="form-group">
-                        <label>Organization</label><span class="text-danger">*</span>
+                        <label>Organization</label>
                         <input type="text" name="organization" class="form-control" value="{{ old('organization') }}" required>
                     </div>
 
                     <div class="form-group">
-                        <label>Designation</label><span class="text-danger">*</span>
+                        <label>Designation</label>
                         <input type="text" name="designation" class="form-control" value="{{ old('designation') }}">
                     </div>
 
                     <div class="form-row">
                         <div class="form-group col-md-6">
-                            <label>From</label><span class="text-danger">*</span>
+                            <label>From</label>
                             <input type="date" name="from" class="form-control" value="{{ old('from') }}">
                         </div>
                         <div class="form-group col-md-6">
-                            <label>To</label><span class="text-danger">*</span>
+                            <label>To</label>
                             <input type="date" name="to" class="form-control" value="{{ old('to') }}">
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label>Details</label><span class="text-danger">*</span>
+                        <label>Details</label>
                         <textarea name="details" class="form-control" rows="3">{{ old('details') }}</textarea>
                     </div>
                 </div>
@@ -846,40 +868,40 @@
 
                 <div class="modal-body">
                     <div class="form-group">
-                        <label>Name </label><span class="text-danger">*</span>
+                        <label>Name <span class="text-danger">*</span></label>
                         <input type="text" name="name" class="form-control" value="{{ old('name') }}" required>
                     </div>
 
                     <div class="form-group">
-                        <label>Designation and Affiliation</label><span class="text-danger">*</span>
+                        <label>Designation and Affiliation</label>
                         <textarea name="designation" class="form-control" rows="2">{{ old('designation') }}</textarea>
                     </div>
 
                     <div class="form-group">
-                        <label>Institute</label><span class="text-danger">*</span>
+                        <label>Institute</label>
                         <input type="text" name="institute" class="form-control" value="{{ old('institute') }}">
                     </div>
 
                     <div class="form-row">
                         <div class="form-group col-md-6">
-                            <label>Email</label><span class="text-danger">*</span>
+                            <label>Email</label>
                             <input type="email" name="email" class="form-control" value="{{ old('email') }}">
                         </div>
                         <div class="form-group col-md-6">
-                            <label>Phone</label><span class="text-danger">*</span>
+                            <label>Phone</label>
                             <input type="text" name="phone" class="form-control" value="{{ old('phone') }}">
                         </div>
                     </div>
 
 
                     <div class="form-group">
-                        <label>Address</label><span class="text-danger">*</span>
+                        <label>Address</label>
                         <textarea name="address" class="form-control" rows="2">{{ old('address') }}</textarea>
                     </div>
 
 
                     <div class="form-group">
-                        <label>Order No</label><span class="text-danger">*</span>
+                        <label>Order No</label>
                         <input type="number" name="order_no" class="form-control" min="1" max="2" value="{{ old('order_no', 1) }}">
                     </div>
 
@@ -893,72 +915,6 @@
         </div>
     </div>
 
-    {{--Attachment modal--}}
-    {{-- Attachment modal --}}
-    {{-- Modal: Quick Upload --}}
-    <div class="modal fade" id="quickUploadModal" tabindex="-1" role="dialog" aria-labelledby="quickUploadLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            {{-- form inside modal for uploading single file --}}
-            <form id="quickUploadForm" class="modal-content" enctype="multipart/form-data">
-                @csrf
-                {{-- hidden applicant_id field --}}
-                <input type="hidden" name="applicant_id" value="{{ $applicant->id }}">
-
-                <div class="modal-header">
-                    <h5 class="modal-title" id="quickUploadLabel">Add Attachment</h5>
-                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
-                </div>
-
-                <div class="modal-body">
-                    {{-- dropdown to select attachment type --}}
-                    <div class="form-group">
-                        <label>Attachment Type</label><span class="text-danger">*</span>
-                        <select name="attachment_type_id" class="form-control" required>
-                            <option value="">-- select --</option>
-                            @foreach($selectableTypes as $t)
-                                <option value="{{ $t->id }}" data-rule="{{ e($t->rules) }}">{{ $t->title }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    {{-- optional title input --}}
-                    <div class="form-group">
-                        <label>Title of File</label><span class="text-danger">*</span>
-                        <input type="text" name="title" class="form-control" maxlength="255" placeholder="e.g., Title">
-                    </div>
-
-                    {{-- file chooser (single file only) --}}
-                    <div class="form-group">
-                        <label>Choose File</label><span class="text-danger">*</span>
-                        <input type="file" name="file" class="form-control-file" accept="image/*,.pdf" required>
-                        {{--<small class="text-muted d-block mt-1">Single PDF is accepted.”</small>--}}
-                    </div>
-
-
-                    <div class="form-group">
-                        <label class="mb-1 d-flex align-items-center">
-                            <span class="mr-2 text-secondary">Rules for selected type</span>
-                            <small class="text-muted"></small>
-                        </label>
-
-                        {{-- shown/hidden dynamically based on selection --}}
-                        <div id="typeRuleBox" class="alert alert-warning mb-0" style="display:none;">
-                            <div id="typeRuleContent"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="modal-footer">
-                    {{-- submit button with spinner --}}
-                    <button id="quickUploadSubmit" type="submit" class="btn btn-success">
-                        <span class="spinner-border spinner-border-sm mr-1 d-none" id="quickUploadSpinner"></span>
-                        Upload
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
 @endsection
 
 {{-- Hidden generic DELETE form --}}
@@ -967,13 +923,6 @@
     @method('DELETE')
 </form>
 
-
-{{--@php
-    // Build an { id: rule } map from your $attachmentTypes collection
-    $__typeRules = ($attachmentTypes ?? collect())->mapWithKeys(function($t){
-        return [$t->id => $t->rule];
-    });
-@endphp--}}
 @section('script')
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.3/dist/umd/popper.min.js"></script>
@@ -1194,205 +1143,6 @@
         });
     </script>
 
-
-
-
-
-
-
-
-
-
-    {{--Attachment--}}
-    <script>
-        (function () {
-            // cache DOM elements
-            const $form   = $('#quickUploadForm');      // upload form
-            const $modal  = $('#quickUploadModal');     // modal
-            const $tbody  = $('#quickUploadTbody');     // tbody of attachments table
-            const $btn    = $('#quickUploadSubmit');    // submit button
-            const $spin   = $('#quickUploadSpinner');   // spinner in button
-
-            // NEW: rule UI elements
-            const $typeSelect  = $form.find('select[name="attachment_type_id"]');
-            const $ruleBox     = $('#typeRuleBox');
-            const $ruleContent = $('#typeRuleContent');
-
-            // NEW: render rule text safely (convert \n to <br>, escape HTML)
-            function renderRule(ruleText) {
-                if (!ruleText) return '';
-                return String(ruleText)
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;')
-                    .replace(/\n/g, '<br>');
-            }
-
-            // NEW: update the rules panel based on current selection
-            function updateRuleBox() {
-                const $opt = $typeSelect.find('option:selected');
-                const raw  = $opt.data('rule') || '';           // raw rule text from DB (already escaped in HTML)
-                const rule = String(raw).trim();
-
-                if (rule.length) {
-                    // Convert newlines to <br> for display
-                    $ruleContent.html(rule.replace(/\n/g, '<br>'));
-                    $ruleBox.show();
-                } else {
-                    $ruleContent.empty();
-                    $ruleBox.hide();
-                }
-            }
-
-            // NEW: initialize rules when modal opens & when type changes
-            $modal.on('shown.bs.modal', updateRuleBox);
-            $typeSelect.on('change', updateRuleBox);
-
-            // Configure Toastr (notification settings)
-            toastr.options = {
-                closeButton: true,
-                progressBar: true,
-                timeOut: 2500,
-                positionClass: 'toast-bottom-right'
-            };
-
-            // ========== AJAX Upload ==========
-            $form.on('submit', function (e) {
-                e.preventDefault(); // prevent normal submit
-
-                const formData = new FormData(this); // build FormData from form
-
-                // disable button + show spinner while uploading
-                $btn.prop('disabled', true);
-                $spin.removeClass('d-none');
-
-                $.ajax({
-                    url: @json(route('attachments.ajaxUpload')), // endpoint
-                    method: 'POST',
-                    data: formData,
-                    contentType: false,
-                    processData: false,
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || @json(csrf_token())
-                    }
-                }).done(function (res) {
-                    // Expecting JSON { id, type_id, type_title, title, url, is_image }
-                    if (!res || !res.id) {
-                        toastr.error('Unexpected server response.');
-                        return;
-                    }
-
-                    // Extract response data
-                    const typeTitle = res.type_title || 'N/A';
-                    const title     = res.title || '';
-                    const url       = res.url || '#';
-
-                    // Decide how to render cell (image preview or View button)
-                    const imgCell = res.is_image
-                        ? `<img src="${url}" alt="image" style="max-width:120px; max-height:80px; border:1px solid #ddd; border-radius:6px;">`
-                        : `<a href="${url}" target="_blank" class="btn btn-outline-info btn-sm">View</a>`;
-
-                    // Build delete URL dynamically
-                    const deleteUrl = @json(route('attachments.ajaxDelete', 0));
-                    const finalDeleteUrl = deleteUrl.replace(/0$/, String(res.id));
-
-                    // Build row HTML
-                    const row = `
-                <tr data-id="${res.id}">
-                    <td>${escapeHtml(typeTitle)}</td>
-                    <td>${escapeHtml(title)}</td>
-                    <td class="text-center">${imgCell}</td>
-                    <td class="text-center">
-                        <button class="btn btn-danger btn-sm q-del" data-delete-url="${finalDeleteUrl}">Delete</button>
-                    </td>
-                </tr>
-            `;
-
-                    // prepend new row to table body
-                    $tbody.prepend(row);
-                    toastr.success('File uploaded successfully.');
-
-                    // reset only title + file inputs (keep type selected and keep rules visible)
-                    $form.find('input[name="title"]').val('');
-                    $form.find('input[name="file"]').val('');
-
-                    // (Optional) re-evaluate rules in case you want to adapt after upload
-                    updateRuleBox();
-                }).fail(function (xhr) {
-                    // handle upload error
-                    let msg = 'Upload failed.';
-                    if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
-                        msg = xhr.responseJSON.message;
-                    }
-                    toastr.error(msg);
-                }).always(function () {
-                    // re-enable button + hide spinner
-                    $btn.prop('disabled', false);
-                    $spin.addClass('d-none');
-                });
-            });
-
-            // ========== AJAX Delete ==========
-            $(document).on('click', '.q-del', function (e) {
-                e.preventDefault();
-                const $btn = $(this);
-                const url  = $btn.data('delete-url');
-                const $row = $btn.closest('tr');
-
-                Swal.fire({
-                    title: "Delete this file?",
-                    icon: "warning",
-                    showCancelButton: true,
-                    confirmButtonText: "Delete",
-                    confirmButtonColor: "#d33"
-                }).then((res) => {
-                    if (!res.isConfirmed) return;
-
-                    // prevent duplicate clicks
-                    if ($btn.data('busy')) return;
-                    $btn.data('busy', true).prop('disabled', true);
-
-                    $.ajax({
-                        url: url,
-                        method: 'DELETE',
-                        headers: {
-                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || @json(csrf_token())
-                        }
-                    }).done(function () {
-                        $row.remove();
-                        toastr.success('File deleted.');
-                    }).fail(function (xhr) {
-                        // If Laravel route-model binding can’t find it, it returns 404 -> treat as already deleted
-                        if (xhr && xhr.status === 404) {
-                            $row.remove();
-                            toastr.info('Item was already deleted.');
-                            return;
-                        }
-                        let msg = 'Delete failed.';
-                        if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
-                            msg = xhr.responseJSON.message;
-                        }
-                        toastr.error(msg);
-                    }).always(function () {
-                        $btn.removeData('busy').prop('disabled', false);
-                    });
-                });
-            });
-
-            // helper: escape text to prevent HTML injection
-            function escapeHtml(s) {
-                return (s || '').toString()
-                    .replaceAll('&', '&amp;')
-                    .replaceAll('<', '&lt;')
-                    .replaceAll('>', '&gt;')
-                    .replaceAll('"', '&quot;')
-                    .replaceAll("'", '&#039;');
-            }
-        })();
-    </script>
-
-
-
     {{-- Compose Present/Perm addresses into hidden fields on submit --}}
     <script>
         (function(){
@@ -1423,6 +1173,7 @@
             }
         })();
     </script>
+
 
     {{--for showing which data should upload--}}
     <script>

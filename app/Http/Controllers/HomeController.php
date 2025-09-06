@@ -180,7 +180,7 @@ class HomeController extends Controller
             $applicant->user_id = Auth::user()->id;
             $applicant->save();
 
-            // ✅ Clone previous applicant data if exists
+          /*  // ✅ Clone previous applicant data if exists
             $userApplicants = Applicant::where('user_id', Auth::id())->orderBy('id', 'asc')->get();
 
             if ($userApplicants->count() > 1) {
@@ -188,6 +188,16 @@ class HomeController extends Controller
                 $newApplicantId = $applicant->id;                 // newly created applicant id
 
                 $this->cloneApplicantData($oldApplicantId, $newApplicantId);
+            }*/
+
+            $source = Applicant::where('user_id', Auth::id())
+                ->where('id', '!=', $applicant->id)     // exclude the new one
+                ->withCount('attachments')              // Laravel will add attachments_count
+                ->orderByDesc('attachments_count')      // pick the one with most attachments
+                ->first();
+
+            if ($source && $source->attachments_count > 0) {
+                $this->cloneApplicantData($source->id, $applicant->id);
             }
 
             return redirect("application/" . $applicant->id);

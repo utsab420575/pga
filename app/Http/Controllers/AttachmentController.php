@@ -2,8 +2,11 @@
 // app/Http/Controllers/AttachmentController.php
 namespace App\Http\Controllers;
 
+use App\Models\Applicant;
 use App\Models\Attachment;
+use App\Models\AttachmentType;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 class AttachmentController extends Controller
@@ -82,7 +85,9 @@ class AttachmentController extends Controller
         return redirect()->back()->with('success', 'Deleted successfully');
     }
 
-    public function upload(Request $request)
+
+    //no need this upload() ; this is handle by ajax upload , delete
+   /* public function upload(Request $request)
     {
         // Basic fields
         $request->validate([
@@ -156,6 +161,143 @@ class AttachmentController extends Controller
         }
 
         return back()->with('success', 'Files uploaded successfully.');
+    }*/
+
+
+    /**
+     * AJAX single-file upload
+     * Expects: attachment_type_id, applicant_id, file (single), optional title
+     * Returns JSON: { id, type_id, type_title, title, url, is_image }
+     */
+    public function ajaxUpload(Request $request)
+    {
+
+        //return $request;
+        // 1. Basic validation for incoming fields
+        $request->validate([
+            'attachment_type_id' => 'required|exists:attachment_types,id', // must exist in DB
+            'applicant_id'       => 'required|exists:applicants,id',       // must exist in DB
+            'file'               => 'required|file',                       // single file required
+            'title'              => 'nullable|string|max:255',             // optional title
+        ]);
+
+        $typeId     = (int) $request->attachment_type_id;
+        $applicant  = Applicant::findOrFail($request->applicant_id);
+
+        // 2. Authorization check
+        // Applicants can only upload for themselves
+        // Admins can upload for any applicant
+        if (Auth::user()->user_type === 'applicant' && $applicant->user_id !== Auth::id()) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        // 3. Per-type validation rules (match your existing `upload` method)
+        if (in_array($typeId, [1, 2], true)) {
+            // For type 6 (photo) or type 10 (signature)
+            // Only allow image files, max size 500 KB
+            $request->validate([
+                'file' => 'mimes:jpg,jpeg,png,webp,gif|max:500',
+            ], [
+                'file.mimes' => 'Only image files (JPG/PNG/WEBP/GIF) are allowed for this type.',
+                'file.max'   => 'Image must not exceed 500KB.',
+            ]);
+        } else {
+            // For all other types: PDF only, max size 10 MB
+            $request->validate([
+                'file' => 'mimes:pdf|max:10240',
+            ], [
+                'file.mimes' => 'Only PDF files are allowed for this attachment type.',
+                'file.max'   => 'PDF must not exceed 10MB.',
+            ]);
+        }
+
+        // 4. Build a safe file name and target directory
+        $file          = $request->file('file'); // UploadedFile instance
+        $extension     = strtolower($file->getClientOriginalExtension()); // e.g. pdf, jpg
+        $originalName  = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+        $safeBase      = preg_replace('/[^A-Za-z0-9_-]/', '', $originalName); // strip special chars
+        $today         = now()->format('Y-m-d'); // e.g. 2025-09-06
+        $uploadPath    = public_path("attachments/{$today}"); // public/attachments/2025-09-06
+
+        // Ensure folder exists
+        if (!is_dir($uploadPath)) {
+            mkdir($uploadPath, 0777, true);
+        }
+
+        // Construct filename pattern: applicantId_typeId_timestamp_originalname.ext
+        $filename = $applicant->id . '_' .
+            $typeId . '_' .
+            now()->format('Ymd_His_u') . '_' .
+            $safeBase . '.' . $extension;
+
+        // 5. Move file from temp to our uploads folder
+        $file->move($uploadPath, $filename);
+
+        // Store relative DB path (used with asset())
+        $dbPath = "attachments/{$today}/{$filename}";
+
+        // 6. Save in DB
+        $attachment = new Attachment();
+        $attachment->file = $dbPath;
+        $attachment->attachment_type_id = $typeId;
+        $attachment->applicant_id = $applicant->id;
+        // If your attachments table has a `title` column, save it
+        if ($attachment->isFillable('title')) {
+            // use given title if not empty, else fallback to type title
+            $attachment->title = $request->input('title') ?: optional(AttachmentType::find($typeId))->title;
+        }
+        $attachment->save();
+
+        // 7. Build JSON response for the front-end
+        $type = AttachmentType::find($typeId); // get type info
+        $url  = asset($attachment->file);      // full URL to file
+
+        // Check if file is an image (for preview vs. "View" link)
+        $isImage = Str::endsWith($dbPath, ['.jpg', '.jpeg', '.png', '.webp', '.gif']);
+
+        return response()->json([
+            'id'         => $attachment->id,
+            'type_id'    => $typeId,
+            'type_title' => $type->title ?? 'N/A',
+            'title'      => $attachment->title ?? null,
+            'url'        => $url,
+            'is_image'   => $isImage,
+        ]);
+    }
+
+
+    /**
+     * AJAX delete attachment
+     * Route model bound: {attachment}
+     */
+    /**
+     * AJAX delete attachment
+     * Route model bound: {attachment}
+     */
+    public function ajaxDelete(Attachment $attachment, Request $request)
+    {
+        // 1. Load applicant for authorization
+        $applicant = Applicant::find($attachment->applicant_id);
+        if (!$applicant) {
+            return response()->json(['message' => 'Not found.'], 404);
+        }
+
+        // Applicants can only delete their own attachments
+        if (Auth::user()->user_type === 'applicant' && $applicant->user_id !== Auth::id()) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        // 2. Delete the physical file if it exists
+        $fullPath = public_path($attachment->file);
+        if (is_file($fullPath)) {
+            @unlink($fullPath); // suppress errors with @
+        }
+
+        // 3. Delete the DB row
+        $attachment->delete();
+
+        // 4. Return success JSON for JS to update the table
+        return response()->json(['ok' => true]);
     }
 
 }
