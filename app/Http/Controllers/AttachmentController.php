@@ -156,11 +156,19 @@ class AttachmentController extends Controller
         }
 
         // File validation
-        if (in_array($typeId, [1, 2], true)) {
+        // File validation with dimensions
+        if ($typeId == 1) {
+            // Photo (Passport size)
             $request->validate([
-                'file' => 'mimes:jpg,jpeg,png,webp,gif|max:500',
+                'file' => 'mimes:jpg,jpeg,png,webp,gif|max:500|dimensions:width=300,height=300',
+            ]);
+        } elseif ($typeId == 2) {
+            // Signature
+            $request->validate([
+                'file' => 'mimes:jpg,jpeg,png,webp,gif|max:500|dimensions:width=300,height=80',
             ]);
         } else {
+            // Other documents (PDFs only)
             $request->validate([
                 'file' => 'mimes:pdf|max:10240',
             ]);
@@ -191,6 +199,18 @@ class AttachmentController extends Controller
             $attachment->title = $request->input('title') ?: optional(AttachmentType::find($typeId))->title;
         }
         $attachment->save();
+
+
+        // ✅ If photo or signature, also update in basic_infos
+        $basic = $applicant->basicInfo; // relation should exist (hasOne)
+        if ($basic) {
+            if ($typeId == 1) {
+                $basic->photo = $dbPath; // assumes you have `photo` column
+            } elseif ($typeId == 2) {
+                $basic->sign = $dbPath; // assumes you have `signature` column
+            }
+            $basic->save();
+        }
 
         $type = AttachmentType::find($typeId);
         $url  = asset($attachment->file);
