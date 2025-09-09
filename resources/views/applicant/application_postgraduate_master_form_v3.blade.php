@@ -66,12 +66,6 @@
                                 <tr><th>Marital Status</th><td>{{ $basicInfo->marital_status }}</td></tr>
 
                                 <tr><th>Field of Interest</th><td>{{ $basicInfo->field_of_interest }}</td></tr>
-                                @if($applicant->department_id == 1)
-                                    <tr>
-                                        <th>Field (Civil Engineering Specific)</th>
-                                        <td>{{ $basicInfo->field_name_ce ?? 'N/A' }}</td>
-                                    </tr>
-                                @endif
 
                                 <tr><th>Present Address</th>
                                     <td><pre class="mb-0" style="white-space:pre-wrap">{{ $basicInfo->pre_address }}</pre></td>
@@ -359,7 +353,7 @@
                 @php
                     // Filter out specific attachment types (like 5,7,8,9)
                     // so they don’t appear in the quick upload selection.
-                    $selectableTypes = $attachmentTypes->reject(fn($t) => in_array($t->id, [13,16]));
+                    $selectableTypes = $attachmentTypes->reject(fn($t) => in_array($t->id, [5,7,8,9]));
                 @endphp
 
                 <div class="card">
@@ -437,56 +431,39 @@
                     </div>
                 </div>
 
-                    {{-- CARD: Final Submit --}}
-                    @if($applicant->final_submit == 1)
-                        <div class="alert alert-success d-flex align-items-center mt-3">
-                            <i class="fas fa-check-circle fa-2x mr-2"></i>
-                            <div>
-                                <strong>Application is submitted successfully.</strong>
-                            </div>
-                        </div>
-                    @else
-                        <form method="POST" action="{{ route('final.submit.application', $applicant->id) }}">
-                            @csrf
-
-                            {{-- CARD: Declaration --}}
-                            <div class="card mt-4">
-                                <div class="card-header">
-                                    <b>Declaration</b>
-                                </div>
-                                <div class="card-body">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="declarationCheckbox" name="declaration" required>
-                                        <label class="form-check-label" for="declarationCheckbox">
-                                            I declare that the information provided in this form is correct, true and complete to the best of my knowledge and belief.
-                                            If any information is found false, incorrect, or incomplete, or if any ineligibility is detected before or after the examination,
-                                            any legal action can be taken against me by the authority including the cancellation of my application.
-                                        </label>
-                                    </div>
+                {{-- CARD: Final Submit --}}
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <b>Final Submit</b>
+                    </div>
+                    <div class="card-body">
+                        @if($applicant->final_submit == 1)
+                            <div class="alert alert-success d-flex align-items-center">
+                                <i class="fas fa-check-circle fa-2x mr-2"></i>
+                                <div>
+                                    <strong>Successfully submitted your data.</strong><br>
+                                    Application is submitted successfully.
                                 </div>
                             </div>
+                        @else
+                            <form method="POST" action="{{ route('final.submit.application', $applicant->id) }}">
+                                @csrf
 
-                            {{-- CARD: Final Submit --}}
-                            <div class="card mt-4">
-                                <div class="card-header">
-                                    <b>Final Submission</b>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="confirmCheckbox" name="confirm" required>
+                                    <label class="form-check-label" for="confirmCheckbox">
+                                        I confirm that I have submitted all of the required documents and information.
+                                    </label>
                                 </div>
-                                <div class="card-body">
-                                    <div class="form-check mb-3">
-                                        <input class="form-check-input" type="checkbox" id="confirmCheckbox" name="confirm" required>
-                                        <label class="form-check-label" for="confirmCheckbox">
-                                            I confirm that I have submitted all of the required documents and information.
-                                        </label>
-                                    </div>
 
-                                    <button type="submit" class="btn btn-success"
-                                            onclick="return confirm('Are you sure? After final submission, you may not be able to edit further?')">
-                                        Submit
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
-                    @endif
+                                <button type="submit" class="btn btn-success"
+                                        onclick="return confirm('Are you sure? After final submission, you may not be able to edit further.')">
+                                    Final Submit
+                                </button>
+                            </form>
+                        @endif
+                    </div>
+                </div>
 
                 {{-- spacer --}}
                 <div class="my-5"></div>
@@ -519,10 +496,7 @@
                     {{-- Names --}}
                     <div class="form-row">
                         <div class="form-group col-md-6">
-                            <label>
-                                Full Name in English
-                                <span class="text-muted">(As per S.S.C Certificate)</span>
-                            </label><span class="text-danger">*</span>
+                            <label>Full Name</label><span class="text-danger">*</span>
                             <input type="text" name="full_name" class="form-control"
                                    maxlength="255"
                                    value="{{ old('full_name', $basicInfo->full_name ?? '') }}" required>
@@ -539,10 +513,7 @@
 
                     <div class="form-row">
                         <div class="form-group col-md-12">
-                            <label>
-                                Full Name in Bengali
-                                <span class="text-muted">(As per S.S.C Certificate)</span>
-                            </label><span class="text-danger">*</span>
+                            <label>Name (Bangla)</label><span class="text-danger">*</span>
                             <input type="text" name="bn_name" class="form-control"
                                    maxlength="255"
                                    value="{{ old('bn_name', $basicInfo->bn_name ?? '') }}" required>
@@ -571,30 +542,26 @@
 
                     {{-- IDs, Nationality, DOB --}}
                     <div class="form-row">
-                        <div class="form-group col-md-6">
+                        <div class="form-group col-md-4">
                             <label>National ID</label><span class="text-danger">*</span>
                             <input type="text" name="nid" class="form-control"
                                    value="{{ old('nid', $basicInfo->nid ?? '') }}" required>
                         </div>
-                        <div class="form-group col-md-6">
+                        <div class="form-group col-md-4">
                             <label>Nationality</label><span class="text-danger">*</span>
                             <input type="text" name="nationality" class="form-control"
                                    value="{{ old('nationality', $basicInfo->nationality ?? '') }}" required>
                         </div>
-
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group col-md-6">
-                            <label>
-                                Date of Birth
-                                <span class="text-muted">(As per S.S.C Certificate)</span>
-                            </label><span class="text-danger">*</span>
+                        <div class="form-group col-md-4">
+                            <label>DOB</label><span class="text-danger">*</span>
                             <input type="date" name="dob" class="form-control"
                                    value="{{ old('dob', optional($basicInfo->dob ?? null)->format('Y-m-d')) }}" required>
                         </div>
+                    </div>
 
-                        <div class="form-group col-md-6">
+                    {{-- Religion, Gender, Marital --}}
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
                             <label>Religion</label><span class="text-danger">*</span>
                             @php $religionOld = strtolower(old('religion', $basicInfo->religion ?? '')); @endphp
                             <select name="religion" class="form-control">
@@ -606,13 +573,7 @@
                                 <option value="others"  {{ $religionOld==='others'  ? 'selected':'' }}>Others</option>
                             </select>
                         </div>
-                    </div>
-
-
-                    {{-- Religion, Gender, Marital --}}
-                    <div class="form-row">
-
-                        <div class="form-group col-md-6">
+                        <div class="form-group col-md-4">
                             <label>Gender</label><span class="text-danger">*</span>
                             @php $genderOld = old('gender', $basicInfo->gender ?? ''); @endphp
                             <select name="gender" class="form-control">
@@ -622,7 +583,7 @@
                                 <option value="Other"  {{ $genderOld==='Other'?'selected':'' }}>Other</option>
                             </select>
                         </div>
-                        <div class="form-group col-md-6">
+                        <div class="form-group col-md-4">
                             <label>Marital Status</label><span class="text-danger">*</span>
                             @php $msOld = old('marital_status', $basicInfo->marital_status ?? ''); @endphp
                             <select name="marital_status" class="form-control" required>
@@ -645,18 +606,6 @@
                         </div>
                     </div>
 
-                    {{-- Extra row only for CE (department_id = 1) --}}
-                    @if($applicant->department_id == 1)
-                        <div class="form-row">
-                            <div class="form-group col-md-12">
-                                <label>Field Name (Civil Engineering Specific)</label><span class="text-danger">*</span>
-                                <input type="text" name="field_name_ce" class="form-control"
-                                       maxlength="255"
-                                       value="{{ old('field_name_ce', $basicInfo->field_name_ce ?? '') }}" required>
-                            </div>
-                        </div>
-                    @endif
-
                     {{-- Split Address (Present & Permanent) --}}
                     @php
                         $preText = $basicInfo->pre_address ?? '';
@@ -672,19 +621,17 @@
                     @endphp
 
                     <div class="form-row">
-                        {{-- Present Address --}}
                         <div class="col-md-6">
                             <label class="mb-2"><b>Present Address</b></label><span class="text-danger">*</span>
-
                             <div class="form-group mb-2">
                                 <small>Holding No</small>
                                 <input type="text" name="pre_holding_no" class="form-control"
-                                       value="{{ old('pre_holding_no', addr_pick($preText, 'Holding No')) }}">
+                                       value="{{ old('pre_holding_no', addr_pick($preText, 'Holding No')) }}" required>
                             </div>
                             <div class="form-group mb-2">
                                 <small>Village / Road No</small>
                                 <input type="text" name="pre_village_road" class="form-control"
-                                       value="{{ old('pre_village_road', addr_pick($preText, 'Village/Road')) }}">
+                                       value="{{ old('pre_village_road', addr_pick($preText, 'Village/Road')) }}" required>
                             </div>
                             <div class="form-group mb-2">
                                 <small>Post Office</small>
@@ -701,30 +648,20 @@
                                 <input type="text" name="pre_district" class="form-control"
                                        value="{{ old('pre_district', addr_pick($preText, 'District')) }}" required>
                             </div>
-
-                            {{-- Hidden field that actually gets submitted (required as before) --}}
-                            <input type="hidden" name="pre_address" required>
+                            <input type="hidden" name="pre_address">
                         </div>
 
-                        {{-- Permanent Address --}}
                         <div class="col-md-6">
-                            <label class="mb-2 d-flex justify-content-start align-items-center">
-                                <b>Permanent Address</b><span class="text-danger">*</span>
-                                <div class="form-check ml-3">
-                                    <input type="checkbox" class="form-check-input" id="sameAsPresent">
-                                    <label class="form-check-label small" for="sameAsPresent">Same as Present</label>
-                                </div>
-                            </label>
-
+                            <label class="mb-2"><b>Permanent Address</b></label><span class="text-danger">*</span>
                             <div class="form-group mb-2">
                                 <small>Holding No</small>
                                 <input type="text" name="per_holding_no" class="form-control"
-                                       value="{{ old('per_holding_no', addr_pick($perText, 'Holding No')) }}">
+                                       value="{{ old('per_holding_no', addr_pick($perText, 'Holding No')) }}" required>
                             </div>
                             <div class="form-group mb-2">
                                 <small>Village / Road No</small>
                                 <input type="text" name="per_village_road" class="form-control"
-                                       value="{{ old('per_village_road', addr_pick($perText, 'Village/Road')) }}">
+                                       value="{{ old('per_village_road', addr_pick($perText, 'Village/Road')) }}" required>
                             </div>
                             <div class="form-group mb-2">
                                 <small>Post Office</small>
@@ -741,8 +678,7 @@
                                 <input type="text" name="per_district" class="form-control"
                                        value="{{ old('per_district', addr_pick($perText, 'District')) }}" required>
                             </div>
-
-                            <input type="hidden" name="per_address" required>
+                            <input type="hidden" name="per_address">
                         </div>
                     </div>
                 </div>
@@ -1135,22 +1071,6 @@
                 document.getElementById('ei_method').value = 'POST';
                 document.getElementById('ei_modal_title').textContent = 'Add Education Info';
                 document.getElementById('ei_submit_btn').textContent  = 'Save';
-            }
-        });
-    </script>
-
-    <script>
-        document.getElementById('sameAsPresent').addEventListener('change', function() {
-            const fields = ['holding_no','village_road','post_office','upazila_thana','district'];
-            if (this.checked) {
-                fields.forEach(f => {
-                    document.querySelector(`[name="per_${f}"]`).value =
-                        document.querySelector(`[name="pre_${f}"]`).value;
-                });
-            } else {
-                fields.forEach(f => {
-                    document.querySelector(`[name="per_${f}"]`).value = '';
-                });
             }
         });
     </script>

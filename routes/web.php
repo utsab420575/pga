@@ -252,3 +252,11 @@ Route::post('/final-submit/application/{applicant}', [FinalSubmitController::cla
     ->name('final.submit.application')
     ->middleware('roles:applicant');
 
+Route::get('applicant/preview-admission-form/{applicant}', [ApplicationPostgraduateController::class, 'preview'])
+    ->name('applicant.preview.admission.form')
+    ->middleware('auth');
+
+Route::get('applicant/preview-eligibility-form/{applicant}', [ApplicationPostgraduateController::class, 'eligibility'])
+    ->name('applicant.preview.eligibility.form')
+    ->middleware('auth');
+

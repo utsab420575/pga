@@ -1,88 +1,102 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container-fluid">
-    <div class="row justify-content-center">
-        <div class="col-md-12">
+    <div class="container-fluid">
+        <div class="row justify-content-center">
+            <div class="col-md-12">
 
-  @if(count($errors)>0)
-          @foreach($errors->all() as $error)
-        <p class="alert alert-danger">{{$error}}</p>
-          @endforeach
-        @endif
+                @if(count($errors)>0)
+                    @foreach($errors->all() as $error)
+                        <p class="alert alert-danger">{{$error}}</p>
+                    @endforeach
+                @endif
 
-        @if(session('Status'))
-        <p class="alert alert-info">{{session('Status')}}</p>
-        @endif
-            <div class="card">
-                <div class="card-header"><b>{{ __('My Applications') }}</b></div>
-                <div class="card-body">
+                @if(session('Status'))
+                    <p class="alert alert-info">{{session('Status')}}</p>
+                @endif
+                <div class="card">
+                    <div class="card-header"><b>{{ __('My Applications') }}</b></div>
+                    <div class="card-body">
 
 
-                    <table class="table table-striped">
-                      <thead>
-                        <tr>
-                          <th scope="col">Sl</th>
-                          <th scope="col">Program</th>
-                          <th scope="col">Department/Institute</th>
-                          <th scope="col">Status</th>
-                          <th scope="col">Application Type</th>
-                          <th scope="col">Applicant ID</th>
-                          <th scope="col">Amount</th>
-                          <th scope="col">Payment Status</th>
-                          <th scope="col">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        @php($i=1)
-                        @foreach($applications as $application)
+                        <table class="table table-striped">
+                            <thead>
                             <tr>
-                              <th scope="row">{{$i++}}</th>
-                              <td>{{$application->degree->degree_name}}</td>
-                              <td>{{$application->department->short_name}}</td>
-                              <td>{{$application->studenttype->type}}</td>
-                              <td>{{$application->applicationtype->type}}</td>
-                              <td>{{$application->roll}}</td>
-                              <td>{{$application->applicationtype->fee}}</td>
-                              <td>@if($application->payment_status == 0)
-                                <span style="color:red"><b>Unpaid</b></span>
-                                @else
-                                <span style="color:green">Paid<br>TRXID: <b>{{$application->payment->trxid}}</b></span>
-                                @endif
-                              </td>
-                                <td>
-                                    {{-- Edit --}}
-                                    @if($application->edit_per == 1 || $application->payment_status == 0)
-                                        <a href="{{ url('edit-application/'.$application->id) }}"
-                                           class="btn btn-warning"
-                                           target="_blank" rel="noopener noreferrer">
-                                            Edit
-                                        </a>
-                                    @endif
+                                <th scope="col">Sl</th>
+                                <th scope="col">Program</th>
+                                <th scope="col">Department/Institute</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Application Type</th>
+                                <th scope="col">Applicant ID</th>
+                                <th scope="col">Amount</th>
+                                <th scope="col">Payment Status</th>
+                                <th scope="col">Action</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            @php($i=1)
+                            @foreach($applications as $application)
+                                <tr>
+                                    <th scope="row">{{$i++}}</th>
+                                    <td>{{$application->degree->degree_name}}</td>
+                                    <td>{{$application->department->short_name}}</td>
+                                    <td>{{$application->studenttype->type}}</td>
+                                    <td>{{$application->applicationtype->type}}</td>
+                                    <td>{{$application->roll}}</td>
+                                    <td>{{$application->applicationtype->fee}}</td>
+                                    <td>@if($application->payment_status == 0)
+                                            <span style="color:red"><b>Unpaid</b></span>
+                                        @else
+                                            <span style="color:green">Paid<br>TRXID: <b>{{$application->payment->trxid}}</b></span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        {{-- Edit --}}
+                                        @if($application->edit_per == 1 || $application->payment_status == 0)
+                                            <a href="{{ url('edit-application/'.$application->id) }}"
+                                               class="btn btn-warning"
+                                               target="_blank" rel="noopener noreferrer">
+                                                Edit
+                                            </a>
+                                        @endif
 
-                                    {{-- Open the correct input form after payment --}}
-                                    @if($application->payment_status == 1 && in_array((int)$application->applicationtype_id, [1, 2], true))
-                                        <a href="{{ (int)$application->applicationtype_id == 1
+                                        {{-- Open the correct input form after payment --}}
+                                        @if($application->payment_status == 1 && in_array((int)$application->applicationtype_id, [1, 2], true))
+                                            <a href="{{ (int)$application->applicationtype_id == 1
                                                     ? url('applicant/application-postgraduate-form/'.$application->id)
                                                     : url('applicant/eligibility-form/'.$application->id) }}"
-                                           class="btn btn-success"
-                                           target="_blank" rel="noopener noreferrer">
-                                            {{ (int)$application->applicationtype_id === 1 ? 'Submit Admission Form' : 'Submit Eligibility Form' }}
-                                        </a>
-                                    @endif
-                                </td>
+                                               class="btn btn-success"
+                                               target="_blank" rel="noopener noreferrer">
+                                                {{ (int)$application->applicationtype_id === 1 ? 'Submit Admission Form' : 'Submit Eligibility Form' }}
+                                            </a>
+                                        @endif
 
-                            </tr>
-                        @endforeach
+                                        @if($application->applicationtype_id === 1)
+                                            <a href="{{ route('applicant.preview.admission.form', $application->id) }}"
+                                               class="btn btn-info"
+                                               target="_blank">
+                                                <i class="fas fa-eye"></i> Preview Application Form
+                                            </a>
+                                        @else
+                                            <a href="{{ route('applicant.preview.eligibility.form', $application->id) }}"
+                                               class="btn btn-info"
+                                               target="_blank">
+                                                <i class="fas fa-eye"></i> Preview Eligibility Form
+                                            </a>
+                                        @endif
+                                    </td>
 
-                      </tbody>
-                    </table>
+                                </tr>
+                            @endforeach
+
+                            </tbody>
+                        </table>
 
 
 
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 @endsection

@@ -124,7 +124,7 @@ class FinalSubmitController extends Controller
 
         // --- Type 9: MSc Mark Sheet
         if (($typeCounts[9] ?? 0) < 1) {
-            return back()->withErrors('You must upload your MSc or equivalent mark sheet/grade sheet/transcript.');
+            return back()->withErrors('You must upload your BSC or equivalent mark sheet/grade sheet/transcript.');
         }
 
 
@@ -155,6 +155,7 @@ class FinalSubmitController extends Controller
 
     public function submitApplication(Request $request, Applicant $applicant)
     {
+
         $request->validate([
             'confirm' => 'accepted',
             'declaration' => 'accepted',
@@ -207,13 +208,13 @@ class FinalSubmitController extends Controller
 
         //minimum one reference
         //Education Info
-        if ($applicant->references->isEmpty()) {
-            return back()->withErrors('Please provide at least one Reference.');
+        if ($applicant->references->count() < 2) {
+            return back()->withErrors('Please provide at least two Reference.');
         }
 
         // ✅ 3. Check education info
-        if ($applicant->educationInfos->count() < 1) {
-            return back()->withErrors('Please provide at least 1 entries.');
+        if ($applicant->educationInfos->count() < 3) {
+            return back()->withErrors('Please provide at least 3 Education Information entries.');
         }
 
 
@@ -224,20 +225,51 @@ class FinalSubmitController extends Controller
         // Count attachments per type
         $typeCounts = $attachments->groupBy('attachment_type_id')->map->count();
 
-        // --- Type 1: Recent picture (min 3 required)
+        // --- Type 1: Recent photograph
         if (($typeCounts[1] ?? 0) < 1) {
-            return back()->withErrors('You must upload at least 1 Recent Pictures.');
+            return back()->withErrors('You must upload at least 1 recent passport-size photograph.');
         }
 
-        // --- Type 2: Signature (min 3 required)
+        // --- Type 2: Signature
         if (($typeCounts[2] ?? 0) < 1) {
-            return back()->withErrors('You must upload at least 1 Signatures.');
+            return back()->withErrors('You must upload at least 1 signature.');
         }
 
-        // --- Type 3: All academic certificates (must exist, min 1 required)
-        if (($typeCounts[3] ?? 0) < 3) {
-            return back()->withErrors('You must upload at least 3 file under "All academic certificates".');
+        // --- Type 3: SSC Certificate
+        if (($typeCounts[3] ?? 0) < 1) {
+            return back()->withErrors('You must upload your SSC or equivalent certificate.');
         }
+
+        // --- Type 4: HSC/Diploma Certificate
+        if (($typeCounts[4] ?? 0) < 1) {
+            return back()->withErrors('You must upload your HSC or equivalent / Diploma certificate.');
+        }
+
+        // --- Type 5: BSc Certificate
+        if (($typeCounts[5] ?? 0) < 1) {
+            return back()->withErrors('You must upload your BSc certificate.');
+        }
+
+        // --- Type 7: SSC Mark Sheet
+        if (($typeCounts[7] ?? 0) < 1) {
+            return back()->withErrors('You must upload your SSC or equivalent mark sheet/grade sheet/transcript.');
+        }
+
+        // --- Type 8: HSC/Diploma Mark Sheet
+        if (($typeCounts[8] ?? 0) < 1) {
+            return back()->withErrors('You must upload your HSC or equivalent / Diploma mark sheet/grade sheet/transcript.');
+        }
+
+        // --- Type 9: BSC Mark Sheet
+        if (($typeCounts[9] ?? 0) < 1) {
+            return back()->withErrors('You must upload your BSC or equivalent mark sheet/grade sheet/transcript.');
+        }
+
+        // --- Type 9: Testimonial
+        if (($typeCounts[11] ?? 0) < 1) {
+            return back()->withErrors('You must upload your Testimonial.');
+        }
+
 
 
 

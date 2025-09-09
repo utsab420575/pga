@@ -67,4 +67,80 @@ class ApplicationPostgraduateController extends Controller
             'references'         => $applicant->references,
         ]);
     }
+
+    public function preview($applicantId)
+    {
+        $setting = Setting::query()->orderByDesc('id')->first(); // or where('session', current)
+        $applicant = Applicant::with([
+            'user',
+            'department.faculty',
+            'degree',
+            'studenttype',
+            'applicationtype',
+            'basicInfo',
+            'educationInfos',
+            'theses',
+            'publications',
+            'jobExperiences',
+            'references',
+            'attachments.type',
+            'eligibilityDegree',
+            'payment'
+        ])->findOrFail($applicantId);
+
+        // Security check - only owner can preview (unless admin)
+        if (auth()->user()->user_type === 'applicant' && $applicant->user_id !== auth()->id()) {
+            abort(403, 'You are not allowed to access this page.');
+        }
+
+        // Business rule: only for paid Admission applications
+        if (auth()->user()->user_type === 'applicant') {
+            if (!($applicant->payment_status == 1 && $applicant->applicationtype_id == 1)) {
+                return back()->withErrors('Preview is available only for paid Admission applications.');
+            }
+        }
+
+        return view('applicant.preview_admission_form', [
+            'applicant' => $applicant,
+            'setting' => $setting,
+        ]);
+    }
+
+    public function eligibility($applicantId)
+    {
+        $setting = Setting::query()->orderByDesc('id')->first(); // or where('session', current)
+        $applicant = Applicant::with([
+            'user',
+            'department.faculty',
+            'degree',
+            'studenttype',
+            'applicationtype',
+            'basicInfo',
+            'educationInfos',
+            'theses',
+            'publications',
+            'jobExperiences',
+            'references',
+            'attachments.type',
+            'eligibilityDegree',
+            'payment'
+        ])->findOrFail($applicantId);
+
+        // Security check - only owner can preview (unless admin)
+        if (auth()->user()->user_type === 'applicant' && $applicant->user_id !== auth()->id()) {
+            abort(403, 'You are not allowed to access this page.');
+        }
+
+        // Business rule: only for paid Admission applications
+        if (auth()->user()->user_type === 'applicant') {
+            if (!($applicant->payment_status == 1 && $applicant->applicationtype_id == 2)) {
+                return back()->withErrors('Preview is available only for paid Admission applications.');
+            }
+        }
+
+        return view('applicant.preview_eligibility_form', [
+            'applicant' => $applicant,
+            'setting' => $setting,
+        ]);
+    }
 }
