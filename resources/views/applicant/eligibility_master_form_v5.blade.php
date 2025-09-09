@@ -63,7 +63,7 @@
                 {{-- CARD 2: Eligibility Degree --}}
                 <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
-                            <span><b>Particulars of Obtained Degree for which Eligibility is required</b></span>
+                            <span><b>Eligibility Degree</b></span>
                             <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#eligibilityModal">
                                 {{ $eligibilityDegree ? 'Update' : 'Add' }}
                             </button>
@@ -75,7 +75,7 @@
                                         <thead>
                                         <tr>
                                             <th>Degree</th><th>Institute</th><th>Country</th><th>CGPA</th><th>Grad. Date</th>
-                                            <th>Duration</th><th>Total Credit</th><th>Mode</th><th>Period</th><th>Uni Status</th><th>Web-link</th>
+                                            <th>Duration</th><th>Total Credit</th><th>Mode</th><th>Period</th><th>Uni Status</th><th>Total Credit</th>
                                         </tr>
                                         </thead>
                                         <tbody>
@@ -90,7 +90,7 @@
                                             <td>{{ $eligibilityDegree->mode }}</td>
                                             <td>{{ $eligibilityDegree->period }}</td>
                                             <td>{{ $eligibilityDegree->uni_status }}</td>
-                                            <td>{{ $eligibilityDegree->url }}</td>
+                                            <td>{{ $eligibilityDegree->total_credit }}</td>
                                         </tr>
                                         </tbody>
                                     </table>
@@ -170,7 +170,7 @@
                 @php
                     // Filter out specific attachment types (like 5,7,8,9)
                     // so they don’t appear in the quick upload selection.
-                    $selectableTypes = $attachmentTypes->reject(fn($t) => in_array($t->id, [11,12]));
+                    $selectableTypes = $attachmentTypes->reject(fn($t) => in_array($t->id, [4]));
                 @endphp
 
                 <div class="card">
@@ -250,60 +250,39 @@
 
 
 
+                    {{-- CARD: Final Submit --}}
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <b>Final Submit</b>
+                        </div>
+                        <div class="card-body">
+                            @if($applicant->final_submit == 1)
+                                <div class="alert alert-success d-flex align-items-center">
+                                    <i class="fas fa-check-circle fa-2x mr-2"></i>
+                                    <div>
+                                        <strong>Successfully submitted your data.</strong><br>
+                                        Application is submitted successfully.
+                                    </div>
+                                </div>
+                            @else
+                                <form method="POST" action="{{ route('final.submit.eligibility', $applicant->id) }}">
+                                    @csrf
 
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" id="confirmCheckbox" name="confirm" required>
+                                        <label class="form-check-label" for="confirmCheckbox">
+                                            I confirm that I have submitted all of the required documents and information.
+                                        </label>
+                                    </div>
 
-
-                {{-- CARD: Final Submit --}}
-                @if($applicant->final_submit == 1)
-                    <div class="alert alert-success d-flex align-items-center mt-3">
-                        <i class="fas fa-check-circle fa-2x mr-2"></i>
-                        <div>
-                            <strong>Application is submitted successfully.</strong>
+                                    <button type="submit" class="btn btn-success"
+                                            onclick="return confirm('Are you sure? After final submission, you may not be able to edit further.')">
+                                        Final Submit
+                                    </button>
+                                </form>
+                            @endif
                         </div>
                     </div>
-                @else
-                    <form method="POST" action="{{ route('final.submit.eligibility', $applicant->id) }}">
-                        @csrf
-
-                        {{-- CARD: Declaration --}}
-                        <div class="card mt-4">
-                            <div class="card-header">
-                                <b>Declaration</b>
-                            </div>
-                            <div class="card-body">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="declarationCheckbox" name="declaration" required>
-                                    <label class="form-check-label" for="declarationCheckbox">
-                                        I declare that the information provided in this form is correct, true and complete to the best of my knowledge and belief.
-                                        If any information is found false, incorrect, or incomplete, or if any ineligibility is detected before or after the examination,
-                                        any legal action can be taken against me by the authority including the cancellation of my application.
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- CARD: Final Submit --}}
-                        <div class="card mt-4">
-                            <div class="card-header">
-                                <b>Final Submission</b>
-                            </div>
-                            <div class="card-body">
-                                <div class="form-check mb-3">
-                                    <input class="form-check-input" type="checkbox" id="confirmCheckbox" name="confirm" required>
-                                    <label class="form-check-label" for="confirmCheckbox">
-                                        I confirm that I have submitted all of the required documents and information.
-                                    </label>
-                                </div>
-
-                                <button type="submit" class="btn btn-success"
-                                        onclick="return confirm('Are you sure? After final submission, you may not be able to edit further?')">
-                                    Submit
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                @endif
-
 
 
                     {{--empty div--}}
@@ -462,18 +441,19 @@
 
                             <div class="form-group mb-2">
                                 <small>Holding No</small>
-                                <input type="text" name="pre_holding_no" class="form-control"
-                                       value="{{ old('pre_holding_no', addr_pick($preText, 'Holding No')) }}">
+                                <input type="text" name="pre_holding_no"    class="form-control"
+                                       value="{{ old('pre_holding_no',    addr_pick($preText, 'Holding No')) }}">
                             </div>
                             <div class="form-group mb-2">
                                 <small>Village / Road No</small>
-                                <input type="text" name="pre_village_road" class="form-control"
-                                       value="{{ old('pre_village_road', addr_pick($preText, 'Village/Road')) }}">
+                                <input type="text" name="pre_village_road"  class="form-control"
+                                       value="{{ old('pre_village_road',  addr_pick($preText, 'Village/Road')) }}">
                             </div>
                             <div class="form-group mb-2">
                                 <small>Post Office</small>
-                                <input type="text" name="pre_post_office" class="form-control"
-                                       value="{{ old('pre_post_office', addr_pick($preText, 'Post Office')) }}" required>
+
+                                <input type="text" name="pre_post_office"   class="form-control"
+                                       value="{{ old('pre_post_office',   addr_pick($preText, 'Post Office')) }}" required>
                             </div>
                             <div class="form-group mb-2">
                                 <small>Upazila / Thana</small>
@@ -482,54 +462,52 @@
                             </div>
                             <div class="form-group mb-2">
                                 <small>District</small>
-                                <input type="text" name="pre_district" class="form-control"
-                                       value="{{ old('pre_district', addr_pick($preText, 'District')) }}" required>
+                                <input type="text" name="pre_district"      class="form-control"
+                                       value="{{ old('pre_district',      addr_pick($preText, 'District')) }}" required>
                             </div>
 
                             {{-- Hidden field that actually gets submitted (required as before) --}}
                             <input type="hidden" name="pre_address" required>
+
                         </div>
 
                         {{-- Permanent Address --}}
                         <div class="col-md-6">
-                            <label class="mb-2 d-flex justify-content-start align-items-center">
-                                <b>Permanent Address</b><span class="text-danger">*</span>
-                                <div class="form-check ml-3">
-                                    <input type="checkbox" class="form-check-input" id="sameAsPresent">
-                                    <label class="form-check-label small" for="sameAsPresent">Same as Present</label>
-                                </div>
-                            </label>
+                            <label class="mb-2"><b>Permanent Address</b></label><span class="text-danger">*</span>
 
                             <div class="form-group mb-2">
                                 <small>Holding No</small>
-                                <input type="text" name="per_holding_no" class="form-control"
-                                       value="{{ old('per_holding_no', addr_pick($perText, 'Holding No')) }}">
+                                <input type="text" name="per_holding_no"    class="form-control"
+                                       value="{{ old('per_holding_no',    addr_pick($perText, 'Holding No')) }}" >
                             </div>
                             <div class="form-group mb-2">
                                 <small>Village / Road No</small>
-                                <input type="text" name="per_village_road" class="form-control"
-                                       value="{{ old('per_village_road', addr_pick($perText, 'Village/Road')) }}">
+                                <input type="text" name="per_village_road"  class="form-control"
+                                       value="{{ old('per_village_road',  addr_pick($perText, 'Village/Road')) }}">
                             </div>
                             <div class="form-group mb-2">
                                 <small>Post Office</small>
-                                <input type="text" name="per_post_office" class="form-control"
-                                       value="{{ old('per_post_office', addr_pick($perText, 'Post Office')) }}" required>
+                                <input type="text" name="per_post_office"   class="form-control"
+                                       value="{{ old('per_post_office',   addr_pick($perText, 'Post Office')) }}" required>
+
                             </div>
                             <div class="form-group mb-2">
                                 <small>Upazila / Thana</small>
                                 <input type="text" name="per_upazila_thana" class="form-control"
                                        value="{{ old('per_upazila_thana', addr_pick($perText, 'Upazila/Thana')) }}" required>
+
                             </div>
                             <div class="form-group mb-2">
                                 <small>District</small>
-                                <input type="text" name="per_district" class="form-control"
-                                       value="{{ old('per_district', addr_pick($perText, 'District')) }}" required>
+                                <input type="text" name="per_district"      class="form-control"
+                                       value="{{ old('per_district',      addr_pick($perText, 'District')) }}" required>
                             </div>
 
+                            {{-- Hidden field that actually gets submitted (required as before) --}}
                             <input type="hidden" name="per_address" required>
+
                         </div>
                     </div>
-
                 </div>
 
                 <div class="modal-footer">
@@ -561,7 +539,7 @@
                 <div class="modal-body">
                     <div class="form-row">
                         <div class="form-group col-md-12">
-                            <label>Name of the degree</label><span class="text-danger">*</span>
+                            <label>Degree</label><span class="text-danger">*</span>
                             <input type="text" name="degree" class="form-control" required
                                    value="{{ old('degree', $eligibilityDegree->degree ?? '') }}"
                             >
@@ -570,49 +548,43 @@
 
                     <div class="form-row">
                         <div class="form-group col-md-12">
-                            <label>Name of the University/Institution</label><span class="text-danger">*</span>
+                            <label>Institute/University</label><span class="text-danger">*</span>
                             <input type="text" name="institute" class="form-control" required
                                    value="{{ old('institute', $eligibilityDegree->institute ?? '') }}">
                         </div>
                     </div>
 
                     <div class="form-row">
-                        <div class="form-group col-md-6">
-                            <label>Country from which the degree obtained </label><span class="text-danger">*</span>
+                        <div class="form-group col-md-4">
+                            <label>Country</label><span class="text-danger">*</span>
                             <input type="text" name="country" class="form-control" required
                                    value="{{ old('country', $eligibilityDegree->country ?? '') }}">
                         </div>
-                        <div class="form-group col-md-6">
+                        <div class="form-group col-md-4">
                             <label>CGPA/GPA/Class</label><span class="text-danger">*</span>
                             <input type="number" step="0.01" name="cgpa" class="form-control" required
                                    value="{{ old('cgpa', $eligibilityDegree->cgpa ?? '') }}">
                         </div>
-
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group col-md-6">
+                        <div class="form-group col-md-4">
                             <label>Date of Graduation</label><span class="text-danger">*</span>
                             <input type="date" name="date_graduation" class="form-control" required
                                    value="{{ old('date_graduation', optional($eligibilityDegree->date_graduation ?? null)->format('Y-m-d')) }}">
                         </div>
-
-                        <div class="form-group col-md-6">
-                            <label>Duration of the program</label><span class="text-danger">*</span>
-                            <input type="number" name="duration" class="form-control" placeholder="e.g., 4" required
-                                   value="{{ old('duration', $eligibilityDegree->duration ?? '') }}">
-                        </div>
                     </div>
 
                     <div class="form-row">
-
-                        <div class="form-group col-md-6">
-                            <label>Total credit earned</label><span class="text-danger">*</span>
+                        <div class="form-group col-md-4">
+                            <label>Duration in Year</label><span class="text-danger">*</span>
+                            <input type="number" name="duration" class="form-control" placeholder="e.g., 4" required
+                                   value="{{ old('duration', $eligibilityDegree->duration ?? '') }}">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Total Credit</label><span class="text-danger">*</span>
                             <input type="number" step="0.01" name="total_credit" class="form-control" required
                                    value="{{ old('total_credit', $eligibilityDegree->total_credit ?? '') }}">
                         </div>
-                        <div class="form-group col-md-6">
-                            <label>Mode of Study </label><span class="text-danger">*</span>
+                        <div class="form-group col-md-4">
+                            <label>Mode</label><span class="text-danger">*</span>
                             @php $modeOld = old('mode', $eligibilityDegree->mode ?? ''); @endphp
                             <select name="mode" class="form-control" required>
                                 <option value="">--select--</option>
@@ -624,22 +596,12 @@
                     </div>
 
                     <div class="form-row">
-                        <div class="form-group col-md-12">
-                            <label>
-                                <b>Period of Stay Abroad</b>
-                            </label>
-                            <small class="form-text text-muted">
-                                For foreign degree, mention your entry & exit dates.
-                                In case of Distance Learning, write <em>“Not Applicable”</em>.
-                            </small>
-                            <input type="text" name="period" class="form-control mt-1"
-                                   placeholder="e.g., Jan 2018 – Dec 2022 or Not Applicable"
+                        <div class="form-group col-md-4">
+                            <label>Period</label><span class="text-danger">*</span>
+                            <input type="text" name="period" class="form-control" placeholder="2018-2022" required
                                    value="{{ old('period', $eligibilityDegree->period ?? '') }}">
                         </div>
-
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group col-md-6">
+                        <div class="form-group col-md-4">
                             <label>University Status</label><span class="text-danger">*</span>
                             @php $uniOld = old('uni_status', $eligibilityDegree->uni_status ?? ''); @endphp
                             <select name="uni_status" class="form-control" required>
@@ -649,7 +611,7 @@
                                 <option {{ $uniOld==='International' ? 'selected':'' }}>International</option>
                             </select>
                         </div>
-                        <div class="form-group col-md-6">
+                        <div class="form-group col-md-4">
                             <label>University Web Link</label><span class="text-danger">*</span>
                             <input type="url" name="url" class="form-control" placeholder="https://..." required
                                    value="{{ old('url', $eligibilityDegree->url ?? '') }}">
@@ -681,13 +643,13 @@
                 </div>
 
                 <div class="modal-body">
-                    <div class="form-group"><label>Degree/Certificate</label><span class="text-danger">*</span><input type="text" name="degree" class="form-control" required></div>
-                    <div class="form-group"><label>University/Institute/ Board</label><span class="text-danger">*</span><input type="text" name="institute" class="form-control" required></div>
+                    <div class="form-group"><label>Degree</label><span class="text-danger">*</span><input type="text" name="degree" class="form-control" required></div>
+                    <div class="form-group"><label>Institute</label><span class="text-danger">*</span><input type="text" name="institute" class="form-control" required></div>
                     <div class="form-row">
                         <div class="form-group col-md-6"><label>Year of Passing</label><span class="text-danger">*</span><input type="number" name="year_of_passing" class="form-control" min="1900" max="2100" required></div>
-                        <div class="form-group col-md-6"><label>Discipline/Field</label><span class="text-danger">*</span><input type="text" name="field" class="form-control"></div>
+                        <div class="form-group col-md-6"><label>Field</label><span class="text-danger">*</span><input type="text" name="field" class="form-control"></div>
                     </div>
-                    <div class="form-group"><label>CGPA/Class/ Division</label><span class="text-danger">*</span><input type="number" step="0.01" name="cgpa" class="form-control"></div>
+                    <div class="form-group"><label>CGPA</label><span class="text-danger">*</span><input type="number" step="0.01" name="cgpa" class="form-control"></div>
                 </div>
 
                 <div class="modal-footer">
@@ -837,22 +799,6 @@
             $('#educationModal').modal('show');
         });
     </script>
-
-   <script>
-       document.getElementById('sameAsPresent').addEventListener('change', function() {
-           const fields = ['holding_no','village_road','post_office','upazila_thana','district'];
-           if (this.checked) {
-               fields.forEach(f => {
-                   document.querySelector(`[name="per_${f}"]`).value =
-                       document.querySelector(`[name="pre_${f}"]`).value;
-               });
-           } else {
-               fields.forEach(f => {
-                   document.querySelector(`[name="per_${f}"]`).value = '';
-               });
-           }
-       });
-   </script>
 
 
    {{--Attachment--}}
