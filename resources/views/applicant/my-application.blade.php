@@ -71,18 +71,16 @@
                                             </a>
                                         @endif
 
-                                        @if($application->applicationtype_id === 1)
-                                            <a href="{{ route('applicant.preview.admission.form', $application->id) }}"
-                                               class="btn btn-info"
-                                               target="_blank">
-                                                <i class="fas fa-eye"></i> Preview Application Form
-                                            </a>
-                                        @else
-                                            <a href="{{ route('applicant.preview.eligibility.form', $application->id) }}"
-                                               class="btn btn-info"
-                                               target="_blank">
-                                                <i class="fas fa-eye"></i> Preview Eligibility Form
-                                            </a>
+                                        @if($application->final_submit == 1)
+                                            @if($application->applicationtype_id == 1)
+                                                <a href="{{ route('applicant.preview.admission.form', $application->id) }}" class="btn btn-info" target="_blank">
+                                                    <i class="fas fa-eye"></i> Print Application Form
+                                                </a>
+                                            @elseif($application->applicationtype_id == 2)
+                                                <a href="{{ route('applicant.preview.eligibility.form', $application->id) }}" class="btn btn-info" target="_blank">
+                                                    <i class="fas fa-eye"></i> Print Eligibility Form
+                                                </a>
+                                            @endif
                                         @endif
                                     </td>
 

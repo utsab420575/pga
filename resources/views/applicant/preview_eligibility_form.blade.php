@@ -30,7 +30,7 @@
 <div class="container-fluid">
     <div class="no-print print-button">
         <button onclick="window.print()" class="btn btn-primary">
-            <i class="fas fa-print"></i> Print Application
+            <i class="fas fa-print"></i> Print/Save Application
         </button>
         <a href="{{ url()->previous() }}" class="btn btn-secondary ml-2">
             <i class="fas fa-arrow-left"></i> Back
@@ -64,7 +64,7 @@
                     <th>Transaction ID:</th>
                     <td><strong>{{ $applicant->payment->trxid }}</strong></td>
                 </tr>
-                
+
             </table>
                 </div>
             </div>
@@ -74,8 +74,8 @@
         <div class="clearfix">
             @if($applicant->basicInfo && $applicant->basicInfo->photo)
                 <div class="photo-section">
-                    <img src="{{ asset($applicant->basicInfo->photo) }}" 
-                         alt="Applicant Photo" 
+                    <img src="{{ asset($applicant->basicInfo->photo) }}"
+                         alt="Applicant Photo"
                          style="width: 120px; height: 150px; object-fit: cover;">
                     <p style="text-align: center; margin: 5px 0; font-size: 12px;">Applicant Photo</p>
                 </div>
@@ -92,7 +92,7 @@
                     <th width="30%">Department / Institute:</th>
                     <td>{{ $applicant->department->full_name ?? 'N/A' }}</td>
                 </tr>
-                
+
                 <tr>
                     <td width="5%">(c)</td>
                     <th width="30%">Student Status:</th>
@@ -298,7 +298,7 @@ knowledge and belief. If any information is found false, incorrect, and incomple
 is detected before or after the examination, any legal action can be taken against me by the authority
 including the cancellation of my application.
             </p>
-            
+
             <div style="display: flex; justify-content: space-between; margin-top: 40px;">
                 <div>
                     <div style="border-bottom: 1px solid #000; width: 200px; margin-bottom: 5px;"></div>
@@ -306,8 +306,8 @@ including the cancellation of my application.
                 </div>
                 <div>
                     @if($applicant->basicInfo && $applicant->basicInfo->sign)
-                        <img src="{{ asset($applicant->basicInfo->sign) }}" 
-                             alt="Signature" 
+                        <img src="{{ asset($applicant->basicInfo->sign) }}"
+                             alt="Signature"
                              style="max-width: 150px; max-height: 50px; border-bottom: 1px solid #000;">
                     @else
                         <div style="border-bottom: 1px solid #000; width: 200px; margin-bottom: 5px;"></div>
