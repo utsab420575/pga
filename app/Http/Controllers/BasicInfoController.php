@@ -62,7 +62,7 @@ class BasicInfoController extends Controller
         ];
 
         // ✅ Extra validation only for CE department
-        if ($applicant->department_id == 1) {
+        if ($applicant->department_id == 1 && $applicant->applicationtype_id==1) {
             $rules['field_name_ce'] = 'required|string|max:255';
         }
 
@@ -142,7 +142,7 @@ class BasicInfoController extends Controller
         ];
 
         // ✅ Extra rule only for CE (Civil Engineering)
-        if ($applicant->department_id == 1) {
+        if ($applicant->department_id == 1 && $applicant->applicationtype_id==1) {
             $rules['field_name_ce'] = 'required|string|max:255';
         }
 

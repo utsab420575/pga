@@ -43,6 +43,7 @@ class ThesisController extends Controller
         $data = $request->validate([
             'title' => 'required|string|max:255',
             'institute' => 'nullable|string|max:255',
+            'supervisor' => 'nullable|string|max:255',
             'period' => 'nullable|string|max:255',
             'applicant_id' => 'required|exists:applicants,id',
         ]);

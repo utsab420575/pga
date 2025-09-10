@@ -27,22 +27,6 @@
 
                             @csrf
 
-                            {{-- University Type --}}
-                            <div class="form-group row">
-                                <label class="col-md-4 col-form-label text-md-right">{{ __('University Type [*]') }}</label>
-                                <div class="col-md-6 d-flex align-items-center">
-                                    <div class="form-check mr-3">
-                                        <input class="form-check-input" type="radio" name="university_type" id="uni_private" value="private"
-                                               {{ old('university_type') === 'private' ? 'checked' : '' }} required>
-                                        <label class="form-check-label" for="uni_private">Private University</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="university_type" id="uni_public" value="public"
-                                               {{ old('university_type') === 'public' ? 'checked' : '' }} required>
-                                        <label class="form-check-label" for="uni_public">Public University</label>
-                                    </div>
-                                </div>
-                            </div>
 
 
                             <div class="form-group row">
@@ -81,7 +65,7 @@
                                 </div>
                             </div>
 
-                           {{-- <div class="form-group row">
+                            <div class="form-group row">
                                 <label for="applicationtype" class="col-md-4 col-form-label text-md-right">{{ __('Application Type [*]') }}</label>
                                 <div class="col-md-6">
                                     <select id="applicationtype" class="form-control" name="applicationtype" required>
@@ -91,19 +75,7 @@
                                         @endforeach
                                     </select>
                                 </div>
-                            </div>--}}
-
-                            {{-- Application Type --}}
-                            <div class="form-group row">
-                                <label for="applicationtype" class="col-md-4 col-form-label text-md-right">{{ __('Application Type [*]') }}</label>
-                                <div class="col-md-6">
-                                    <select id="applicationtype" class="form-control" name="applicationtype" required>
-                                        <option value="" selected>-Select application type-</option>
-                                        {{-- Options will be filled dynamically by JS based on University Type --}}
-                                    </select>
-                                </div>
                             </div>
-
 
                             <div class="form-group row">
                                 <label for="declaration" class="col-md-4 col-form-label text-md-right">{{ __('Declaration [*]') }}</label>
@@ -182,57 +154,5 @@
                 });
             }
         });
-    </script>
-
-
-    {{--for showing options based on private/public university--}}
-    <script>
-        const allApplicationTypes = @json($applicationtypes);
-        const oldUniversityType = @json(old('university_type'));
-        const oldApplicationType = @json(old('applicationtype'));
-        const hasEligibilityApproval = @json($hasApprovalEligibility);
-
-        const appTypeSelect = document.getElementById('applicationtype');
-        const uniPrivate   = document.getElementById('uni_private');
-        const uniPublic    = document.getElementById('uni_public');
-
-        function fillApplicationTypes(universityType) {
-            if (!appTypeSelect) return;
-
-            appTypeSelect.innerHTML = '<option value="">-Select application type-</option>';
-
-            let allowedIds = [];
-            if (universityType === 'private') {
-                allowedIds = hasEligibilityApproval ? [1] : [2];
-            } else if (universityType === 'public') {
-                allowedIds = [1]; // <-- fixed
-            }
-
-
-            allApplicationTypes.forEach(item => {
-                if (allowedIds.includes(item.id)) {
-                    const opt = document.createElement('option');
-                    opt.value = item.id;
-                    opt.textContent = item.type;
-                    appTypeSelect.appendChild(opt);
-                }
-            });
-
-            if (oldApplicationType && allowedIds.includes(Number(oldApplicationType))) {
-                appTypeSelect.value = String(oldApplicationType);
-            }
-        }
-
-        if (uniPrivate) uniPrivate.addEventListener('change', () => fillApplicationTypes('private'));
-        if (uniPublic) uniPublic.addEventListener('change', () => fillApplicationTypes('public'));
-
-        // Init on page load
-        if (oldUniversityType === 'private') {
-            if (uniPrivate) uniPrivate.checked = true;
-            fillApplicationTypes('private');
-        } else if (oldUniversityType === 'public') {
-            if (uniPublic) uniPublic.checked = true;
-            fillApplicationTypes('public');
-        }
     </script>
 @endsection

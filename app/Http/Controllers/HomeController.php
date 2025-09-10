@@ -132,19 +132,59 @@ class HomeController extends Controller
 
     public function apply_now()
     {
-      //return redirect::back()->withErrors('Online application started from 28 May, 2023 at 09.00AM');
-
-        if(Auth::user()->phone_verified === 0)
-        {
+        // Force mobile verification first
+        if (Auth::user()->phone_verified === 0) {
             return Redirect::to('verify-mobile');
         }
 
-        $degrees = Degree::all();
-        $departments = Department::all();
-        $studenttypes = Studenttype::all();
-        $applicationtypes = Applicationtype::all();
-        return view('applicant.apply')->with('degrees',$degrees)->with('departments',$departments)->with('studenttypes',$studenttypes)->with('applicationtypes',$applicationtypes);
+        // 🔒 Deadline check from settings
+        $setting = Setting::query()->orderByDesc('id')->first(); // or where('session', current)
+
+        if ($setting && $setting->end_date) {
+            $deadline = \Illuminate\Support\Carbon::parse($setting->end_date)->endOfDay();
+
+            if (now()->gt($deadline)) {
+                // You can include the date to be clear
+                return back()->withErrors('Application date is over. Deadline was: '.$deadline->toDateString());
+            }
+        }else{
+            return back()->withErrors('Setting Table Data Not Found');
+        }
+
+
+        // Block if user has an eligibility application (type=2) not yet approved
+        $hasPendingEligibility = Applicant::where('user_id', Auth::id())
+            ->where('applicationtype_id', 2)
+            ->where(function ($q) {
+                $q->whereNull('eligibility_approve')
+                    ->orWhere('eligibility_approve', 0);
+            })
+            ->exists();
+
+        if ($hasPendingEligibility) {
+            return redirect()->back()
+                ->withErrors('You have to eligibility approval for apply application');
+            // (If you prefer a "success/error" flash key instead, use ->with('error', '...'))
+        }
+
+
+
+        // Eligibility approved?
+        $hasApprovalEligibility = Applicant::where('user_id', Auth::id())
+            ->where('applicationtype_id', 2)
+            ->where('eligibility_approve', 1)
+            ->exists();
+
+        // Load dropdown data
+        $degrees         = Degree::all();
+        $departments     = Department::all();
+        $studenttypes    = Studenttype::all();
+        $applicationtypes= Applicationtype::all();
+
+
+        return view('applicant.apply', compact('degrees','departments','studenttypes','applicationtypes','hasApprovalEligibility'));
     }
+
 
     public function apply_now_submit(Request $request)
     {
@@ -155,6 +195,33 @@ class HomeController extends Controller
             'applicationtype' => ['required'],
             'declaration' =>'accepted'
         ]);
+
+        //    If the user is trying to apply for ELIGIBILITY (type=2)
+        //    and already has an APPROVED eligibility, block re-application.
+        if ((int) $request->applicationtype === 2) {
+            $hasApprovedEligibility = Applicant::where('user_id', Auth::id())
+                ->where('applicationtype_id', 2)
+                ->where('eligibility_approve', 1) // approved
+                ->exists();
+
+            if ($hasApprovedEligibility) {
+                return back()->withErrors('You already have eligibility approval. Please proceed to admission application.');
+            }
+
+
+            // Block if user has an eligibility application (type=2) not yet approved
+            $hasAppliedApplication = Applicant::where('user_id', Auth::id())
+                ->where('applicationtype_id',1)
+                ->exists();
+
+            if ($hasAppliedApplication) {
+                return redirect()->back()
+                    ->withErrors('You already have admission application.You can not apply for eligibility now.');
+                // (If you prefer a "success/error" flash key instead, use ->with('error', '...'))
+            }
+        }
+
+
 
         $application = Applicationtype::find($request->applicationtype);
 

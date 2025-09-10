@@ -13,13 +13,12 @@
 
         @if(session('Status'))
         <p class="alert alert-info">{{session('Status')}}</p>
-        @endif 
+        @endif
             <div class="card">
                 <div class="card-header"><b>{{ __('Online Application Summary') }}</b></div>
                 <div class="card-body" align="center">
-                    <h3 style="color:green">Your application has been submited successfully.</h3><br>
                     <table class="table table-hover table-striped">
-                        
+
                         <tbody>
                           <tr>
                             <td width="50%" align="right">Program applied for:</td>

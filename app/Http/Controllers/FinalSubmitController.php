@@ -87,7 +87,7 @@ class FinalSubmitController extends Controller
         // Count attachments per type
         $typeCounts = $attachments->groupBy('attachment_type_id')->map->count();
 
-        // --- Type 1: Recent photograph
+       // --- Type 1: Recent photograph
         if (($typeCounts[1] ?? 0) < 1) {
             return back()->withErrors('You must upload at least 1 recent passport-size photograph.');
         }
@@ -218,7 +218,7 @@ class FinalSubmitController extends Controller
         }
 
 
-        //Attachments
+      //Attachments
         // ✅ 5. Check attachments by type
         $attachments = $applicant->attachments;
 
