@@ -3,6 +3,7 @@
 use App\Http\Controllers\ApplicationPostgraduateController;
 use App\Http\Controllers\FinalSubmitController;
 use App\Http\Controllers\PaymentController;
+use App\Models\Notice;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\HomeController;
@@ -28,14 +29,26 @@ use App\Http\Controllers\EligibilityVerificationController;
 |--------------------------------------------------------------------------
 */
 
-Route::get('/', fn () => view('welcome'))->name('welcome');
+/*Route::get('/', fn () => view('welcome'))->name('welcome');*/
+
+Route::get('/', function () {
+    $notices = Notice::orderByDesc('date')->orderByDesc('id')->get();
+    return view('welcome', compact('notices'));
+})->name('welcome');
+
+
 
 Route::get('/reg', function () {
     // Use the back() helper and pass an errors bag (works with $errors in views)
     return back()->withErrors(['notice' => 'Online application started from 28 May, 2023 at 09.00AM']);
 })->name('reg');
 
-Route::get('/notice', fn () => view('notice'))->name('notice');
+Route::get('/notice', function () {
+    $notices = Notice::orderByDesc('date')->orderByDesc('id')->get();
+    return view('notice', compact('notices'));
+})->name('notice');
+
+
 
 // Auth routes provided by laravel/ui (installed in Step 2)
 Auth::routes();

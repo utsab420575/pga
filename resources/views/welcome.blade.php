@@ -58,13 +58,40 @@
                           </td>
 
                         </tr>
-                        <tr>
-                        <td align="center"><br>Notice<br>
-                            Admission Notice: <a href="{{ asset('public/notice1.pdf') }}"><b>Download</b></a>
-                          </td>
+                      <tr>
+                          <td align="center">
+                              <br>Notice<br>
 
-                        </tr>
-                        <tr>
+                              @if(isset($notices) && $notices->isNotEmpty())
+                                  <ul class="list-unstyled mb-0">
+                                      @foreach($notices as $notice)
+                                          <li class="mb-2">
+                                              {{-- Date + Title --}}
+                                              <div>
+                                                  <b>{{ $notice->date?->format('d M Y') }}</b> — {{ $notice->title }}
+                                              </div>
+
+                                              {{-- File link (direct from public folder) --}}
+                                              @if($notice->file)
+                                                  <a href="{{ asset($notice->file) }}" target="_blank"><b>Download</b></a>
+                                              @endif
+
+                                              {{-- Optional details preview --}}
+                                              @if($notice->details)
+                                                  <div class="small text-muted mt-1">
+                                                      {{ \Illuminate\Support\Str::limit(strip_tags($notice->details), 120) }}
+                                                  </div>
+                                              @endif
+                                          </li>
+                                      @endforeach
+                                  </ul>
+                              @else
+                                  <span class="text-muted">No notices published yet.</span>
+                              @endif
+                          </td>
+                      </tr>
+
+                      <tr>
                         <td align="center"><br>Form<br>
                             {{--Application for admission to Postgraduate Program: <a href="{{ asset('public/admission.doc') }}"><b>Download</b></a><br>
                             Application for Eligibility Verification of Obtained Degree: <a href="{{ asset('public/eligibility.doc') }}"><b>Download</b></a><br>--}}
