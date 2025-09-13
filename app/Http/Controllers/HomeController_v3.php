@@ -35,7 +35,7 @@ use Illuminate\Support\Facades\Response;
 use Illuminate\Console\View\Components\Alert;
 use DateTime;
 
-class HomeController extends Controller
+class HomeController_v3 extends Controller
 {
     /**
      * Create a new controller instance.
@@ -137,7 +137,7 @@ class HomeController extends Controller
             return Redirect::to('verify-mobile');
         }
 
-        //  Deadline check from settings
+        // 🔒 Deadline check from settings
         $setting = Setting::query()->orderByDesc('id')->first(); // or where('session', current)
 
         if ($setting && $setting->end_date) {
@@ -188,157 +188,91 @@ class HomeController extends Controller
 
     public function apply_now_submit(Request $request)
     {
-        // Basic validation (keep as-is to match your Blade)
         $this->validate($request, [
-            'degree'         => ['required'],
-            'department'     => ['required'],
-            'studenttype'    => ['required'],
-            'applicationtype'=> ['required'],
-            'declaration'    => 'accepted',
+            'degree' => ['required'],
+            'department' => ['required'],
+            'studenttype' => ['required'],
+            'applicationtype' => ['required'],
+            'declaration' =>'accepted'
         ]);
 
-        $appType = (int) $request->applicationtype; // 1 = Admission, 2 = Eligibility
-
-        // --- Load settings and compute windows (optional but safer) ---
-        $setting = Setting::query()->orderByDesc('id')->first();
-        if (!$setting) {
-            return back()->withErrors('Setting Table Data Not Found');
-        }
-
-        $now = now();
-
-        $admissionStart = $setting->start_date
-            ? \Illuminate\Support\Carbon::parse($setting->start_date)->startOfDay() : null;
-        $admissionEnd = $setting->end_date
-            ? \Illuminate\Support\Carbon::parse($setting->end_date)->endOfDay() : null;
-
-        $eligStart = $setting->eligibility_start_date
-            ? \Illuminate\Support\Carbon::parse($setting->eligibility_start_date)->startOfDay() : null;
-        $eligEnd = $setting->eligibility_last_date
-            ? \Illuminate\Support\Carbon::parse($setting->eligibility_last_date)->endOfDay() : null;
-
-        $canAdmission   = $admissionStart && $admissionEnd && $now->between($admissionStart, $admissionEnd);
-        $canEligibility = $eligStart && $eligEnd && $now->between($eligStart, $eligEnd);
-
-        // Enforce windows per application type (if dates configured)
-        if ($appType === 1 && !$canAdmission) {
-            return back()->withErrors(
-                'Admission time is closed.' .
-                ($admissionStart && $admissionEnd
-                    ? ' Window: ' . $admissionStart->toDateString() . ' – ' . $admissionEnd->toDateString() . '.'
-                    : '')
-            );
-        }
-        if ($appType === 2 && !$canEligibility) {
-            return back()->withErrors(
-                'Eligibility time is closed.' .
-                ($eligStart && $eligEnd
-                    ? ' Window: ' . $eligStart->toDateString() . ' – ' . $eligEnd->toDateString() . '.'
-                    : '')
-            );
-        }
-
-        // --- Common state checks ---
-        $userId = Auth::id();
-
-        // Pending eligibility exists?
-        $hasPendingEligibility = Applicant::where('user_id', $userId)
-            ->where('applicationtype_id', 2)
-            ->where(function ($q) {
-                $q->whereNull('eligibility_approve')
-                    ->orWhere('eligibility_approve', 0);
-            })
-            ->exists();
-
-        // If trying to apply for Admission while eligibility is pending -> block
-        if ($appType === 1 && $hasPendingEligibility) {
-            return back()->withErrors('Your eligibility application is pending approval. Please wait for approval before applying for admission.');
-        }
-
-        // If trying to apply for Eligibility and there is already a pending eligibility -> block
-        if ($appType === 2 && $hasPendingEligibility) {
-            return back()->withErrors('You already have an eligibility application pending approval. Please wait for a decision.');
-        }
-
-        // If trying to apply for Eligibility and there is already an APPROVED eligibility -> block re-application
-        if ($appType === 2) {
-            $hasApprovedEligibility = Applicant::where('user_id', $userId)
+        //    If the user is trying to apply for ELIGIBILITY (type=2)
+        //    and already has an APPROVED eligibility, block re-application.
+        if ((int) $request->applicationtype === 2) {
+            $hasApprovedEligibility = Applicant::where('user_id', Auth::id())
                 ->where('applicationtype_id', 2)
-                ->where('eligibility_approve', 1)
+                ->where('eligibility_approve', 1) // approved
                 ->exists();
 
             if ($hasApprovedEligibility) {
                 return back()->withErrors('You already have eligibility approval. Please proceed to admission application.');
             }
 
-            // If trying to apply for Eligibility but an Admission application already exists -> block
-            $hasAdmissionApplication = Applicant::where('user_id', $userId)
-                ->where('applicationtype_id', 1)
+
+            // Block if user has an eligibility application (type=2) not yet approved
+            $hasAppliedApplication = Applicant::where('user_id', Auth::id())
+                ->where('applicationtype_id',1)
                 ->exists();
 
-            if ($hasAdmissionApplication) {
-                return back()->withErrors('You already have an admission application. You cannot apply for eligibility now.');
+            if ($hasAppliedApplication) {
+                return redirect()->back()
+                    ->withErrors('You already have admission application.You can not apply for eligibility now.');
+                // (If you prefer a "success/error" flash key instead, use ->with('error', '...'))
             }
         }
 
-        // Prevent duplicate: same user + same type + same department
-        $duplicate = Applicant::where('applicationtype_id', $appType)
+
+
+        $application = Applicationtype::find($request->applicationtype);
+
+        $checkApplication = Applicant::where('applicationtype_id', $request->applicationtype)
             ->where('department_id', $request->department)
-            ->where('user_id', $userId)
+            ->where('user_id', Auth::user()->id)
             ->first();
 
-        if ($duplicate) {
+        if ($checkApplication) {
             return Redirect::back()->withErrors('Already applied in this department');
-        }
+        } else {
+            $applicant = new Applicant;
 
-        // Create applicant (safer roll generation with transaction & row lock)
-        $application = Applicationtype::find($appType);
-        if (!$application) {
-            return back()->withErrors('Invalid application type.');
-        }
-
-        DB::beginTransaction();
-        try {
-            if ($application->type === "Admission") {
-                // lock the table scope used for counting to avoid race
-                $nextSeq = Applicant::where('applicationtype_id', 1)->lockForUpdate()->count() + 1;
-                $roll = 100000 + $nextSeq;
+            if ($application->type == "Admission") {
+                $applicant->roll = 100000 + Applicant::where('applicationtype_id', 1)->count() + 1;
             } else {
-                $nextSeq = Applicant::where('applicationtype_id', 2)->lockForUpdate()->count() + 1;
-                $roll = 200000 + $nextSeq;
+                $applicant->roll = 200000 + Applicant::where('applicationtype_id', 2)->count() + 1;
             }
 
-            $applicant = new Applicant;
-            $applicant->roll               = $roll;
-            $applicant->payment_status     = 0;
-            $applicant->edit_per           = 0;
-            $applicant->department_id      = $request->department;
-            $applicant->studenttype_id     = $request->studenttype;
-            $applicant->degree_id          = $request->degree;
-            $applicant->applicationtype_id = $appType;
-            $applicant->user_id            = $userId;
+            $applicant->payment_status = 0;
+            $applicant->edit_per = 0;
+            $applicant->department_id = $request->department;
+            $applicant->studenttype_id = $request->studenttype;
+            $applicant->degree_id = $request->degree;
+            $applicant->applicationtype_id = $request->applicationtype;
+            $applicant->user_id = Auth::user()->id;
             $applicant->save();
 
-            // Clone attachments from prior application with most attachments (your existing logic)
-            $source = Applicant::where('user_id', $userId)
-                ->where('id', '!=', $applicant->id)
-                ->withCount('attachments')
-                ->orderByDesc('attachments_count')
+          /*  // ✅ Clone previous applicant data if exists
+            $userApplicants = Applicant::where('user_id', Auth::id())->orderBy('id', 'asc')->get();
+
+            if ($userApplicants->count() > 1) {
+                $oldApplicantId = $userApplicants->first()->id;   // oldest applicant id
+                $newApplicantId = $applicant->id;                 // newly created applicant id
+
+                $this->cloneApplicantData($oldApplicantId, $newApplicantId);
+            }*/
+
+            $source = Applicant::where('user_id', Auth::id())
+                ->where('id', '!=', $applicant->id)     // exclude the new one
+                ->withCount('attachments')              // Laravel will add attachments_count
+                ->orderByDesc('attachments_count')      // pick the one with most attachments
                 ->first();
 
             if ($source && $source->attachments_count > 0) {
                 $this->cloneApplicantData($source->id, $applicant->id);
             }
 
-            DB::commit();
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            return back()->withErrors('Failed to create application. Please try again.');
+            return redirect("application/" . $applicant->id);
         }
-
-        return redirect("application/" . $applicant->id);
     }
-
 
 
     public function application($id)
