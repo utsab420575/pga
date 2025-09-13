@@ -32,20 +32,22 @@
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span><b>Basic Information</b></span>
-                        <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#basicInfoModal">
-                            Add / Update
-                        </button>
+                        @if($applicant->final_submit != 1)
+                            <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#basicInfoModal">
+                                Add / Update
+                            </button>
+                        @endif
                     </div>
                     <div class="card-body">
                         @if($basicInfo)
                             <table class="table table-sm table-bordered mb-0">
                                 <tbody>
-                                <tr><th width="25%">Applicant Name(Block Letter)</th><td>{{ $basicInfo->full_name_block_letter}}</td></tr>
+                                <tr><th width="25%">Applicant Name (Block Letter)</th><td>{{ $basicInfo->full_name_block_letter}}</td></tr>
                                 <tr><th>Father's Name</th><td>{{ $basicInfo->f_name }}</td></tr>
                                 <tr><th>Mother's Name</th><td>{{ $basicInfo->m_name }}</td></tr>
                                 <tr><th>National ID</th><td>{{ $basicInfo->nid }}</td></tr>
                                 <tr><th>Nationality</th><td>{{ $basicInfo->nationality }}</td></tr>
-                                <tr><th>DOB</th><td>{{ optional($basicInfo->dob)->format('Y-m-d') }}</td></tr>
+                                <tr><th>Date of Birth</th><td>{{ optional($basicInfo->dob)->format('Y-m-d') }}</td></tr>
                                 <tr><th>Religion</th><td>{{ $basicInfo->religion }}</td></tr>
                                 <tr><th>Gender</th><td>{{ $basicInfo->gender }}</td></tr>
                                 <tr><th>Marital Status</th><td>{{ $basicInfo->marital_status }}</td></tr>
@@ -64,9 +66,11 @@
                 <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <span><b>Particulars of Obtained Degree for which Eligibility is required</b></span>
-                            <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#eligibilityModal">
-                                {{ $eligibilityDegree ? 'Update' : 'Add' }}
-                            </button>
+                            @if($applicant->final_submit != 1)
+                                <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#eligibilityModal">
+                                    {{ $eligibilityDegree ? 'Update' : 'Add' }}
+                                </button>
+                            @endif
                         </div>
                         <div class="card-body">
                             @if($eligibilityDegree)
@@ -105,9 +109,11 @@
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span><b>Education Info</b></span>
-                        <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#educationModal">
-                            Add
-                        </button>
+                        @if($applicant->final_submit != 1)
+                            <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#educationModal">
+                                Add
+                            </button>
+                        @endif
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
@@ -177,7 +183,9 @@
                     {{-- Card header with title and "Add" button (opens modal) --}}
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span><b>Upload all necessary documents</b></span>
-                        <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#quickUploadModal">Add</button>
+                        @if($applicant->final_submit != 1)
+                            <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#quickUploadModal">Add</button>
+                        @endif
                     </div>
 
                     <div class="card-body">
@@ -428,7 +436,7 @@
                         </div>
 
                         <div class="form-group col-md-6">
-                            <label>Passport Number</label><span class="text-mute">(If any)</span>
+                            <label>Passport Number </label><span class="text-mute"> (If any)</span>
                             <input type="number" name="passport_no" class="form-control"
                                    value="{{ old('passport_no', $basicInfo->passport_no ?? '') }}">
                         </div>

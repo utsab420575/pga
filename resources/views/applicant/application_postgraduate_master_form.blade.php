@@ -37,20 +37,22 @@
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span><b>Basic Information</b></span>
                         {{-- Floating Info Button --}}
-                        <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#basicInfoModal">Add / Update</button>
+                        @if($applicant->final_submit != 1)
+                            <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#basicInfoModal">Add / Update</button>
+                        @endif
                     </div>
                     <div class="card-body">
                         @if($basicInfo)
                             <table class="table table-sm table-bordered mb-0">
                                 <tbody>
-                                <tr><th width="25%">Full Name</th><td>{{ $basicInfo->full_name }}</td></tr>
+                                <tr><th width="35%">Full Name (As per S.S.C Certificate)</th><td>{{ $basicInfo->full_name }}</td></tr>
                                 <tr><th>Applicant Name (Block Letter)</th><td>{{ $basicInfo->full_name_block_letter }}</td></tr>
-                                <tr><th>Name (Bangla)</th><td>{{ $basicInfo->bn_name }}</td></tr>
+                                <tr><th>Name (Bangla)(As per S.S.C Certificate)</th><td>{{ $basicInfo->bn_name }}</td></tr>
 
                                 <tr><th>Father's Name</th><td>{{ $basicInfo->f_name }}</td></tr>
                                 <tr><th>Mother's Name</th><td>{{ $basicInfo->m_name }}</td></tr>
                                 <tr>
-                                    <th>Guardian's Income</th>
+                                    <th>Guardian's Annual Income</th>
                                     <td>
                                         @if(!is_null($basicInfo->g_income))
                                             {{ number_format((float)$basicInfo->g_income, 2) }}
@@ -60,7 +62,7 @@
 
                                 <tr><th>National ID</th><td>{{ $basicInfo->nid }}</td></tr>
                                 <tr><th>Nationality</th><td>{{ $basicInfo->nationality }}</td></tr>
-                                <tr><th>DOB</th><td>{{ optional($basicInfo->dob)->format('Y-m-d') }}</td></tr>
+                                <tr><th>Date of Birth</th><td>{{ optional($basicInfo->dob)->format('Y-m-d') }}</td></tr>
                                 <tr><th>Religion</th><td>{{ $basicInfo->religion }}</td></tr>
                                 <tr><th>Gender</th><td>{{ $basicInfo->gender }}</td></tr>
                                 <tr><th>Marital Status</th><td>{{ $basicInfo->marital_status }}</td></tr>
@@ -98,9 +100,11 @@
                                 and Testimonial for all academic qualifications.
                             </small>
                         </div>
-                        <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#educationModal">
-                            <i class="fas fa-plus"></i> Add
-                        </button>
+                        @if($applicant->final_submit != 1)
+                            <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#educationModal">
+                                <i class="fas fa-plus"></i> Add
+                            </button>
+                        @endif
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
@@ -153,13 +157,15 @@
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span><b>Thesis (if any):</b></span>
-                        <button id="btnThAdd"
-                                class="btn btn-primary btn-sm"
-                                data-toggle="modal"
-                                data-target="#thesisModal"
-                                data-store-url="{{ route('thesis.store') }}">
-                            <i class="fas fa-plus"></i> Add
-                        </button>
+                        @if($applicant->final_submit != 1)
+                            <button id="btnThAdd"
+                                    class="btn btn-primary btn-sm"
+                                    data-toggle="modal"
+                                    data-target="#thesisModal"
+                                    data-store-url="{{ route('thesis.store') }}">
+                                <i class="fas fa-plus"></i> Add
+                            </button>
+                        @endif
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
@@ -209,7 +215,9 @@
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span><b>Publication (if any):</b></span>
-                        <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#publicationModal"><i class="fas fa-plus"></i> Add</button>
+                        @if($applicant->final_submit != 1)
+                            <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#publicationModal"><i class="fas fa-plus"></i> Add</button>
+                        @endif
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
@@ -259,7 +267,9 @@
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span><b>Practical Job Experience (if any)	: </b></span>
-                        <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#jobModal"><i class="fas fa-plus"></i> Add</button>
+                        @if($applicant->final_submit != 1)
+                            <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#jobModal"><i class="fas fa-plus"></i> Add</button>
+                        @endif
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
@@ -315,9 +325,11 @@
                                 At least one referee must be a teacher from the last institution you attended.
                             </small>
                         </div>
-                        <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#referenceModal">
-                            <i class="fas fa-plus"></i> Add
-                        </button>
+                        @if($applicant->final_submit != 1)
+                            <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#referenceModal">
+                                <i class="fas fa-plus"></i> Add
+                            </button>
+                        @endif
                     </div>
 
                     <div class="card-body">
@@ -384,7 +396,9 @@
                     {{-- Card header with title and "Add" button (opens modal) --}}
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span><b>Upload all necessary documents</b></span>
-                        <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#quickUploadModal"><i class="fas fa-plus"></i> Add</button>
+                        @if($applicant->final_submit != 1)
+                            <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#quickUploadModal"><i class="fas fa-plus"></i> Add</button>
+                        @endif
                     </div>
 
                     <div class="card-body">
@@ -614,14 +628,14 @@
 
                         <div class="form-group col-md-6">
                             <label>Religion</label><span class="text-danger">*</span>
-                            @php $religionOld = strtolower(old('religion', $basicInfo->religion ?? '')); @endphp
+                            @php $religionOld = old('religion', $basicInfo->religion ?? ''); @endphp
                             <select name="religion" class="form-control">
                                 <option value="">--select--</option>
-                                <option value="islam"   {{ $religionOld==='islam'   ? 'selected':'' }}>Islam</option>
-                                <option value="hindu"   {{ $religionOld==='hindu'   ? 'selected':'' }}>Hindu</option>
-                                <option value="cristan" {{ $religionOld==='cristan' ? 'selected':'' }}>Cristan</option>
-                                <option value="baudda"  {{ $religionOld==='baudda'  ? 'selected':'' }}>Baudda</option>
-                                <option value="others"  {{ $religionOld==='others'  ? 'selected':'' }}>Others</option>
+                                <option value="Islam"   {{ $religionOld==='Islam'   ? 'selected':'' }}>Islam</option>
+                                <option value="Hindu"   {{ $religionOld==='Hindu'   ? 'selected':'' }}>Hindu</option>
+                                <option value="Cristan" {{ $religionOld==='Cristan' ? 'selected':'' }}>Cristan</option>
+                                <option value="Baudda"  {{ $religionOld==='Baudda'  ? 'selected':'' }}>Baudda</option>
+                                <option value="others"  {{ $religionOld==='Others'  ? 'selected':'' }}>Others</option>
                             </select>
                         </div>
                     </div>

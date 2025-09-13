@@ -27,12 +27,20 @@ class EligibilityVerificationController extends Controller
             abort(403, 'You are not allowed to access this page.');
         }
 
-        // Business rule: page opens only if payment_status=1 AND applicationtype_id=1
+       /* // Business rule: page opens only if payment_status=1 AND applicationtype_id=1
         // (If your column is literally `application_type_id`, change the property name below.)
         if (auth()->user()->user_type === 'applicant') {
             if (!($applicant->payment_status == 1 && $applicant->applicationtype_id == 2)) {
                 return back()->withErrors('This page is available only for paid Admission applications.');
                 // Or: abort(403, 'This page is available only for paid Admission applications.');
+            }
+        }*/
+
+        // Business rule: paid Admission applications only
+        if (auth()->user()->user_type === 'applicant') {
+            // ✅ If payment record not found or payment_status != 2 → block
+            if (!$applicant->payment || $applicant->payment_status != 1 || $applicant->applicationtype_id != 2) {
+                return back()->withErrors('You must complete payment first before accessing this page.');
             }
         }
 

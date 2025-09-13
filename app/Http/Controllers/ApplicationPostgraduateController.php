@@ -28,10 +28,18 @@ class ApplicationPostgraduateController extends Controller
             abort(403, 'You are not allowed to access this page.');
         }
 
-        // Business rule: paid Admission applications only
+        /*// Business rule: paid Admission applications only
         if (auth()->user()->user_type === 'applicant') {
             if (!($applicant->payment_status == 1 && $applicant->applicationtype_id == 1)) {
                 return back()->withErrors('This page is available only for paid Admission applications.');
+            }
+        }*/
+
+        // Business rule: paid Admission applications only
+        if (auth()->user()->user_type === 'applicant') {
+            // ✅ If payment record not found or payment_status != 1 → block
+            if (!$applicant->payment || $applicant->payment_status != 1 || $applicant->applicationtype_id != 1) {
+                return back()->withErrors('You must complete payment first before accessing this page.');
             }
         }
 

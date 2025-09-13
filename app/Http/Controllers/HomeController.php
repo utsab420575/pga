@@ -169,6 +169,9 @@ class HomeController extends Controller
 
 
 
+
+
+
         // Eligibility approved?
         $hasApprovalEligibility = Applicant::where('user_id', Auth::id())
             ->where('applicationtype_id', 2)
@@ -188,18 +191,19 @@ class HomeController extends Controller
 
     public function apply_now_submit(Request $request)
     {
-        // Basic validation (keep as-is to match your Blade)
+        // Step 1: Validate form input (must match your Blade form)
         $this->validate($request, [
-            'degree'         => ['required'],
-            'department'     => ['required'],
-            'studenttype'    => ['required'],
-            'applicationtype'=> ['required'],
-            'declaration'    => 'accepted',
+            'degree'          => ['required'],
+            'department'      => ['required'],
+            'studenttype'     => ['required'],
+            'applicationtype' => ['required'],
+            'declaration'     => 'accepted',
         ]);
 
         $appType = (int) $request->applicationtype; // 1 = Admission, 2 = Eligibility
+        $userId  = Auth::id();
 
-        // --- Load settings and compute windows (optional but safer) ---
+        // Step 2: Load latest settings (for date windows)
         $setting = Setting::query()->orderByDesc('id')->first();
         if (!$setting) {
             return back()->withErrors('Setting Table Data Not Found');
@@ -207,11 +211,13 @@ class HomeController extends Controller
 
         $now = now();
 
+        // Admission application window
         $admissionStart = $setting->start_date
             ? \Illuminate\Support\Carbon::parse($setting->start_date)->startOfDay() : null;
         $admissionEnd = $setting->end_date
             ? \Illuminate\Support\Carbon::parse($setting->end_date)->endOfDay() : null;
 
+        // Eligibility application window
         $eligStart = $setting->eligibility_start_date
             ? \Illuminate\Support\Carbon::parse($setting->eligibility_start_date)->startOfDay() : null;
         $eligEnd = $setting->eligibility_last_date
@@ -220,7 +226,7 @@ class HomeController extends Controller
         $canAdmission   = $admissionStart && $admissionEnd && $now->between($admissionStart, $admissionEnd);
         $canEligibility = $eligStart && $eligEnd && $now->between($eligStart, $eligEnd);
 
-        // Enforce windows per application type (if dates configured)
+        // 🔹 Step 3: Enforce time windows for Admission / Eligibility
         if ($appType === 1 && !$canAdmission) {
             return back()->withErrors(
                 'Admission time is closed.' .
@@ -238,10 +244,20 @@ class HomeController extends Controller
             );
         }
 
-        // --- Common state checks ---
-        $userId = Auth::id();
+        // 🔹 Step 4: Extra rules & state checks
 
-        // Pending eligibility exists?
+        //  If any eligibility application already exists, block another one
+        if ($appType === 2) {
+            $hasAnyEligibility = Applicant::where('user_id', $userId)
+                ->where('applicationtype_id', 2)
+                ->exists();
+
+            if ($hasAnyEligibility) {
+                return back()->withErrors('You already have an eligibility application; you cannot submit another.');
+            }
+        }
+
+        // Check if user has a pending (not approved) eligibility
         $hasPendingEligibility = Applicant::where('user_id', $userId)
             ->where('applicationtype_id', 2)
             ->where(function ($q) {
@@ -250,17 +266,17 @@ class HomeController extends Controller
             })
             ->exists();
 
-        // If trying to apply for Admission while eligibility is pending -> block
+        // If Admission requested but eligibility still pending → block
         if ($appType === 1 && $hasPendingEligibility) {
-            return back()->withErrors('Your eligibility application is pending approval. Please wait for approval before applying for admission.');
+            return back()->withErrors('Your eligibility application is pending approval. Please wait before applying for admission.');
         }
 
-        // If trying to apply for Eligibility and there is already a pending eligibility -> block
+        // If Eligibility requested but one is pending → block
         if ($appType === 2 && $hasPendingEligibility) {
             return back()->withErrors('You already have an eligibility application pending approval. Please wait for a decision.');
         }
 
-        // If trying to apply for Eligibility and there is already an APPROVED eligibility -> block re-application
+        // If Eligibility requested but already approved → block
         if ($appType === 2) {
             $hasApprovedEligibility = Applicant::where('user_id', $userId)
                 ->where('applicationtype_id', 2)
@@ -271,7 +287,7 @@ class HomeController extends Controller
                 return back()->withErrors('You already have eligibility approval. Please proceed to admission application.');
             }
 
-            // If trying to apply for Eligibility but an Admission application already exists -> block
+            // If Admission already exists, block creating eligibility
             $hasAdmissionApplication = Applicant::where('user_id', $userId)
                 ->where('applicationtype_id', 1)
                 ->exists();
@@ -281,7 +297,7 @@ class HomeController extends Controller
             }
         }
 
-        // Prevent duplicate: same user + same type + same department
+        // 🔹 Step 5: Prevent duplicate: same user + same type + same department
         $duplicate = Applicant::where('applicationtype_id', $appType)
             ->where('department_id', $request->department)
             ->where('user_id', $userId)
@@ -291,7 +307,7 @@ class HomeController extends Controller
             return Redirect::back()->withErrors('Already applied in this department');
         }
 
-        // Create applicant (safer roll generation with transaction & row lock)
+        // 🔹 Step 6: Create new application (inside transaction for safety)
         $application = Applicationtype::find($appType);
         if (!$application) {
             return back()->withErrors('Invalid application type.');
@@ -299,8 +315,8 @@ class HomeController extends Controller
 
         DB::beginTransaction();
         try {
+            // Generate roll no. based on type
             if ($application->type === "Admission") {
-                // lock the table scope used for counting to avoid race
                 $nextSeq = Applicant::where('applicationtype_id', 1)->lockForUpdate()->count() + 1;
                 $roll = 100000 + $nextSeq;
             } else {
@@ -308,6 +324,7 @@ class HomeController extends Controller
                 $roll = 200000 + $nextSeq;
             }
 
+            // Save applicant record
             $applicant = new Applicant;
             $applicant->roll               = $roll;
             $applicant->payment_status     = 0;
@@ -319,7 +336,7 @@ class HomeController extends Controller
             $applicant->user_id            = $userId;
             $applicant->save();
 
-            // Clone attachments from prior application with most attachments (your existing logic)
+            // 🔹 Step 7: Clone attachments from the applicant with the most attachments (if any)
             $source = Applicant::where('user_id', $userId)
                 ->where('id', '!=', $applicant->id)
                 ->withCount('attachments')
@@ -336,8 +353,10 @@ class HomeController extends Controller
             return back()->withErrors('Failed to create application. Please try again.');
         }
 
+        // 🔹 Step 8: Redirect user to their new application form
         return redirect("application/" . $applicant->id);
     }
+
 
 
 
