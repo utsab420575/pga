@@ -2,52 +2,243 @@
 
 @section('css')
     <style>
-        .preview-container { background: white; margin: 0 auto; max-width: 900px; }
-        .print-button { margin: 20px 0; text-align: center; }
+        .preview-container {
+            background: white;
+            margin: 0 auto;
+            max-width: 900px;
+        }
+
+        .print-button {
+            margin: 20px 0;
+            text-align: center;
+        }
 
         /* HEADER */
-        .header-section { padding-bottom: 10px; margin-bottom: 15px; border-bottom: 2px solid #000; }
-        .header-row { display: grid; grid-template-columns: 120px 1fr 140px; align-items: center; gap: 12px; }
-        .header-logo img { width: 100%; max-width: 100px; height: auto; display: block; }
-        .header-titles { text-align: center; }
-        .header-titles h3 { margin: 0; font-size: 20px; font-weight: 700; }
-        .header-titles h4 { margin: 0; font-size: 14px; font-weight: 500; }
+        .header-section {
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #000;
+        }
+
+        .header-row {
+            display: grid;
+            grid-template-columns: 120px 1fr 140px;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-logo img {
+            width: 100%;
+            max-width: 100px;
+            height: auto;
+            display: block;
+        }
+
+        .header-titles {
+            text-align: center;
+        }
+
+        .header-titles h3 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .header-titles h4 {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
         .boxed-title {
-            margin-top: 15px; display: inline-block; padding: 10px 18px;
-             outline: 3px solid #000; outline-offset: 6px;
-            font-weight: 700; font-size: 18px;
+            margin-top: 15px;
+            display: inline-block;
+            padding: 10px 18px;
+            outline: 3px solid #000;
+            outline-offset: 6px;
+            font-weight: 700;
+            font-size: 18px;
         }
+
         .header-photo {
-            border: 1px solid #000; padding: 6px; text-align: center; min-height: 170px;
-            display: flex; flex-direction: column; justify-content: center; gap: 6px;
+            border: 1px solid #000;
+            padding: 6px;
+            text-align: center;
+            min-height: 170px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 6px;
         }
-        .header-photo img { width: 120px; height: 150px; object-fit: cover; display: block; margin: 0 auto; }
+
+        .header-photo img {
+            width: 120px;
+            height: 150px;
+            object-fit: cover;
+            display: block;
+            margin: 0 auto;
+        }
 
         /* SECTIONS */
-        .section-title { background: #f8f9fa; padding: 8px 12px; margin: 20px 0 10px; font-weight: bold; border-left: 4px solid #007bff; }
+        .section-title {
+            background: #f8f9fa;
+            padding: 8px 12px;
+            margin: 20px 0 10px;
+            font-weight: bold;
+            border-left: 4px solid #007bff;
+        }
 
         /* TABLES */
-        .info-table, .info-table2 { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+        .info-table, .info-table2 {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+
         .info-table th, .info-table td,
-        .info-table2 th, .info-table2 td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        .info-table th { background-color: #f8f9fa; width: 30%; font-weight: normal; }
-        .info-table2 th { background-color: #f8f9fa; font-weight: normal; }
+        .info-table2 th, .info-table2 td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .info-table th {
+            background-color: #f8f9fa;
+            width: 30%;
+            font-weight: normal;
+        }
+
+        .info-table2 th {
+            background-color: #f8f9fa;
+            font-weight: normal;
+        }
 
         /* REFERENCES: 2 columns on screen and print */
-        .refs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .ref-card { border: 1px solid #ddd; padding: 10px; }
+        .refs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
 
-        .clearfix::after { content: ""; display: table; clear: both; }
+        .ref-card {
+            border: 1px solid #ddd;
+            padding: 10px;
+        }
+
+        .clearfix::after {
+            content: "";
+            display: table;
+            clear: both;
+        }
 
         /* Keep “To + IDs” two columns in print as well */
-        .col-6 { flex: 0 0 50% !important; max-width: 50% !important; }
+        .col-6 {
+            flex: 0 0 50% !important;
+            max-width: 50% !important;
+        }
+
+
+        /* Dept-only verification block */
+        .dept-only-title {
+            text-align: center;
+            font-weight: 700;
+            text-decoration: underline;
+            margin: 28px 0 10px;
+        }
+
+        .dept-note {
+            margin: 0 0 8px;
+            font-weight: 600;
+        }
+
+        .dept-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .dept-table th, .dept-table td {
+            border: 1px solid #000;
+            padding: 6px 8px;
+        }
+
+        .dept-table thead th {
+            background: #fff;
+            color: #000;
+            text-align: center;
+        }
+
+        .dept-table .sl {
+            width: 60px;
+            text-align: center;
+        }
+
+        .dept-table .yn {
+            width: 60px;
+            text-align: center;
+        }
+
+        /* Signature / meta tables */
+        .sig-table, .meta-table, .sig3-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+        }
+
+        .sig-table th, .sig-table td,
+        .meta-table th, .meta-table td,
+        .sig3-table th, .sig3-table td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .meta-table th {
+            font-weight: 700;
+        }
+
+        .sig-space {
+            height: 90px;
+        }
+
+        /* space for signatures */
+        .meta-space {
+            height: 35px;
+        }
+
+        /* space to handwrite numbers/dates */
+
 
         @media print {
-            @page { size: A4; margin: 12mm; }
-            .print-button, .no-print { display: none !important; }
-            .preview-container { margin: 0; max-width: none; }
-            body { font-size: 12px; }
-            .header-section, .row.pb-3, .refs { page-break-inside: avoid; }
+            @page {
+                size: A4;
+                margin: 12mm;
+            }
+
+            .print-button, .no-print {
+                display: none !important;
+            }
+
+            .preview-container {
+                margin: 0;
+                max-width: none;
+            }
+
+            body {
+                font-size: 12px;
+            }
+
+            .header-section, .row.pb-3, .refs {
+                page-break-inside: avoid;
+            }
+
+            .sig-space {
+                height: 90px;
+            }
+
+            .sig-table, .meta-table, .sig3-table {
+                page-break-inside: avoid;
+            }
         }
     </style>
 @endsection
@@ -112,11 +303,11 @@
                             </tr>
                             <tr>
                                 <th width="25%">Transaction ID:</th>
-                                <td  width="75%"><strong>{{ $applicant->payment?->trxid ?? 'N/A' }}</strong></td>
+                                <td width="75%"><strong>{{ $applicant->payment?->trxid ?? 'N/A' }}</strong></td>
                             </tr>
                             <tr>
                                 <th width="25%">Eligibility Check:</th>
-                                <td  width="75%">{{ ($hasEligibility ?? 0) == 1 ? 'Approved' : 'None' }}</td>
+                                <td width="75%">{{ ($hasEligibility ?? 0) == 1 ? 'Approved' : 'None' }}</td>
                             </tr>
                         </table>
                     </div>
@@ -325,7 +516,8 @@
                             <td>{{ $index + 1 }}</td>
                             <td>{{ $job->designation }}</td>
                             <td>{{ $job->organization }}</td>
-                            <td>{{ optional($job->from)->format('d-m-Y') }} to {{ optional($job->to)->format('d-m-Y') }}</td>
+                            <td>{{ optional($job->from)->format('d-m-Y') }}
+                                to {{ optional($job->to)->format('d-m-Y') }}</td>
                             <td>{{ $job->details }}</td>
                         </tr>
                     @endforeach
@@ -352,12 +544,17 @@
             @endif
 
             {{-- Declaration and Signature --}}
-            <p>18. I hereby apply for admission in the program <b>{{ $applicant->degree->degree_name ?? 'N/A' }}</b> in the <b>{{ $applicant->department->full_name ?? 'N/A' }}</b> Department/Institute of DUET, Gazipur as full-time/part-time student. I agree to abide by all the rules and regulations of the University.</p>
+            <p>18. I hereby apply for admission in the program <b>{{ $applicant->degree->degree_name ?? 'N/A' }}</b> in
+                the <b>{{ $applicant->department->full_name ?? 'N/A' }}</b> Department/Institute of DUET, Gazipur as
+                full-time/part-time student. I agree to abide by all the rules and regulations of the University.</p>
 
             <p>19. Declaration</p>
             <div style="margin:20px 0; padding:15px; border:1px solid #ddd;">
                 <p style="text-align: justify; margin-bottom: 15px;">
-                    I declare that the information provided in this form is correct, true and complete to the best of my knowledge and belief. If any information is found false, incorrect, and incomplete or if any ineligibility is detected before or after the examination, any legal action can be taken against me by the authority including the cancellation of my candidature.
+                    I declare that the information provided in this form is correct, true and complete to the best of my
+                    knowledge and belief. If any information is found false, incorrect, and incomplete or if any
+                    ineligibility is detected before or after the examination, any legal action can be taken against me
+                    by the authority including the cancellation of my candidature.
                 </p>
 
                 <div style="display:flex; justify-content:space-between; margin-top:40px;">
@@ -384,11 +581,116 @@
             </div>
 
             {{-- Footer --}}
-            <div style="margin-top:30px; padding-top:15px; border-top:1px solid #ddd; text-align:center; font-size:12px; color:#666;">
+            <div style="margin-top:30px; padding-top:15px; border-top:1px solid #000; text-align:center; font-size:12px; color:#000;">
+            </div>
+
+            {{-- =========================
+     Use only for Department/Institute
+     ========================= --}}
+            <div class="dept-only-title">Use only for respective Department/Institute</div>
+
+            <p class="dept-note">
+                <strong>20.</strong> List of necessary documents have been verified and found correct as follows
+                <em>(Use √ mark)</em>:
+            </p>
+
+            @php
+                $docs = [
+                    'Two recent passport size colored photographs',
+                    'Attested copy of SSC/equivalent Certificate',
+                    'Attested copy of SSC or equivalent Mark Sheet/Grade Sheet',
+                    'Attested copy of HSC or equivalent/Diploma in Engineering Certificate',
+                    'Attested copy of HSC or equivalent/Diploma in Engineering Mark Sheet/Grade Sheet/Transcript',
+                    "Attested copy of B Sc. Engg /B Sc. Hon's/equivalent Certificate",
+                    "Attested copy of B Sc. Engg /B Sc. Hon's/equivalent Mark Sheet/Transcript",
+                    'Attested copy of M Engg /M Sc. Engg /M Sc./M Phil/equivalent Certificate',
+                    'Attested copy of M Engg /M Sc. Engg /M Sc./M Phil/equivalent Mark Sheet/Transcript',
+                    'Attested copy of Testimonial from the institute last attended',
+                    'NOC from employer (if applicable)',
+                ];
+            @endphp
+
+            <table class="dept-table">
+                <thead>
+                <tr>
+                    <th class="sl" rowspan="2">SL<br>No.</th>
+                    <th rowspan="2">Particulars</th>
+                    <th class="yn" colspan="2">Submitted<br>Documents</th>
+                </tr>
+                <tr>
+                    <th class="yn">Yes</th>
+                    <th class="yn">No</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach($docs as $i => $item)
+                    <tr>
+                        <td class="sl">({{ $i+1 }})</td>
+                        <td>{{ $item }}</td>
+                        <td class="yn"></td>
+                        <td class="yn"></td>
+                    </tr>
+                @endforeach
+                </tbody>
+            </table>
+
+            {{-- 1) Applicant + Authorized Teacher (two columns) --}}
+            <table class="sig-table">
+                <thead>
+                <tr>
+                    <th>Signature of the applicant</th>
+                    <th>Signature of the Authorized Teacher</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td class="sig-space"></td>
+                    <td class="sig-space"></td>
+                </tr>
+                </tbody>
+            </table>
+
+            {{-- 2) Reg / Student / Enrollment (three columns) --}}
+            <table class="meta-table">
+                <thead>
+                <tr>
+                    <th>Reg. No.</th>
+                    <th>Student No.</th>
+                    <th>Date of Enrollment</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td class="meta-space"></td>
+                    <td class="meta-space"></td>
+                    <td class="meta-space"></td>
+                </tr>
+                </tbody>
+            </table>
+
+            {{-- 3) Three signatories (three columns) --}}
+            <table class="sig3-table">
+                <thead>
+                <tr>
+                    <th>Signature of the<br>PG Coordinator</th>
+                    <th>Signature of the<br>Head of the Department/<br>Director of the Institute</th>
+                    <th>Signature of the<br>Registrar/Authorized Officer</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td class="sig-space"></td>
+                    <td class="sig-space"></td>
+                    <td class="sig-space"></td>
+                </tr>
+                </tbody>
+            </table>
+
+            {{-- Footer --}}
+            <div style="margin-top:30px; padding-top:15px; text-align:center; font-size:12px; color:#666;">
                 <p>Generated on: {{ now()->format('d-m-Y H:i:s') }}</p>
                 <p>This is a computer-generated document. No signature is required for validity.</p>
             </div>
-
         </div>
     </div>
 @endsection

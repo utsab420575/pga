@@ -515,6 +515,22 @@ class HomeController extends Controller
             \DB::table('education_infos')->insert($data);
         }
 
+        // ✅ Copy references (if any)
+        $refs = \DB::table('references')
+            ->where('applicant_id', $oldApplicantId)
+            ->get();
+
+        if ($refs->isNotEmpty()) {
+            $rows = [];
+            foreach ($refs as $ref) {
+                $data = (array) $ref;      // cast row object to array
+                unset($data['id']);        // new PK will be generated
+                $data['applicant_id'] = $newApplicantId; // reassign owner
+                $rows[] = $data;
+            }
+            \DB::table('references')->insert($rows); // bulk insert
+        }
+
         // ✅ Copy attachments + files (if needed)
         $this->cloneAttachmentsWithFiles($oldApplicantId, $newApplicantId);
     }

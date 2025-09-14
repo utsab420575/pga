@@ -76,8 +76,8 @@
                                                 @if($application->final_submit == 1)
                                                     {{-- ✅ Already submitted → show View button --}}
                                                     <a href="{{ (int)$application->applicationtype_id === 1
-                                                            ? route('applicant.preview.admission.form', $application->id)
-                                                            : route('applicant.preview.eligibility.form', $application->id) }}"
+                                                            ? url('applicant/application-postgraduate-form/'.$application->id)
+                                                            : url('applicant/eligibility-form/'.$application->id) }}"
                                                        class="btn btn-primary btn-sm mb-1"
                                                        target="_blank" rel="noopener noreferrer">
                                                         <i class="fas fa-eye"></i>

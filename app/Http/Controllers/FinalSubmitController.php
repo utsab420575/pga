@@ -122,7 +122,7 @@ class FinalSubmitController extends Controller
             return back()->withErrors('You must upload your HSC or equivalent / Diploma mark sheet/grade sheet/transcript.');
         }
 
-        // --- Type 9: MSc Mark Sheet
+        // --- Type 9: BSC Mark Sheet
         if (($typeCounts[9] ?? 0) < 1) {
             return back()->withErrors('You must upload your BSC or equivalent mark sheet/grade sheet/transcript.');
         }
@@ -140,6 +140,21 @@ class FinalSubmitController extends Controller
         }
 
 
+        //for PHD you need to upload msc certificate and transcript
+        if ((int) $applicant->degree_id === 8) {
+            if (($typeCounts[6] ?? 0) < 1) {
+                return back()->withErrors(
+                    'You must upload the M Engg. / M Sc. Engg. / M Sc. / M Phil. / equivalent certificate.'
+                );
+            }
+
+            if (($typeCounts[10] ?? 0) < 1) {
+                return back()->withErrors(
+                    'You must upload the M Engg. / M Sc. Engg. / M Sc. / M Phil. / equivalent mark sheet/transcript.'
+                );
+            }
+        }
+
 
 
 
@@ -155,6 +170,7 @@ class FinalSubmitController extends Controller
 
     public function submitApplication(Request $request, Applicant $applicant)
     {
+        //return $applicant;
 
         $request->validate([
             'confirm' => 'accepted',
@@ -222,6 +238,8 @@ class FinalSubmitController extends Controller
         // ✅ 5. Check attachments by type
         $attachments = $applicant->attachments;
 
+        //return $attachments;
+
         // Count attachments per type
         $typeCounts = $attachments->groupBy('attachment_type_id')->map->count();
 
@@ -271,6 +289,20 @@ class FinalSubmitController extends Controller
         }
 
 
+
+        if ((int) $applicant->degree_id == 8) {
+            if (($typeCounts[6] ?? 0) < 1) {
+                return back()->withErrors(
+                    'You must upload the M Engg. / M Sc. Engg. / M Sc. / M Phil. / equivalent certificate.'
+                );
+            }
+
+            if (($typeCounts[10] ?? 0) < 1) {
+                return back()->withErrors(
+                    'You must upload the M Engg. / M Sc. Engg. / M Sc. / M Phil. / equivalent mark sheet/transcript.'
+                );
+            }
+        }
 
 
 
