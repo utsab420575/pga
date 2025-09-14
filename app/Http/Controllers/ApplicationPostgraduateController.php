@@ -7,6 +7,7 @@ use App\Models\AttachmentType;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class ApplicationPostgraduateController extends Controller
 {
@@ -108,9 +109,15 @@ class ApplicationPostgraduateController extends Controller
             }
         }
 
+        //  Does the logged-in user have ANY approved eligibility?
+        $hasEligibility = Applicant::where('user_id', auth()->id())
+            ->where('eligibility_approve', 1)
+            ->exists();
+
         return view('applicant.preview_admission_form', [
             'applicant' => $applicant,
             'setting' => $setting,
+            'hasEligibility' => $hasEligibility,
         ]);
     }
 
