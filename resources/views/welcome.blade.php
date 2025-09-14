@@ -32,6 +32,7 @@
                           <td align="left">
                               Step 1. If you don't have any applicant account then click
                               <a href="{{ URL::to('register') }}"><b>"Create Applicant Account"</b></a><br><br>
+                              {{--<a href="{{ URL::to('register') }}"><b>"Create Applicant Account"</b></a><br><br>--}}
 
                               Step 2. Then verify your contact number.<br><br>
 
