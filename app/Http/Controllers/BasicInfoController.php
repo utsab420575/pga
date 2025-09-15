@@ -23,6 +23,7 @@ class BasicInfoController extends Controller
 
     public function store(Request $request)
     {
+        //return $request;
         $applicant = Applicant::findOrFail($request->applicant_id);
 
         // ✅ Four Conditions
@@ -125,7 +126,7 @@ class BasicInfoController extends Controller
             'm_name'          => 'required|string|max:255',
             'nationality'     => 'required|string|max:100',
             'dob'             => 'required|date',
-            'religion'        => 'required|in:Islam,Hindu,Cristan,Baudda,others',
+            'religion'        => 'required|in:Islam,Hindu,Cristan,Baudda,Others',
             'gender'          => 'required|in:Male,Female,Other',
             'marital_status'  => 'required|in:Single,Married,Divorced,Widowed',
             'full_name'       => 'nullable|string|max:255',

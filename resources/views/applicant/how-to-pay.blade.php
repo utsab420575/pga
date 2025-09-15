@@ -13,12 +13,12 @@
 
         @if(session('Status'))
         <p class="alert alert-info">{{session('Status')}}</p>
-        @endif 
+        @endif
             <div class="card">
                 <div class="card-header"><b>{{ __('How to pay?') }}</b></div>
                 <div class="card-body" align="center">
                     <p align="justify">If you face any kind of difficulties after payment, please contact with "ictcell@duet.ac.bd" with the following supporting documents.<br><br>1. Screenshot of the transaction<br>2. Applicant ID<br><br>We will take necessary steps within few hours.</p>
-                    <img src="{{asset('public/nagad.png')}}" class="img-thumbnail" alt="Cinque Terre">
+                    <img src="{{asset('bkash_web.png')}}" class="img-thumbnail" alt="Cinque Terre">
                 </div>
             </div>
         </div>

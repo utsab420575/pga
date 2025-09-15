@@ -400,14 +400,14 @@
                         </div>
                         <div class="form-group col-md-4">
                             <label>Religion</label><span class="text-danger">*</span>
-                            @php $religionOld = strtolower(old('religion', $basicInfo->religion ?? '')); @endphp
+                            @php $religionOld = old('religion', $basicInfo->religion ?? ''); @endphp
                             <select name="religion" class="form-control" required>
                                 <option value="">--select--</option>
-                                <option value="islam"   {{ $religionOld==='islam'   ? 'selected' : '' }}>Islam</option>
-                                <option value="hindu"   {{ $religionOld==='hindu'   ? 'selected' : '' }}>Hindu</option>
-                                <option value="cristan" {{ $religionOld==='cristan' ? 'selected' : '' }}>Cristan</option>
-                                <option value="baudda"  {{ $religionOld==='baudda'  ? 'selected' : '' }}>Baudda</option>
-                                <option value="others"  {{ $religionOld==='others'  ? 'selected' : '' }}>Others</option>
+                                <option value="Islam"   {{ $religionOld==='Islam'   ? 'selected':'' }}>Islam</option>
+                                <option value="Hindu"   {{ $religionOld==='Hindu'   ? 'selected':'' }}>Hindu</option>
+                                <option value="Cristan" {{ $religionOld==='Cristan' ? 'selected':'' }}>Cristan</option>
+                                <option value="Baudda"  {{ $religionOld==='Baudda'  ? 'selected':'' }}>Baudda</option>
+                                <option value="Others"  {{ $religionOld==='Others'  ? 'selected':'' }}>Others</option>
                             </select>
                         </div>
                         <div class="form-group col-md-4">

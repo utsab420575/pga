@@ -629,13 +629,13 @@
                         <div class="form-group col-md-6">
                             <label>Religion</label><span class="text-danger">*</span>
                             @php $religionOld = old('religion', $basicInfo->religion ?? ''); @endphp
-                            <select name="religion" class="form-control">
+                            <select name="religion" class="form-control" required>
                                 <option value="">--select--</option>
                                 <option value="Islam"   {{ $religionOld==='Islam'   ? 'selected':'' }}>Islam</option>
                                 <option value="Hindu"   {{ $religionOld==='Hindu'   ? 'selected':'' }}>Hindu</option>
                                 <option value="Cristan" {{ $religionOld==='Cristan' ? 'selected':'' }}>Cristan</option>
                                 <option value="Baudda"  {{ $religionOld==='Baudda'  ? 'selected':'' }}>Baudda</option>
-                                <option value="others"  {{ $religionOld==='Others'  ? 'selected':'' }}>Others</option>
+                                <option value="Others"  {{ $religionOld==='Others'  ? 'selected':'' }}>Others</option>
                             </select>
                         </div>
                     </div>
