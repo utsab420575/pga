@@ -437,7 +437,7 @@
 
                         <div class="form-group col-md-6">
                             <label>Passport Number </label><span class="text-mute"> (If any)</span>
-                            <input type="number" name="passport_no" class="form-control"
+                            <input type="text" name="passport_no" class="form-control"
                                    value="{{ old('passport_no', $basicInfo->passport_no ?? '') }}">
                         </div>
                     </div>

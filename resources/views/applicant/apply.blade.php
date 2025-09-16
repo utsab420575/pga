@@ -149,7 +149,7 @@
             4: [5,6,8],   // CSE (Computer Science and Engineering) → M Engg., M Sc. Engg., Ph. D
             5: [5,6,8],   // TE (Textile Engineering) → M Engg., M Sc. Engg., Ph. D
             6: [5,6],     // FE (Food Engineering) → M Engg., M Sc. Engg.
-            7: [],        // IPE (Industrial and Production Engineering) → no degree mapped yet
+            7: [5,6],        // IPE (Industrial and Production Engineering) → no degree mapped yet
             8: [1,3,4],   // IWE (Institute of Water and Environment) → PGD, M Sc. in WEM, M in WEM
             9: [5,6,1],   // IICT (Institute of Information and Communication Technology) → M Engg., M Sc. Engg., PGD
             10: [5,6,1],  // IEE (Institute of Energy Engineering) → M Engg., M Sc. Engg., PGD
