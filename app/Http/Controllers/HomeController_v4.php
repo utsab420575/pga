@@ -35,7 +35,7 @@ use Illuminate\Support\Facades\Response;
 use Illuminate\Console\View\Components\Alert;
 use DateTime;
 
-class HomeController extends Controller
+class HomeController_v4 extends Controller
 {
     /**
      * Create a new controller instance.
@@ -376,189 +376,79 @@ class HomeController extends Controller
 
     public function edit_application($id)
     {
-        $applicant = Applicant::where('id', $id)
-            ->where('user_id', Auth::id())
-            ->first();
-
-        if (!$applicant) {
-            return back()->withErrors('Application not found');
+        $applicant = Applicant::where('id',$id)->where('user_id',Auth::user()->id)->first();
+      	if($applicant->edit_per === 0 && $applicant->payment_status === 1)
+        {
+          return redirect::back()->withErrors('Already paid');
+        }
+        if($applicant)
+        {
+            $degrees = Degree::all();
+            $departments = Department::all();
+            $studenttypes = Studenttype::all();
+            $applicationtypes = Applicationtype::all();
+            return view('applicant.edit-application')->with('applicant',$applicant)->with('degrees',$degrees)->with('departments',$departments)->with('studenttypes',$studenttypes)->with('applicationtypes',$applicationtypes);
+        }
+        else
+        {
+            return redirect::back()->withErrors('Application not found');
         }
 
-        // Edit only if payment==0 AND final_submit==0
-        if ((int)$applicant->payment_status === 1 || (int)$applicant->final_submit === 1) {
-            return back()->withErrors('Editing not allowed after payment or final submission.');
-        }
-
-        $degrees          = Degree::all();
-        $departments      = Department::all();
-        $studenttypes     = Studenttype::all();
-        $applicationtypes = Applicationtype::all();
-
-        // Same flag your apply blade/JS expects
-        $hasApprovalEligibility = Applicant::where('user_id', Auth::id())
-            ->where('applicationtype_id', 2)
-            ->where('eligibility_approve', 1)
-            ->exists();
-
-        return view('applicant.edit-application', compact(
-            'applicant', 'degrees', 'departments', 'studenttypes', 'applicationtypes', 'hasApprovalEligibility'
-        ));
     }
 
     public function edit_application_submit($id, Request $request)
     {
-        $applicant = Applicant::where('id', $id)
-            ->where('user_id', Auth::id())
-            ->first();
-
-        if (!$applicant) {
-            return back()->withErrors('Application not found');
+        $this->validate($request,[
+        'degree' => ['required'],
+        'department' => ['required'],
+        'studenttype' => ['required'],
+        'applicationtype' => ['required'],
+        'declaration' =>'accepted'
+    ]);
+      	$application = Applicationtype::find($request->applicationtype);
+        $applicant = Applicant::where('id',$id)->where('user_id',Auth::user()->id)->first();
+		if($applicant->edit_per === 0 && $applicant->payment_status === 1)
+        {
+          return redirect::back()->withErrors('Already paid');
         }
+        if($applicant)
+        {
+            $checkApplication = Applicant::where('applicationtype_id',$request->applicationtype)->where('department_id',$request->department)->where('user_id',Auth::user()->id)->where('id', '!=', $applicant->id)->first();
 
-        // Edit only if payment==0 AND final_submit==0
-        if ((int)$applicant->payment_status === 1 || (int)$applicant->final_submit === 1) {
-            return back()->withErrors('Editing not allowed after payment or final submission.');
-        }
+          if($checkApplication)
+          {
+            return redirect::back()->withErrors('Already applied in this department');
+          }
+          else
+          {
+                if($applicant->payment_status === 0)
+                {
+                    if($application->type == "Admission")
+                    {
+                      $applicant->roll = 100000+Applicant::where('applicationtype_id',1)->count()+1;
+                    }
+                    else
+                    {
+                      $applicant->roll = 200000+Applicant::where('applicationtype_id',2)->count()+1;
+                    }
+                  $applicant->applicationtype_id = $request->applicationtype;
+                }
+                $applicant->edit_per = 0;
+                $applicant->department_id = $request->department;
+                $applicant->studenttype_id = $request->studenttype;
+                $applicant->degree_id = $request->degree;
 
-        // Validate (university_type is request-only; used for gating)
-        $this->validate($request, [
-            'degree'          => ['required'],
-            'department'      => ['required'],
-            'studenttype'     => ['required'],
-            'applicationtype' => ['required'],
-            'university_type' => ['required', 'in:private,public'],
-            'declaration'     => ['accepted'],
-        ]);
+                $applicant->save();
 
-        $userId       = Auth::id();
-        $newAppType   = (int) $request->applicationtype;          // target type from form (1=Admission, 2=Eligibility)
-        $oldAppType   = (int) $applicant->applicationtype_id;     // current stored type
-        $changingType = $newAppType !== $oldAppType;
-
-        // Load settings (windows) like apply_now_submit
-        $setting = Setting::query()->orderByDesc('id')->first();
-        if (!$setting) {
-            return back()->withErrors('Setting Table Data Not Found');
-        }
-
-        $now = now();
-
-        $admissionStart = $setting->start_date
-            ? \Illuminate\Support\Carbon::parse($setting->start_date)->startOfDay() : null;
-        $admissionEnd = $setting->end_date
-            ? \Illuminate\Support\Carbon::parse($setting->end_date)->endOfDay() : null;
-
-        $eligStart = $setting->eligibility_start_date
-            ? \Illuminate\Support\Carbon::parse($setting->eligibility_start_date)->startOfDay() : null;
-        $eligEnd = $setting->eligibility_last_date
-            ? \Illuminate\Support\Carbon::parse($setting->eligibility_last_date)->endOfDay() : null;
-
-        $canAdmission   = $admissionStart && $admissionEnd && $now->between($admissionStart, $admissionEnd);
-        $canEligibility = $eligStart && $eligEnd && $now->between($eligStart, $eligEnd);
-
-        // Enforce time windows for the TARGET type (even if only department/degree changed)
-        if ($newAppType === 1 && !$canAdmission) {
-            return back()->withErrors(
-                'Admission time is closed.' .
-                ($admissionStart && $admissionEnd
-                    ? ' Window: ' . $admissionStart->toDateString() . ' – ' . $admissionEnd->toDateString() . '.'
-                    : '')
-            );
-        }
-        if ($newAppType === 2 && !$canEligibility) {
-            return back()->withErrors(
-                'Eligibility time is closed.' .
-                ($eligStart && $eligEnd
-                    ? ' Window: ' . $eligStart->toDateString() . ' – ' . $eligEnd->toDateString() . '.'
-                    : '')
-            );
-        }
-
-        // Eligibility rule flags (same as apply)
-        $hasPendingEligibility = Applicant::where('user_id', $userId)
-            ->where('applicationtype_id', 2)
-            ->where(function ($q) {
-                $q->whereNull('eligibility_approve')->orWhere('eligibility_approve', 0);
-            })
-            ->exists();
-
-        $hasApprovedEligibility = Applicant::where('user_id', $userId)
-            ->where('applicationtype_id', 2)
-            ->where('eligibility_approve', 1)
-            ->exists();
-
-        $hasAdmissionApplication = Applicant::where('user_id', $userId)
-            ->where('applicationtype_id', 1)
-            ->exists();
-
-        // Apply the same “extra rules & state checks” against the TARGET type
-        if ($newAppType === 1 /* Admission */) {
-            // Block if there is a pending eligibility
-            if ($hasPendingEligibility) {
-                return back()->withErrors('Your eligibility application is pending approval. Please wait before applying for admission.');
-            }
-            // (Approved eligibility is fine; admission may proceed as per your rules)
-        }
-
-        if ($newAppType === 2 /* Eligibility */) {
-            // Only one eligibility application per user
-            $hasAnyEligibility = Applicant::where('user_id', $userId)
-                ->where('applicationtype_id', 2)
-                ->where('id', '!=', $applicant->id)   // exclude the one being edited
-                ->exists();
-            if ($hasAnyEligibility) {
-                return back()->withErrors('You already have an eligibility application; you cannot submit another.');
-            }
-            // Block if another eligibility is pending (excluding this one)
-            if ($hasPendingEligibility && $oldAppType !== 2) { // changing to eligibility while another pending exists
-                return back()->withErrors('You already have an eligibility application pending approval. Please wait for a decision.');
-            }
-            // Block if eligibility already approved
-            if ($hasApprovedEligibility && $oldAppType !== 2) {
-                return back()->withErrors('You already have eligibility approval. Please proceed to admission application.');
-            }
-            // Block creating eligibility if admission application exists
-            if ($hasAdmissionApplication && $oldAppType !== 2) {
-                return back()->withErrors('You already have an admission application. You cannot apply for eligibility now.');
+                return redirect("application/".$applicant->id);
             }
         }
-
-        // Private/Public gating (same as your blade JS)
-        $hasApprovalEligibility = $hasApprovedEligibility; // reuse computed flag
-        $uniType = $request->input('university_type');     // not stored
-        $allowedAppTypeIds = $uniType === 'private'
-            ? ($hasApprovalEligibility ? [1] : [2])
-            : [1];
-
-        if (!in_array($newAppType, $allowedAppTypeIds, true)) {
-            return back()->withErrors('Selected application type is not allowed for the chosen university type.');
+        else
+        {
+            return redirect::back()->withErrors('Application not found');
         }
 
-        // Prevent duplicate: same user + same department + same app type (exclude this record)
-        $duplicate = Applicant::where('user_id', $userId)
-            ->where('department_id', $request->department)
-            ->where('applicationtype_id', $newAppType)
-            ->where('id', '!=', $applicant->id)
-            ->first();
-
-        if ($duplicate) {
-            return back()->withErrors('Already applied in this department');
-        }
-
-        // ✅ Update fields (no roll generation in edit)
-        $applicant->department_id      = $request->department;
-        $applicant->studenttype_id     = $request->studenttype;
-        $applicant->degree_id          = $request->degree;
-        $applicant->applicationtype_id = $newAppType;
-
-        // If you still use edit_per to disable further edits after this save, keep:
-        $applicant->edit_per = 0;
-
-        $applicant->save();
-
-        return redirect("application/" . $applicant->id);
     }
-
 
     public function my_application(){
 
