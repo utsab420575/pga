@@ -8,9 +8,8 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>{{ config('app.name', 'Laravel') }}</title>
-
-    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/364/364089.png">
-
+  
+  <link rel="icon" type="image/png" href="{{ asset('duet.png') }}">
 
     <!-- Bootstrap 4.1.3 (CDN) -->
     <link rel="stylesheet"
@@ -52,9 +51,6 @@
                     </li>
                     @if (Route::has('register'))
                         <li class="nav-item">
-                            {{--<a class="nav-link btn btn-info text-white" href="{{ url('register') }}">
-                                {{ __('Create Applicant Account') }}
-                            </a>--}}
                             <a class="nav-link btn btn-info text-white" href="{{ url('register') }}">
                                 {{ __('Create Applicant Account') }}
                             </a>

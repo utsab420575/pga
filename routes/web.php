@@ -276,6 +276,5 @@ Route::get('applicant/preview-eligibility-form/{applicant}', [ApplicationPostgra
 //Payment Route
 Route::get('/bkash-pull', [PgaPaymentApiController::class, 'bkashPull']);
 Route::get('/bkash-push', [PgaPaymentApiController::class, 'bkashPush']);
-
 Route::get('/agrani-pull', [PgaPaymentApiController::class, 'agraniPull']);
 Route::get('/agrani-push', [PgaPaymentApiController::class, 'agraniPush']);

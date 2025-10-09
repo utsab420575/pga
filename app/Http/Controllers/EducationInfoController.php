@@ -43,7 +43,7 @@ class EducationInfoController extends Controller
             'institute' => 'required|string|max:255',
             'year_of_passing' => 'nullable|integer|min:1900|max:2100',
             'field' => 'nullable|string|max:255',
-            'cgpa' => 'nullable|numeric|min:0|max:5',
+            'cgpa' => 'nullable|string|max:255',
             'applicant_id' => 'required|exists:applicants,id',
         ]);
 
@@ -97,7 +97,7 @@ class EducationInfoController extends Controller
             'institute' => 'required|string|max:255',
             'year_of_passing' => 'nullable|integer|min:1900|max:2100',
             'field' => 'nullable|string|max:255',
-            'cgpa' => 'nullable|numeric|min:0|max:5',
+            'cgpa' => 'nullable|string|max:255',
             'applicant_id' => 'required|exists:applicants,id',
         ]);
 

@@ -559,7 +559,6 @@ class HomeController extends Controller
         return redirect("application/" . $applicant->id);
     }
 
-
     public function my_application(){
 
         $applications = Applicant::where('user_id',Auth::user()->id)->get();

@@ -408,7 +408,7 @@
                                 <option value="Cristan" {{ $religionOld==='Cristan' ? 'selected':'' }}>Cristan</option>
                                 <option value="Baudda"  {{ $religionOld==='Baudda'  ? 'selected':'' }}>Baudda</option>
                                 <option value="Others"  {{ $religionOld==='Others'  ? 'selected':'' }}>Others</option>
-                            </select>
+                            </select>                      
                         </div>
                         <div class="form-group col-md-4">
                             <label>Gender</label><span class="text-danger">*</span>
@@ -592,7 +592,7 @@
                         </div>
                         <div class="form-group col-md-6">
                             <label>CGPA/GPA/Class</label><span class="text-danger">*</span>
-                            <input type="number" step="0.01" name="cgpa" class="form-control" required
+                            <input type="text" name="cgpa" class="form-control" required
                                    value="{{ old('cgpa', $eligibilityDegree->cgpa ?? '') }}">
                         </div>
 
@@ -695,7 +695,7 @@
                         <div class="form-group col-md-6"><label>Year of Passing</label><span class="text-danger">*</span><input type="number" name="year_of_passing" class="form-control" min="1900" max="2100" required></div>
                         <div class="form-group col-md-6"><label>Discipline/Field</label><span class="text-danger">*</span><input type="text" name="field" class="form-control"></div>
                     </div>
-                    <div class="form-group"><label>CGPA/Class/ Division</label><span class="text-danger">*</span><input type="number" step="0.01" name="cgpa" class="form-control"></div>
+                    <div class="form-group"><label>CGPA/Class/ Division</label><span class="text-danger">*</span><input type="text" name="cgpa" class="form-control"></div>
                 </div>
 
                 <div class="modal-footer">

@@ -49,7 +49,7 @@ class PgaPaymentApiController extends Controller
         }
 
         try {
-
+            
 
             // 3) Find applicant
             $applicant = Applicant::where('roll', $examRoll)->first();
@@ -186,7 +186,7 @@ class PgaPaymentApiController extends Controller
         $amount    = (float) $request->input('amount');
         $today     = Carbon::today();
 
-        // 2) Auth check (hash of G66WG6OEJOL2J5J8P44E6D9CJ2HS)
+        // 2) Auth check (hash of UXZPQ6OEJOL2J5J8P44E6D9CJ2HS)
         if (md5($authkey) !== 'ea737681fab0183ca42dca52400f20bf') {
             return response()->json([
                 "code"    => 403,
@@ -345,8 +345,8 @@ class PgaPaymentApiController extends Controller
             ]);
         }
     }
-
-
+  
+  
     public function agraniPull(Request $request)
     {
 
@@ -371,7 +371,7 @@ class PgaPaymentApiController extends Controller
 
         // 2) Authentication check (fixed md5 hash)
         //for pga authkey is: UXZPQ6OEJOL2J5J8P44E6D9CJ2HS
-        if (md5($authkey) !== '722d04592d25056bfb6172324bfbd521') {
+        if (md5($authkey) !== 'ea737681fab0183ca42dca52400f20bf') {
             return response()->json([
                 "code"    => 403,
                 "status"  => "error",
@@ -518,8 +518,8 @@ class PgaPaymentApiController extends Controller
         $amount    = (float) $request->input('amount');
         $today     = Carbon::today();
 
-        // 2) Auth check (hash of G66WG6OEJOL2J5J8P44E6D9CJ2HS)
-        if (md5($authkey) !== '722d04592d25056bfb6172324bfbd521') {
+        // 2) Auth check (hash of UXZPQ6OEJOL2J5J8P44E6D9CJ2HS)
+        if (md5($authkey) !== 'ea737681fab0183ca42dca52400f20bf') {
             return response()->json([
                 "code"    => 403,
                 "status"  => "error",
