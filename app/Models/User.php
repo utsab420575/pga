@@ -41,9 +41,24 @@ class User extends Authenticatable /* implements MustVerifyEmail */
         return $this->hasMany(\App\Models\Applicant::class);
     }
 
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+
+    /**
+     * Check if the user has any of the given role(s).
+     * `user_type` is treated as the user's role.
+     *
+     *  roles  e.g. 'admin' or ['admin','head']
+     * @return bool                  true if user_type matches
+     */
     public function hasAnyRole($roles): bool
     {
+        // If array given, return true on first match; otherwise false
         if (is_array($roles)) {
+            //user_type working as roles
             foreach ($roles as $role) {
                 if (($this->user_type ?? null) === $role) {
                     return true;

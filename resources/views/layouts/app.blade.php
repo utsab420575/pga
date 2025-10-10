@@ -8,7 +8,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>{{ config('app.name', 'Laravel') }}</title>
-  
+
   <link rel="icon" type="image/png" href="{{ asset('duet.png') }}">
 
     <!-- Bootstrap 4.1.3 (CDN) -->
@@ -38,7 +38,15 @@
         <div class="collapse navbar-collapse" id="main-navbar">
             <!-- Left -->
             <ul class="navbar-nav mr-auto">
-                <!-- add left links if needed -->
+                @auth
+                    @if (auth()->user()->user_type === 'head')
+                        <li class="nav-item d-none d-md-inline-flex align-items-center">
+                            <a href="{{ url('approve-eligibility') }}" class="btn btn-success btn-sm ml-3 text-white">
+                                <i class="fas fa-user-check mr-1"></i> Eligibility Approval
+                            </a>
+                        </li>
+                    @endif
+                @endauth
             </ul>
 
             <!-- Right -->
@@ -64,6 +72,7 @@
                                 Students
                             </a>
                             <div class="dropdown-menu" aria-labelledby="studentsDropdown">
+                                <a class="dropdown-item" href="{{ url('approve-eligibility') }}">Eligibility Approval</a>
                                 <a class="dropdown-item" href="{{ url('select-department-update-student-status') }}">Admin Status</a>
                                 <a class="dropdown-item" href="{{ url('select-department-view-student-status') }}">View Status</a>
                             </div>
@@ -72,6 +81,11 @@
                             <a class="nav-link" href="{{ url('payment-report') }}">Accounts Report</a>
                         </li>
                     @endif
+
+
+
+
+
 
                     @if (Auth::user()->user_type == 'applicant')
                         <li class="nav-item"><a class="nav-link" href="{{ url('home') }}">Dashboard</a></li>

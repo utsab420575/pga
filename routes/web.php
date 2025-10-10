@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ApplicationPostgraduateController;
+use App\Http\Controllers\EligibilityApprovalController;
 use App\Http\Controllers\FinalSubmitController;
 use App\Http\Controllers\PaymentController;
 use Illuminate\Support\Facades\Route;
@@ -88,11 +89,11 @@ Route::get('application/{id}', [HomeController::class, 'application'])
     ->name('application');
 
 Route::get('change-password', [HomeController::class, 'update_password'])
-    ->middleware('roles:admin,applicant')
+    ->middleware('roles:admin,applicant,head')
     ->name('change-password');
 
 Route::post('change-password-submit', [HomeController::class, 'update_password_submit'])
-    ->middleware('roles:admin,applicant')
+    ->middleware('roles:admin,applicant,head')
     ->name('change-password-submit');
 
 Route::get('payment-report', [HomeController::class, 'payment_report'])
@@ -216,11 +217,11 @@ Route::prefix('setting')->name('setting.')->middleware('roles:admin,applicant')-
 
 Route::get('applicant/eligibility-form/{id}', [EligibilityVerificationController::class, 'create'])
     ->name('applicant.eligibility_master_form')
-    ->middleware(['auth','roles:admin,applicant']);
+    ->middleware(['auth','roles:admin,applicant,head']);
 
 Route::get('applicant/application-postgraduate-form/{id}', [ApplicationPostgraduateController::class, 'create'])
     ->name('applicant.application_postgraduate_master_form')
-    ->middleware(['auth','roles:admin,applicant']);
+    ->middleware(['auth','roles:admin,applicant,head']);
 
 Route::post('/attachments/ajax-upload', [AttachmentController::class, 'ajaxUpload'])
     ->name('attachments.ajaxUpload')
@@ -278,3 +279,14 @@ Route::get('/bkash-pull', [PgaPaymentApiController::class, 'bkashPull']);
 Route::get('/bkash-push', [PgaPaymentApiController::class, 'bkashPush']);
 Route::get('/agrani-pull', [PgaPaymentApiController::class, 'agraniPull']);
 Route::get('/agrani-push', [PgaPaymentApiController::class, 'agraniPush']);
+
+
+//showing full page for approve
+Route::get('approve-eligibility', [HomeController::class, 'approve_eligibility'])
+    ->middleware('roles:admin,head')
+    ->name('approve-eligibility');
+
+//approve individual applicant using sweetalert
+Route::post('approve-eligibility/{applicant}', [EligibilityApprovalController::class, 'toggle'])
+    ->middleware(['auth','roles:admin,head'])
+    ->name('approve-eligibility.toggle');

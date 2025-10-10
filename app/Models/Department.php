@@ -21,4 +21,7 @@ class Department extends Model
     {
         return $this->hasMany(Applicant::class);
     }
+    public function user(){
+        return $this->hasOne(User::class);
+    }
 }

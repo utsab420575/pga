@@ -921,6 +921,40 @@ class HomeController extends Controller
     }
 
 
+    //approve eligibility work
+    public function approve_eligibility(Request $request)
+    {
+        $user = auth()->user();
+
+        // Base query: show only submitted & not-yet-approved by default
+        $q = Applicant::with([
+            'department:id,short_name',
+            'user:id,name',
+            'payment:trxid,paymentdate,amount,method,applicant_id',
+        ])
+            ->where('final_submit', 1)
+            ->where('payment_status', 1)
+            ->where('applicationtype_id',2);
+
+        // Role-based visibility
+        if ($user->user_type === 'head') {
+            // Assumes you store the head's department id in the session.
+            // Replace with your own mapping if different.
+            $headDeptId = $user->department_id;
+            $q->where('department_id', $headDeptId);
+        } // admins see all
+
+        $applicants = $q->orderBy('department_id')->orderBy('roll')->get();
+
+        // For the header/filter display only
+        $departments = Department::orderBy('short_name')->get();
+
+        //return $applicants->count();
+
+        return view('head.approve-eligibility', compact('applicants', 'departments'));
+    }
+
+
 
 
 
