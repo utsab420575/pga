@@ -7,6 +7,8 @@ use App\Models\AttachmentType;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
+use const http\Client\Curl\AUTH_ANY;
 
 class EligibilityVerificationController extends Controller
 {
@@ -45,19 +47,22 @@ class EligibilityVerificationController extends Controller
         }
 
 
-        // 🔒 Deadline check from settings
-        $setting = Setting::query()->orderByDesc('id')->first(); // or where('session', current)
+        // 🔒 Deadline check: APPLICANTS ONLY (admins/heads skip)
+        if (auth()->user()->user_type === 'applicant') {
+            $setting = Setting::query()->latest('id')->first();
 
-        if ($setting && $setting->eligibility_last_date) {
-            $deadline = Carbon::parse($setting->eligibility_last_date)->endOfDay();
+            if (!$setting || !$setting->eligibility_last_date) {
+                return back()->withErrors('Setting Table Data Not Found, Contact ICT-CELL');
+            }
+
+            $deadline = \Carbon\Carbon::parse($setting->eligibility_last_date)->endOfDay();
 
             if (now()->gt($deadline)) {
-                // You can include the date to be clear
                 return back()->withErrors('Application date is over. Deadline was: '.$deadline->toDateString());
             }
-        }else{
-            return back()->withErrors('Setting Table Data Not Found,Contact With ICT-CELL');
         }
+
+
 
         return view('applicant.eligibility_master_form', [
             'applicant'          => $applicant,

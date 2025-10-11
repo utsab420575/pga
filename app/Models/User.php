@@ -60,7 +60,7 @@ class User extends Authenticatable /* implements MustVerifyEmail */
         if (is_array($roles)) {
             //user_type working as roles
             foreach ($roles as $role) {
-                if (($this->user_type ?? null) === $role) {
+                if (($this->user_type ?? null) == $role) {
                     return true;
                 }
             }
