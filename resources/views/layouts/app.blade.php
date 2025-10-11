@@ -40,12 +40,20 @@
             <ul class="navbar-nav mr-auto">
                 @auth
                     @if (auth()->user()->user_type === 'head')
+                        <!-- Mobile (inside collapsed menu) -->
+                        <li class="nav-item d-md-none">
+                            <a href="{{ url('approve-eligibility') }}" class="nav-link">
+                                <i class="fas fa-user-check mr-1"></i> Eligibility Approval
+                            </a>
+                        </li>
+                        <!-- Desktop button -->
                         <li class="nav-item d-none d-md-inline-flex align-items-center">
                             <a href="{{ url('approve-eligibility') }}" class="btn btn-success btn-sm ml-3 text-white">
                                 <i class="fas fa-user-check mr-1"></i> Eligibility Approval
                             </a>
                         </li>
                     @endif
+
                 @endauth
             </ul>
 
