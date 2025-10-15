@@ -13,6 +13,10 @@ class EligibilityApprovalController extends Controller
     {
         // role-based guard: heads can only act on their own department
         $user = auth()->user();
+
+        if ($user->user_type != 'head') {
+                abort(403, 'You are not allowed to update this applicant.');
+        }
         if ($user->user_type === 'head') {
             if (!$user->department_id || $applicant->department_id !== $user->department_id) {
                 abort(403, 'You are not allowed to update this applicant.');

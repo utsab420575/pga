@@ -32,6 +32,7 @@
                                     <th scope="col">Department/Institute</th>
                                     <th scope="col">Status</th>
                                     <th scope="col">Application Type</th>
+                                    <th scope="col">Approval Status</th>
                                     <th scope="col">Applicant ID</th>
                                     <th scope="col">Amount</th>
                                     <th scope="col">Payment Status</th>
@@ -47,6 +48,19 @@
                                         <td>{{ $application->department->short_name }}</td>
                                         <td>{{ $application->studenttype->type }}</td>
                                         <td>{{ $application->applicationtype->type }}</td>
+                                        <td>
+                                            @if($application->applicationtype->id == 1 && $application->admission_approve == 0)
+                                                <span class="badge bg-warning text-dark">Pending</span>
+                                            @elseif($application->applicationtype->id == 1 && $application->admission_approve == 1)
+                                                <span class="badge bg-success">Approved</span>
+                                            @elseif($application->applicationtype->id == 2 && $application->eligibility_approve == 0)
+                                                <span class="badge bg-warning text-dark">Pending</span>
+                                            @elseif($application->applicationtype->id == 2 && $application->eligibility_approve == 1)
+                                                <span class="badge bg-success">Approved</span>
+                                            @else
+                                                <span class="badge bg-secondary">N/A</span>
+                                            @endif
+                                        </td>
                                         <td><span class="badge badge-secondary">{{ $application->roll }}</span></td>
                                         <td>{{ number_format($application->applicationtype->fee) }}</td>
                                         <td>
