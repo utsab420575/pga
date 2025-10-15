@@ -7,8 +7,6 @@ use App\Models\AttachmentType;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Auth;
-use const http\Client\Curl\AUTH_ANY;
 
 class EligibilityVerificationController extends Controller
 {
@@ -29,14 +27,14 @@ class EligibilityVerificationController extends Controller
             abort(403, 'You are not allowed to access this page.');
         }
 
-       /* // Business rule: page opens only if payment_status=1 AND applicationtype_id=1
-        // (If your column is literally `application_type_id`, change the property name below.)
-        if (auth()->user()->user_type === 'applicant') {
-            if (!($applicant->payment_status == 1 && $applicant->applicationtype_id == 2)) {
-                return back()->withErrors('This page is available only for paid Admission applications.');
-                // Or: abort(403, 'This page is available only for paid Admission applications.');
-            }
-        }*/
+        /* // Business rule: page opens only if payment_status=1 AND applicationtype_id=1
+         // (If your column is literally `application_type_id`, change the property name below.)
+         if (auth()->user()->user_type === 'applicant') {
+             if (!($applicant->payment_status == 1 && $applicant->applicationtype_id == 2)) {
+                 return back()->withErrors('This page is available only for paid Admission applications.');
+                 // Or: abort(403, 'This page is available only for paid Admission applications.');
+             }
+         }*/
 
         // Business rule: paid Admission applications only
         if (auth()->user()->user_type === 'applicant') {
@@ -49,19 +47,31 @@ class EligibilityVerificationController extends Controller
 
         // 🔒 Deadline check: APPLICANTS ONLY (admins/heads skip)
         if (auth()->user()->user_type === 'applicant') {
-            $setting = Setting::query()->latest('id')->first();
 
-            if (!$setting || !$setting->eligibility_last_date) {
-                return back()->withErrors('Setting Table Data Not Found, Contact ICT-CELL');
-            }
+            // ✅ Bypass deadline ONLY if:
+            //    1) eligibility not approved yet
+            //    2) payment completed
+            //    3) not final submitted
+            $canBypassDeadline =
+                ((int)$applicant->eligibility_approve === 0) &&
+                ((int)$applicant->payment_status === 1) &&
+                ((int)$applicant->final_submit === 0);
 
-            $deadline = \Carbon\Carbon::parse($setting->eligibility_last_date)->endOfDay();
+            if (!$canBypassDeadline) {
+                // 🛑 Everyone else → enforce deadline
+                $setting = Setting::query()->latest('id')->first();
 
-            if (now()->gt($deadline)) {
-                return back()->withErrors('Application date is over. Deadline was: '.$deadline->toDateString());
+                if (!$setting || !$setting->eligibility_last_date) {
+                    return back()->withErrors('Setting Table Data Not Found, Contact ICT-CELL');
+                }
+
+                $deadline = \Carbon\Carbon::parse($setting->eligibility_last_date)->endOfDay();
+
+                if (now()->gt($deadline)) {
+                    return back()->withErrors('Application date is over. Deadline was: ' . $deadline->toDateString());
+                }
             }
         }
-
 
 
         return view('applicant.eligibility_master_form', [

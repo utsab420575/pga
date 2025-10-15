@@ -929,10 +929,10 @@ class HomeController extends Controller
         // Base query: show only submitted & not-yet-approved by default
         $q = Applicant::with([
             'department:id,short_name',
-            'user:id,name',
+            'user:id,name,phone',
             'payment:trxid,paymentdate,amount,method,applicant_id',
         ])
-            ->where('final_submit', 1)
+          
             ->where('payment_status', 1)
             ->where('applicationtype_id',2);
 

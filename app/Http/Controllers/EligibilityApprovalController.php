@@ -51,7 +51,7 @@ class EligibilityApprovalController extends Controller
         return response()->json([
             'ok'       => true,
             'approved' => $approved,
-            'label'    => $approved ? 'Reject' : 'Approve Eligibility',
+            'label'    => $approved ? 'Undo' : 'Approve Eligibility',
             'class'    => $approved ? 'btn-danger' : 'btn-success',
             'id'       => $applicant->id,
         ]);

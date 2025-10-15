@@ -25,7 +25,7 @@ class FinalSubmitController extends Controller
             'full_name_block_letter',
             'f_name',
             'm_name',
-            'passport_no',
+            /*'passport_no',*/
             'per_address',
             'pre_address',
             'dob',

@@ -24,6 +24,7 @@
 
                 <div class="mb-3">
                     <h4 class="mb-0">Application For Eligibility Verification of Obtained Degree</h4>
+                    <h5>Degree Name: {{$applicant->degree->degree_name}}</h5>
                     <small class="text-muted">Applicant Name: <b>{{ $applicant->user->name }}</b> &nbsp;|&nbsp; Roll: <b>{{ $applicant->roll }}</b></small>
                     <input type="hidden" id="applicant_id" value="{{ $applicant->id }}">
                 </div>

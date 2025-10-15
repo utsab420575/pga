@@ -26,7 +26,7 @@
         <div class="row mb-3">
             <div class="col">
                 <div class="alert alert-info py-2 mb-0">
-                    Listing applicants with <strong>Final Submit = Yes</strong>, <strong>Payment = Done</strong>{{--, and <strong>Eligibility = Pending</strong>--}}.
+                    Listing applicants with <strong>Payment = Done</strong>{{--, and <strong>Eligibility = Pending</strong>--}}.
                 </div>
             </div>
         </div>
@@ -47,11 +47,12 @@
                             <thead>
                             <tr>
                                 <th>SL</th>
-                                <th>Department/Institute</th>
+                                <th>Department</th>
                                 <th>Applicant Roll</th>
                                 <th>Name</th>
                                 {{--<th>Transaction ID</th>--}}
                                 <th>Payment Date</th>
+                                <th>Status</th>
                                 <th>Action</th>
                             </tr>
                             </thead>
@@ -64,17 +65,36 @@
                                     <td>{{ $i++ }}</td>
                                     <td>{{ optional($row->department)->short_name ?? '-' }}</td>
                                     <td>{{ $row->roll }}</td>
-                                    <td>{{ $row->user->name }}</td>
+                                    <td>
+                                        {{ $row->user->name }} <br>
+                                        {{ $row->user->phone }}
+                                    </td>
                                     {{--<td>{{ optional($row->payment)->trxid ?? '-' }}</td>--}}
                                     <td>
-                                        @if(optional($row->payment)->paymentdate)
-                                            {{ \Carbon\Carbon::parse($row->payment->paymentdate)->format('d M Y') }}
+                                        {{-- payment date (or dash) --}}
+                                        {{ optional($row->payment)->paymentdate
+                                            ? \Carbon\Carbon::parse($row->payment->paymentdate)->format('d M Y')
+                                            : '-' }}
+
+                                        {{-- final submit status (plain text on next line) --}}
+                                        @if((int)($row->final_submit ?? 0) === 1)
+                                            <div class="small text-success mt-1">Final Submitted</div>
                                         @else
-                                            -
+                                            <div class="small text-danger mt-1">Not Final Submitted</div>
                                         @endif
                                     </td>
+
+
+                                    @php($isApproved = (int)$row->eligibility_approve === 1) {{-- ensure correct field --}}
+                                    <td class="cell-status">
+                                          <span
+                                              id="status-{{ $row->id }}"
+                                              class="badge {{ $isApproved ? 'badge-success' : 'badge-secondary' }}">
+                                            {{ $isApproved ? 'Approved' : 'Pending' }}
+                                          </span>
+                                    </td>
                                     <td>
-                                        {{-- Approve/Reject toggle --}}
+                                        {{-- Approve/Undo toggle --}}
                                         @php($isApproved = (int)$row->eligibility_approve === 1)
                                         <button
                                             type="button"
@@ -83,27 +103,27 @@
                                             data-approved="{{ (int)$row->eligibility_approve }}"
                                             data-roll="{{ $row->roll }}"
                                             data-url="{{ route('approve-eligibility.toggle', $row->id) }}"
-                                            title="{{ $isApproved ? 'Reject' : 'Approve Eligibility' }}"
+                                            data-status-target="#status-{{ $row->id }}"
+                                            title="{{ $isApproved ? 'Undo' : 'Approve Eligibility' }}"
                                         >
-                                            {{ $isApproved ? 'Reject' : 'Approve Eligibility' }}
+                                            {{ $isApproved ? 'Undo' : 'Approve Eligibility' }}
                                         </button>
 
-                                        {{-- Show Applicant (opens correct form if submitted) --}}
+
+                                        {{-- Show Applicant (always open) --}}
                                         @php(
                                           $viewUrl = (int)$row->applicationtype_id === 1
                                             ? url('applicant/application-postgraduate-form/'.$row->id)
                                             : url('applicant/eligibility-form/'.$row->id)
                                         )
-                                        <button
-                                            type="button"
-                                            class="btn btn-sm btn-primary ms-1 btn-show-applicant"
-                                            data-applicant="{{ $row->id }}"
-                                            data-final="{{ (int)$row->final_submit }}"
-                                            data-url="{{ $viewUrl }}"
+                                        <a
+                                            href="{{ $viewUrl }}"
+                                            target="_blank" rel="noopener"
+                                            class="btn btn-sm btn-primary ml-1"
                                             title="Show Applicant"
                                         >
                                             Show Applicant
-                                        </button>
+                                        </a>
                                     </td>
                                 </tr>
                             @endforeach
@@ -127,30 +147,27 @@
     <script>
         const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-        // Approve / Reject with confirm
+        // Approve / Undo with confirm
+        // Approve / Undo with confirm (your existing listener)
         document.addEventListener('click', async (e) => {
             const btn = e.target.closest('.btn-approve-eligibility');
             if (!btn) return;
 
-            const id        = btn.dataset.applicant;
-            const roll = btn.dataset.roll;      // shown to the user
-            const url       = btn.dataset.url;
-            const approved  = btn.dataset.approved === '1';
-            const nextLabel = approved ? 'Approve Eligibility' : 'Reject';
-            const actionTxt = approved ? 'reject' : 'approve';
+            const roll     = btn.dataset.roll;
+            const url      = btn.dataset.url;
+            const approved = btn.dataset.approved === '1';
+            const actionTxt = approved ? 'undo approval' : 'approve';
 
             const confirm = await Swal.fire({
                 title: `Confirm ${actionTxt}?`,
-                text: `Are you sure you want to ${actionTxt} eligibility for Applicant Roll ${roll}?`,
+                text: `Are you sure you want to ${actionTxt} for Applicant Roll ${roll}?`,
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonText: `Yes, ${actionTxt}`,
                 cancelButtonText: 'Cancel'
             });
-
             if (!confirm.isConfirmed) return;
 
-            // show loading
             btn.disabled = true;
 
             try {
@@ -158,29 +175,36 @@
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': csrf,
+                        'X-Requested-With': 'XMLHttpRequest',
                         'Accept': 'application/json',
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({ toggle: true })
                 });
-
                 const data = await res.json();
+                if (!res.ok || !data.ok) throw new Error(data.msg || 'Failed to update.');
 
-                if (!res.ok || !data.ok) {
-                    throw new Error(data.msg || 'Failed to update.');
+                // 1) Update button state/label
+                btn.textContent = data.label; // 'Undo' or 'Approve Eligibility'
+                btn.title = data.label === 'Undo' ? 'Undo approval' : 'Approve Eligibility';
+                btn.dataset.approved = data.approved ? '1' : '0';
+                btn.classList.remove('btn-success','btn-danger','btn-warning');
+                btn.classList.add(data.class); // 'btn-warning' or 'btn-success'
+
+                // 2) Update Status badge live
+                const statusSel = btn.dataset.statusTarget;              // "#status-123"
+                const statusEl  = statusSel ? document.querySelector(statusSel) : null;
+                if (statusEl) {
+                    statusEl.textContent = data.approved ? 'Approved' : 'Pending';
+                    statusEl.classList.remove('badge-success','badge-secondary','badge-warning');
+                    statusEl.classList.add(data.approved ? 'badge-success' : 'badge-secondary');
                 }
 
-                // update UI: text, class, dataset
-                btn.textContent = data.label;
-                btn.title = data.label;
-                btn.dataset.approved = data.approved ? '1' : '0';
-                btn.classList.remove('btn-success', 'btn-danger');
-                btn.classList.add(data.class);
-
+                // Toast
                 Swal.fire({
                     icon: 'success',
-                    title: data.approved ? 'Approved' : 'Rejected',
-                    text: `Eligibility has been ${data.approved ? 'approved' : 'rejected'}.`,
+                    title: data.approved ? 'Approved' : 'Approval undone',
+                    text: data.approved ? 'Eligibility approved.' : 'Eligibility approval has been undone.',
                     timer: 1200,
                     showConfirmButton: false
                 });
@@ -191,7 +215,8 @@
             }
         });
 
-        // Show Applicant (only if final_submit == 1)
+
+        /*// Show Applicant (only if final_submit == 1)
         document.addEventListener('click', (e) => {
             const linkBtn = e.target.closest('.btn-show-applicant');
             if (!linkBtn) return;
@@ -209,7 +234,6 @@
             }
 
             window.open(url, '_blank', 'noopener');
-        });
+        });*/
     </script>
 @endsection
-

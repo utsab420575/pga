@@ -32,10 +32,32 @@ class BasicInfoController extends Controller
         if ($applicant->final_submit == 1) {
             return back()->withErrors('Final submission already done. Cannot update.');
         }
-        $setting = Setting::latest()->first();
+        /* $setting = Setting::latest()->first();;
         $lastDate = $applicant->applicationtype_id == 1 ? $setting?->end_date : $setting?->eligibility_last_date;
         if ($lastDate && now()->toDateString() > \Carbon\Carbon::parse($lastDate)->toDateString()) {
-            return back()->withErrors('Submission deadline has passed. Cannot update.');
+            return response()->json(['message' => 'Submission deadline has passed. You cannot delete files.'], 403);
+        }*/
+
+        // ✅ Deadline: applicants only, with bypass for (final_submit=0 && eligibility_approve=0 && payment_status=1)
+        if (Auth::user()->user_type === 'applicant') {
+            $bypassDeadline =
+                ((int)$applicant->final_submit === 0) &&
+                ((int)$applicant->eligibility_approve === 0) &&
+                ((int)$applicant->payment_status === 1);
+
+            if (!$bypassDeadline) {
+                $setting  = Setting::latest('id')->first();
+                $lastDate = $applicant->applicationtype_id == 1 ? ($setting?->end_date) : ($setting?->eligibility_last_date);
+
+                if (!$lastDate) {
+                    return response()->json(['message' => 'Setting Table Data Not Found. Contact ICT-CELL.'], 403);
+                }
+
+                $deadline = Carbon::parse($lastDate)->endOfDay();
+                if (now()->gt($deadline)) {
+                    return response()->json(['message' => 'Submission deadline has passed. You cannot upload new files.'], 403);
+                }
+            }
         }
 
         // ✅ Base rules
@@ -110,10 +132,32 @@ class BasicInfoController extends Controller
         if ($applicant->final_submit == 1) {
             return back()->withErrors('Final submission already done. Cannot update.');
         }
-        $setting = Setting::latest()->first();
+        /* $setting = Setting::latest()->first();;
         $lastDate = $applicant->applicationtype_id == 1 ? $setting?->end_date : $setting?->eligibility_last_date;
         if ($lastDate && now()->toDateString() > \Carbon\Carbon::parse($lastDate)->toDateString()) {
-            return back()->withErrors('Submission deadline has passed. Cannot update.');
+            return response()->json(['message' => 'Submission deadline has passed. You cannot delete files.'], 403);
+        }*/
+
+        // ✅ Deadline: applicants only, with bypass for (final_submit=0 && eligibility_approve=0 && payment_status=1)
+        if (Auth::user()->user_type === 'applicant') {
+            $bypassDeadline =
+                ((int)$applicant->final_submit === 0) &&
+                ((int)$applicant->eligibility_approve === 0) &&
+                ((int)$applicant->payment_status === 1);
+
+            if (!$bypassDeadline) {
+                $setting  = Setting::latest('id')->first();
+                $lastDate = $applicant->applicationtype_id == 1 ? ($setting?->end_date) : ($setting?->eligibility_last_date);
+
+                if (!$lastDate) {
+                    return response()->json(['message' => 'Setting Table Data Not Found. Contact ICT-CELL.'], 403);
+                }
+
+                $deadline = Carbon::parse($lastDate)->endOfDay();
+                if (now()->gt($deadline)) {
+                    return response()->json(['message' => 'Submission deadline has passed. You cannot upload new files.'], 403);
+                }
+            }
         }
 
         $item = BasicInfo::findOrFail($id);
@@ -177,10 +221,32 @@ class BasicInfoController extends Controller
             return back()->withErrors('Final submission already done. Cannot delete.');
         }
 
-        $setting = Setting::latest()->first();
+        /* $setting = Setting::latest()->first();;
         $lastDate = $applicant->applicationtype_id == 1 ? $setting?->end_date : $setting?->eligibility_last_date;
         if ($lastDate && now()->toDateString() > \Carbon\Carbon::parse($lastDate)->toDateString()) {
-            return back()->withErrors('Submission deadline has passed. Cannot delete.');
+            return response()->json(['message' => 'Submission deadline has passed. You cannot delete files.'], 403);
+        }*/
+
+        // ✅ Deadline: applicants only, with bypass for (final_submit=0 && eligibility_approve=0 && payment_status=1)
+        if (Auth::user()->user_type === 'applicant') {
+            $bypassDeadline =
+                ((int)$applicant->final_submit === 0) &&
+                ((int)$applicant->eligibility_approve === 0) &&
+                ((int)$applicant->payment_status === 1);
+
+            if (!$bypassDeadline) {
+                $setting  = Setting::latest('id')->first();
+                $lastDate = $applicant->applicationtype_id == 1 ? ($setting?->end_date) : ($setting?->eligibility_last_date);
+
+                if (!$lastDate) {
+                    return response()->json(['message' => 'Setting Table Data Not Found. Contact ICT-CELL.'], 403);
+                }
+
+                $deadline = Carbon::parse($lastDate)->endOfDay();
+                if (now()->gt($deadline)) {
+                    return response()->json(['message' => 'Submission deadline has passed. You cannot upload new files.'], 403);
+                }
+            }
         }
 
         $item->delete();

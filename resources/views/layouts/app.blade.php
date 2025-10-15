@@ -53,7 +53,6 @@
                             </a>
                         </li>
                     @endif
-
                 @endauth
             </ul>
 
