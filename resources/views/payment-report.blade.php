@@ -53,7 +53,7 @@
         <div class="col-md-12" align="center">
             <h3>Payment Summary</h3><br>
         </div>
-    </div>                
+    </div>
     <div class="row justify-content-center">
         <div class="col-md-12">
                 <table class="table table-striped">
@@ -72,13 +72,13 @@
                       </tr>
                     <tr>
                         <td>Equivalance</td>
-                        <td>Nagad</td>
+                        <td>Bkash/Agrani</td>
                         <td>{{$equivalance_fees->count()}}</td>
                         <td>{{$equivalance_fees->count()*3000}}</td>
                       </tr>
                     </tbody>
                   </table>
-            
+
         </div>
     </div>
     <div class="row">
@@ -92,7 +92,7 @@
     <div id="content">
     <div class="row justify-content-center">
         <div class="col-md-12">
-              <p>Payment information of admission applications:</p>            
+              <p>Payment information of admission applications:</p>
               <table class="table table-striped">
                 <thead>
                   <tr>
@@ -116,13 +116,13 @@
                                     <td>{{$admission_fee->user->name}}</td>
                                     <td>{{$admission_fee->payment->trxid}}</td>
                                     <td>{{$admission_fee->payment->paymentdate}}</td>
-                                    <td>Nagad</td>
+                                    <td>{{$admission_fee->payment->bankname}}</td>
                                     <td>{{$admission_fee->payment->amount}}</td>
                               </tr>
                     @endforeach
                 </tbody>
               </table>
-            
+
         </div>
     </div>
     </div>
@@ -131,7 +131,7 @@
     <div id="content">
     <div class="row justify-content-center">
         <div class="col-md-12">
-              <p>Payment information of equivalance applications:</p>            
+              <p>Payment information of equivalance applications:</p>
               <table class="table table-striped">
                 <thead>
                   <tr>
@@ -147,7 +147,7 @@
                 </thead>
                 <tbody>
                     @php($i = 1)
-                    
+
 
                     @foreach($equivalance_fees as $equivalance_fee)
                                 <tr>
@@ -157,14 +157,14 @@
                                     <td>{{$equivalance_fee->user->name}}</td>
                                     <td>{{$equivalance_fee->payment->trxid}}</td>
                                     <td>{{$equivalance_fee->payment->paymentdate}}</td>
-                                    <td>Nagad</td>
+                                    <td>{{$equivalance_fee->payment->bankname}}</td>
                                     <td>{{$equivalance_fee->payment->amount}}</td>
                               </tr>
                     @endforeach
 
                 </tbody>
               </table>
-            
+
         </div>
     </div>
     </div>
