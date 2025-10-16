@@ -7,6 +7,7 @@ use App\Models\AttachmentType;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class EligibilityVerificationController extends Controller
 {
@@ -45,42 +46,85 @@ class EligibilityVerificationController extends Controller
         }
 
 
-        // 🔒 Deadline check: APPLICANTS ONLY (admins/heads skip)
-        if (auth()->user()->user_type === 'applicant') {
+        if(Auth::user()->user_type === 'head' && $applicant->applicationtype_id == 2){
+            // ✅ Date gate: allow ONLY if now() < settings.start_date
+            $setting = Setting::query()->latest('id')->first();
+            if (!$setting || !$setting->start_date) {
+                return response()->json([
+                    'ok' => false,
+                    'msg' => 'Settings missing start date. Contact ICT-CELL.'
+                ], 422);
+            }
 
-            // ✅ Bypass deadline ONLY if:
-            //    1) eligibility not approved yet
-            //    2) payment completed
-            //    3) not final submitted
-            $canBypassDeadline =
-                ((int)$applicant->eligibility_approve === 0) &&
-                ((int)$applicant->payment_status === 1) &&
-                ((int)$applicant->final_submit === 0);
+            // Compare using start of day so the whole start_date is blocked
+            $start = Carbon::parse($setting->start_date)->startOfDay();
+            if (! now()->lt($start)) {
+                return response()->json([
+                    'ok' => false,
+                    'msg' => 'Approval window is closed. Allowed only before: '.$start->toDateString()
+                ], 422);
+            }
+        }
+        if(Auth::user()->user_type === 'head' && $applicant->applicationtype_id == 1){
+            // ✅ Date gate: allow ONLY if now() < settings.start_date
+            $setting = Setting::query()->latest('id')->first();
+            if (!$setting || !$setting->start_date) {
+                return response()->json([
+                    'ok' => false,
+                    'msg' => 'Settings missing start date. Contact ICT-CELL.'
+                ], 422);
+            }
 
-            if (!$canBypassDeadline) {
-                // 🛑 Everyone else → enforce deadline
-                $setting = Setting::query()->latest('id')->first();
+            // Compare using start of day so the whole start_date is blocked
+            $start = Carbon::parse($setting->last_date)->startOfDay();
+            if (! now()->lt($start)) {
+                return response()->json([
+                    'ok' => false,
+                    'msg' => 'Approval window is closed. Allowed only before: '.$start->toDateString()
+                ], 422);
+            }
+        }
 
-                if (!$setting || !$setting->eligibility_last_date) {
-                    return back()->withErrors('Setting Table Data Not Found, Contact ICT-CELL');
-                }
-
-                $deadline = \Carbon\Carbon::parse($setting->eligibility_last_date)->endOfDay();
-
-                if (now()->gt($deadline)) {
-                    return back()->withErrors('Application date is over. Deadline was: ' . $deadline->toDateString());
-                }
+        if(Auth::user()->user_type === 'applicant'){
+            $setting = Setting::latest()->first();
+            $lastDate = $applicant->applicationtype_id == 1 ? $setting?->end_date : $setting?->eligibility_last_date;
+            if ($lastDate && now()->toDateString() > \Carbon\Carbon::parse($lastDate)->toDateString()) {
+                return back()->withErrors('Submission deadline has passed. Cannot update.');
             }
         }
 
 
+
+        // ✅ Deadline: applicants only, with bypass for (final_submit=0 && eligibility_approve=0 && payment_status=1)
+        /* if (Auth::user()->user_type === 'applicant') {
+             $bypassDeadline =
+                 ((int)$applicant->final_submit === 0) &&
+                 ((int)$applicant->eligibility_approve === 0) &&
+                 ((int)$applicant->payment_status === 1);
+
+             if (!$bypassDeadline) {
+                 $setting  = Setting::latest('id')->first();
+                 $lastDate = $applicant->applicationtype_id == 1 ? ($setting?->end_date) : ($setting?->eligibility_last_date);
+
+                 if (!$lastDate) {
+                     return response()->json(['message' => 'Setting Table Data Not Found. Contact ICT-CELL.'], 403);
+                 }
+
+                 $deadline = Carbon::parse($lastDate)->endOfDay();
+                 if (now()->gt($deadline)) {
+                     return response()->json(['message' => 'Submission deadline has passed. You cannot upload new files.'], 403);
+                 }
+             }
+         }*/
+
+
         return view('applicant.eligibility_master_form', [
-            'applicant'          => $applicant,
-            'basicInfo'          => $applicant->basicInfo,
+            'applicant' => $applicant,
+            'basicInfo' => $applicant->basicInfo,
             'eligibilityDegree' => $applicant->eligibilityDegree,
-            'educationInfos'     => $applicant->educationInfos,
-            'attachments'        => $applicant->attachments,
-            'attachmentTypes'    => AttachmentType::orderBy('id')->get(),
+            'educationInfos' => $applicant->educationInfos,
+            'attachments' => $applicant->attachments,
+            'attachmentTypes' => AttachmentType::orderBy('id')->get(),
         ]);
     }
 }

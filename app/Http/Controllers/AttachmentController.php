@@ -43,14 +43,14 @@ class AttachmentController extends Controller
 
 
 
-       /* $setting = Setting::latest()->first();;
+        $setting = Setting::latest()->first();;
         $lastDate = $applicant->applicationtype_id == 1 ? $setting?->end_date : $setting?->eligibility_last_date;
         if ($lastDate && now()->toDateString() > \Carbon\Carbon::parse($lastDate)->toDateString()) {
             return back()->withErrors('Submission deadline has passed. Cannot upload.');
-        }*/
+        }
 
         // ✅ Deadline: applicants only, with bypass for (final_submit=0 && eligibility_approve=0 && payment_status=1)
-        if (Auth::user()->user_type === 'applicant') {
+        /*if (Auth::user()->user_type === 'applicant') {
             $bypassDeadline =
                 ((int)$applicant->final_submit === 0) &&
                 ((int)$applicant->eligibility_approve === 0) &&
@@ -69,7 +69,7 @@ class AttachmentController extends Controller
                     return response()->json(['message' => 'Submission deadline has passed. You cannot upload new files.'], 403);
                 }
             }
-        }
+        }*/
 
         if ($request->hasFile('file')) {
             $data['file'] = $request->file('file')->store('attachments', 'public');
@@ -104,14 +104,14 @@ class AttachmentController extends Controller
         if ($applicant->final_submit == 1) {
             return back()->withErrors('Final submission already done. Cannot update.');
         }
-        /*$setting = Setting::latest()->first();;
+        $setting = Setting::latest()->first();;
         $lastDate = $applicant->applicationtype_id == 1 ? $setting?->end_date : $setting?->eligibility_last_date;
         if ($lastDate && now()->toDateString() > \Carbon\Carbon::parse($lastDate)->toDateString()) {
             return back()->withErrors('Submission deadline has passed. Cannot update.');
-        }*/
+        }
 
         // ✅ Deadline: applicants only, with bypass for (final_submit=0 && eligibility_approve=0 && payment_status=1)
-        if (Auth::user()->user_type === 'applicant') {
+        /*if (Auth::user()->user_type === 'applicant') {
             $bypassDeadline =
                 ((int)$applicant->final_submit === 0) &&
                 ((int)$applicant->eligibility_approve === 0) &&
@@ -130,7 +130,7 @@ class AttachmentController extends Controller
                     return response()->json(['message' => 'Submission deadline has passed. You cannot upload new files.'], 403);
                 }
             }
-        }
+        }*/
 
         $data = $request->validate([
             'file' => 'nullable|file|max:5120',
@@ -158,14 +158,14 @@ class AttachmentController extends Controller
         if ($applicant->final_submit == 1) {
             return back()->withErrors('Final submission already done. Cannot delete.');
         }
-        /*$setting = Setting::latest()->first();;
+        $setting = Setting::latest()->first();;
         $lastDate = $applicant->applicationtype_id == 1 ? $setting?->end_date : $setting?->eligibility_last_date;
         if ($lastDate && now()->toDateString() > \Carbon\Carbon::parse($lastDate)->toDateString()) {
             return back()->withErrors('Submission deadline has passed. Cannot delete.');
-        }*/
+        }
 
         // ✅ Deadline: applicants only, with bypass for (final_submit=0 && eligibility_approve=0 && payment_status=1)
-        if (Auth::user()->user_type === 'applicant') {
+        /*if (Auth::user()->user_type === 'applicant') {
             $bypassDeadline =
                 ((int)$applicant->final_submit === 0) &&
                 ((int)$applicant->eligibility_approve === 0) &&
@@ -184,7 +184,7 @@ class AttachmentController extends Controller
                     return response()->json(['message' => 'Submission deadline has passed. You cannot upload new files.'], 403);
                 }
             }
-        }
+        }*/
 
         // full path in public folder
         $filePath = public_path($item->file);
@@ -220,14 +220,14 @@ class AttachmentController extends Controller
         }
 
         //this can be useful,not delete this code
-        /*$setting = Setting::latest()->first();;
+        $setting = Setting::latest()->first();;
         $lastDate = $applicant->applicationtype_id == 1 ? $setting?->end_date : $setting?->eligibility_last_date;
         if ($lastDate && now()->toDateString() > \Carbon\Carbon::parse($lastDate)->toDateString()) {
             return response()->json(['message' => 'Submission deadline has passed. You cannot upload new files.'], 403);
-        }*/
+        }
 
         // ✅ Deadline: applicants only, with bypass for (final_submit=0 && eligibility_approve=0 && payment_status=1)
-        if (Auth::user()->user_type === 'applicant') {
+       /* if (Auth::user()->user_type === 'applicant') {
             $bypassDeadline =
                 ((int)$applicant->final_submit === 0) &&
                 ((int)$applicant->eligibility_approve === 0) &&
@@ -246,7 +246,7 @@ class AttachmentController extends Controller
                     return response()->json(['message' => 'Submission deadline has passed. You cannot upload new files.'], 403);
                 }
             }
-        }
+        }*/
 
         // File validation
         // File validation with dimensions
@@ -336,14 +336,14 @@ class AttachmentController extends Controller
         if ($applicant->final_submit == 1) {
             return response()->json(['message' => 'Final submission already done. You cannot delete files.'], 403);
         }
-       /* $setting = Setting::latest()->first();;
+        $setting = Setting::latest()->first();;
         $lastDate = $applicant->applicationtype_id == 1 ? $setting?->end_date : $setting?->eligibility_last_date;
         if ($lastDate && now()->toDateString() > \Carbon\Carbon::parse($lastDate)->toDateString()) {
             return response()->json(['message' => 'Submission deadline has passed. You cannot delete files.'], 403);
-        }*/
+        }
 
         // ✅ Deadline: applicants only, with bypass for (final_submit=0 && eligibility_approve=0 && payment_status=1)
-        if (Auth::user()->user_type === 'applicant') {
+        /*if (Auth::user()->user_type === 'applicant') {
             $bypassDeadline =
                 ((int)$applicant->final_submit === 0) &&
                 ((int)$applicant->eligibility_approve === 0) &&
@@ -362,7 +362,7 @@ class AttachmentController extends Controller
                     return response()->json(['message' => 'Submission deadline has passed. You cannot upload new files.'], 403);
                 }
             }
-        }
+        }*/
 
         $fullPath = public_path($attachment->file);
         if (is_file($fullPath)) {
