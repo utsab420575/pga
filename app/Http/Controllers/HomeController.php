@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Attachment;
 use App\Models\OtpVerification;
 use App\Models\Setting;
+use App\Models\UserAttachment;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
@@ -34,6 +35,7 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Console\View\Components\Alert;
 use DateTime;
+use Illuminate\Validation\Rule;
 
 class HomeController extends Controller
 {
@@ -198,6 +200,13 @@ class HomeController extends Controller
             'studenttype'     => ['required'],
             'applicationtype' => ['required'],
             'declaration'     => 'accepted',
+
+            // Required only when previously_eligible
+            'prev_eligibility_file' => [
+                Rule::requiredIf($request->university_type === 'previously_eligible'),
+                'file','mimes:pdf,jpg,jpeg,png','max:2048'
+            ],
+
         ]);
 
         $appType = (int) $request->applicationtype; // 1 = Admission, 2 = Eligibility
@@ -313,6 +322,8 @@ class HomeController extends Controller
             return back()->withErrors('Invalid application type.');
         }
 
+
+        //return 'hi';
         DB::beginTransaction();
         try {
             // Generate roll no. based on type
@@ -346,6 +357,54 @@ class HomeController extends Controller
             if ($source && $source->attachments_count > 0) {
                 $this->cloneApplicantData($source->id, $applicant->id);
             }
+
+
+
+
+
+            // inside your try { ... } block, AFTER $applicant->save();
+            $storedPublicRelativePath = null;
+
+            if ($request->university_type === 'previously_eligible' && $request->hasFile('prev_eligibility_file')) {
+                $file = $request->file('prev_eligibility_file');
+
+                // Basic whitelist (you already validate; this is an extra guard)
+                $extension = strtolower($file->getClientOriginalExtension());
+                if (!in_array($extension, ['pdf', 'jpg', 'jpeg', 'png'])) {
+                    throw new \RuntimeException('Invalid file type.');
+                }
+
+                $originalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+                $safeBase     = preg_replace('/[^A-Za-z0-9_-]/', '', $originalName) ?: 'file';
+                $today        = now()->format('Y-m-d');
+
+                // Folder under public/
+                $subdir     = "user_attachments/{$today}";
+                $uploadPath = public_path($subdir);
+
+                if (!is_dir($uploadPath)) {
+                    mkdir($uploadPath, 0775, true);
+                }
+
+                // e.g. 42_prev_eligibility_20251018_153045_123456_filename.pdf
+                $filename = $userId . '_prev_eligibility_' . now()->format('Ymd_His_u') . '_' . $safeBase . '.' . $extension;
+
+                // Move into public/…
+                $file->move($uploadPath, $filename);
+
+                // Save relative path (so you can use asset($path) later)
+                $storedPublicRelativePath = "{$subdir}/{$filename}";
+
+                // DB insert
+                UserAttachment::create([
+                    'user_id'     => $userId,
+                    'type'        => 3, // previous_eligibility
+                    'file'        => $storedPublicRelativePath, // <-- public relative path
+                    'title'       => 'Previously approved eligibility',
+                    'attachments' => 'previous_eligibility_proof',
+                ]);
+            }
+
 
             DB::commit();
         } catch (\Throwable $e) {
@@ -932,7 +991,7 @@ class HomeController extends Controller
             'user:id,name,phone',
             'payment:trxid,paymentdate,amount,method,applicant_id',
         ])
-          
+
             ->where('payment_status', 1)
             ->where('applicationtype_id',2);
 

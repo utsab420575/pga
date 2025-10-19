@@ -53,7 +53,7 @@
         <div class="col-md-12" align="center">
             <h3>Payment Summary</h3><br>
         </div>
-    </div>
+    </div>                
     <div class="row justify-content-center">
         <div class="col-md-12">
                 <table class="table table-striped">
@@ -66,7 +66,7 @@
                     <tbody>
                       <tr>
                         <td>Admission</td>
-                        <td>Nagad</td>
+                        <td>Bkash/Agrani</td>
                         <td>{{$admission_fees->count()}}</td>
                         <td>{{$admission_fees->count()*1500}}</td>
                       </tr>
@@ -78,7 +78,7 @@
                       </tr>
                     </tbody>
                   </table>
-
+            
         </div>
     </div>
     <div class="row">
@@ -92,7 +92,7 @@
     <div id="content">
     <div class="row justify-content-center">
         <div class="col-md-12">
-              <p>Payment information of admission applications:</p>
+              <p>Payment information of admission applications:</p>            
               <table class="table table-striped">
                 <thead>
                   <tr>
@@ -122,7 +122,7 @@
                     @endforeach
                 </tbody>
               </table>
-
+            
         </div>
     </div>
     </div>
@@ -131,7 +131,7 @@
     <div id="content">
     <div class="row justify-content-center">
         <div class="col-md-12">
-              <p>Payment information of equivalance applications:</p>
+              <p>Payment information of equivalance applications:</p>            
               <table class="table table-striped">
                 <thead>
                   <tr>
@@ -147,7 +147,7 @@
                 </thead>
                 <tbody>
                     @php($i = 1)
-
+                    
 
                     @foreach($equivalance_fees as $equivalance_fee)
                                 <tr>
@@ -164,7 +164,7 @@
 
                 </tbody>
               </table>
-
+            
         </div>
     </div>
     </div>

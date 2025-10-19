@@ -1,10 +1,24 @@
 @extends('layouts.app')
 @section('css')
+    <style>
+        .form-card{border:0;border-radius:1rem;box-shadow:0 14px 30px rgba(18,38,63,.06)}
+        .card-header{border-bottom:0;background:linear-gradient(90deg,#f8f9fa,#fff);font-weight:600}
+        .label-req::after{content:" *";color:#dc3545;font-weight:700}
+        .help{font-size:.85rem;color:#6c757d}
+        .radio-deck{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.75rem}
+        .radio-tile{border:1px solid #e9ecef;border-radius:.75rem;padding:.75rem 1rem;display:flex;align-items:center;gap:.6rem;background:#fff;transition:.2s;cursor:pointer}
+        .radio-tile:hover{border-color:#dfe3e7;box-shadow:0 6px 16px rgba(0,0,0,.05)}
+        .radio-tile .fa{font-size:1.1rem;opacity:.8}
+        .radio-tile input{margin-top:2px}
+        #prev-eligibility-block{border:1px dashed #dfe3e7;border-radius:.75rem;padding:1rem;background:#fcfcfd}
+        .sticky-submit{position:sticky;bottom:0;background:#fff;padding:.75rem 0;border-top:1px solid #f1f3f5}
+    </style>
 @endsection
+
 @section('content')
     <div class="container">
         <div class="row justify-content-center">
-            <div class="col-md-12">
+            <div class="col-xxl-12">
 
                 @if(count($errors)>0)
                     @foreach($errors->all() as $error)
@@ -19,34 +33,42 @@
                     Apply for Postgraduate Program in DUET, Gazipur
                 </div>
                 <form method="POST" action="{{ URL('apply-now-submit')}}" enctype="multipart/form-data">
-                    <div class="card" style="margin-top: 15px;">
-
+                    <div class="card form-card" style="margin-top: 15px;">
                         <div class="card-header">{{ __('Basic Information') }}</div>
 
                         <div class="card-body">
-
                             @csrf
 
                             {{-- University Type --}}
-                            <div class="form-group row">
-                                <label class="col-md-4 col-form-label text-md-right">{{ __('University Type [*]') }}</label>
-                                <div class="col-md-6 d-flex align-items-center">
-                                    <div class="form-check mr-3">
+                            <div class="form-group">
+                                <label class="label-req">{{ __('University Type') }}</label>
+                                <div class="radio-deck mt-2">
+                                    <label class="radio-tile">
                                         <input class="form-check-input" type="radio" name="university_type" id="uni_private" value="private"
                                                {{ old('university_type') === 'private' ? 'checked' : '' }} required>
-                                        <label class="form-check-label" for="uni_private">Private University</label>
-                                    </div>
-                                    <div class="form-check">
+                                        <i class="fa fa-university"></i>
+                                        <span>Private University</span>
+                                    </label>
+
+                                    <label class="radio-tile">
                                         <input class="form-check-input" type="radio" name="university_type" id="uni_public" value="public"
                                                {{ old('university_type') === 'public' ? 'checked' : '' }} required>
-                                        <label class="form-check-label" for="uni_public">Public University</label>
-                                    </div>
+                                        <i class="fa fa-landmark"></i>
+                                        <span>Public University</span>
+                                    </label>
+
+                                    <label class="radio-tile">
+                                        <input class="form-check-input" type="radio" name="university_type" id="uni_prev_eligible" value="previously_eligible"
+                                               {{ old('university_type') === 'previously_eligible' ? 'checked' : '' }} required>
+                                        <i class="fa fa-landmark"></i>
+                                        <span>Previously Approved Eligibility</span>
+                                    </label>
                                 </div>
                             </div>
 
-
+                            {{-- Program Details --}}
                             <div class="form-group row">
-                                <label for="department" class="col-md-4 col-form-label text-md-right">{{ __('Department/Institute [*]') }}</label>
+                                <label for="department" class="col-md-4 col-form-label text-md-right label-req">{{ __('Department/Institute') }}</label>
                                 <div class="col-md-6">
                                     <select id="department" class="form-control" name="department" required>
                                         <option value="" selected>-Select department-</option>
@@ -54,11 +76,12 @@
                                             <option value="{{$department->id}}">{{$department->short_name}}</option>
                                         @endforeach
                                     </select>
+                                    <small class="help">Pick the department/institute you’re applying to.</small>
                                 </div>
                             </div>
 
                             <div class="form-group row">
-                                <label for="degree" class="col-md-4 col-form-label text-md-right">{{ __('Program Applied For [*]') }}</label>
+                                <label for="degree" class="col-md-4 col-form-label text-md-right label-req">{{ __('Program Applied For') }}</label>
                                 <div class="col-md-6">
                                     <select id="degree" class="form-control" name="degree" required>
                                         <option value="" selected>-Select program-</option>
@@ -66,11 +89,12 @@
                                             <option value="{{$degree->id}}">{{$degree->degree_name}}</option>
                                         @endforeach
                                     </select>
+                                    <small class="help">Options filter automatically based on your selected department.</small>
                                 </div>
                             </div>
 
                             <div class="form-group row">
-                                <label for="studenttype" class="col-md-4 col-form-label text-md-right">{{ __('Status [*]') }}</label>
+                                <label for="studenttype" class="col-md-4 col-form-label text-md-right label-req">{{ __('Status') }}</label>
                                 <div class="col-md-6">
                                     <select id="studenttype" class="form-control" name="studenttype" required>
                                         <option value="" selected>-Select program status-</option>
@@ -81,50 +105,63 @@
                                 </div>
                             </div>
 
-                           {{-- <div class="form-group row">
-                                <label for="applicationtype" class="col-md-4 col-form-label text-md-right">{{ __('Application Type [*]') }}</label>
-                                <div class="col-md-6">
-                                    <select id="applicationtype" class="form-control" name="applicationtype" required>
-                                        <option value="" selected>-Select application type-</option>
-                                        @foreach($applicationtypes as $applicationtype)
-                                            <option value="{{$applicationtype->id}}">{{$applicationtype->type}}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>--}}
-
-                            {{-- Application Type --}}
+                            {{-- Application Type (filled by JS) --}}
                             <div class="form-group row">
-                                <label for="applicationtype" class="col-md-4 col-form-label text-md-right">{{ __('Application Type [*]') }}</label>
+                                <label for="applicationtype" class="col-md-4 col-form-label text-md-right label-req">{{ __('Application Type') }}</label>
                                 <div class="col-md-6">
                                     <select id="applicationtype" class="form-control" name="applicationtype" required>
                                         <option value="" selected>-Select application type-</option>
-                                        {{-- Options will be filled dynamically by JS based on University Type --}}
                                     </select>
                                 </div>
                             </div>
 
+                            {{-- Previously-Eligible Proof --}}
+                            <div id="prev-eligibility-block" class="mt-3" style="display:none;">
+                                <div class="form-group row">
+                                    <label class="col-md-4 col-form-label text-md-right label-req">Upload Approval Proof (PDF/JPG/PNG)</label>
+                                    <div class="col-md-6">
+                                        <div class="custom-file">
+                                            <input type="file" name="prev_eligibility_file" accept=".pdf,.jpg,.jpeg,.png" class="custom-file-input" id="prev_eligibility_file">
+                                            <label class="custom-file-label" for="prev_eligibility_file">Choose file...</label>
+                                        </div>
+                                        <small class="help">Max 10 MB. Upload your previous eligibility approval document.</small>
+                                    </div>
+                                </div>
 
-                            <div class="form-group row">
-                                <label for="declaration" class="col-md-4 col-form-label text-md-right">{{ __('Declaration [*]') }}</label>
-                                <div class="col-md-6">
-                                    <p align="justify">
-                                        <input type="checkbox" name="declaration" required>
-                                        I declare that the information provided in this form is correct, true and complete to the best of my knowledge and belief. If any information is found false, incorrect, and incomplete or if any ineligibility is detected before or after the examination, any legal action can be taken against me by the authority including the cancellation of my candidature.
-                                    </p>
+                                <div class="form-group row">
+                                    <label class="col-md-4 col-form-label text-md-right label-req">Confirmation</label>
+                                    <div class="col-md-6 d-flex align-items-center">
+                                        <input type="checkbox" name="prev_eligibility_confirm" id="prev_eligibility_confirm" class="mr-2">
+                                        <label for="prev_eligibility_confirm" class="mb-0">I declare that my eligibility was previously approved.</label>
+                                    </div>
                                 </div>
                             </div>
 
+                            {{-- Declaration --}}
+                            <div class="form-group row">
+                                <label for="declaration" class="col-md-4 col-form-label text-md-right label-req">{{ __('Declaration') }}</label>
+                                <div class="col-md-6">
+                                    <div class="custom-control custom-checkbox">
+                                        <input type="checkbox" id="declaration" name="declaration" class="custom-control-input" required>
+                                        <label class="custom-control-label" for="declaration">
+                                            I declare that the information provided in this form is correct, true and complete to the best of my knowledge and belief. If any information is found false, incorrect, and incomplete or if any ineligibility is detected before or after the examination, any legal action can be taken against me by the authority including the cancellation of my candidature.
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sticky-submit">
+                            <div class="form-group row mb-0">
+                                <div class="col-md-8 offset-md-4">
+                                    <button type="submit" class="btn btn-success px-4">
+                                        {{ __('Submit') }}
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="form-group row mb-0" style="padding-top: 10px;">
-                        <div class="col-md-8 offset-md-4">
-                            <button type="submit" class="btn btn-success">
-                                {{ __('Submit') }}
-                            </button>
-                        </div>
-                    </div>
                 </form>
             </div>
         </div>
@@ -186,7 +223,7 @@
 
 
     {{--for showing options based on private/public university--}}
-    <script>
+{{--    <script>
         const allApplicationTypes = @json($applicationtypes);
         const oldUniversityType = @json(old('university_type'));
         const oldApplicationType = @json(old('applicationtype'));
@@ -234,5 +271,78 @@
             if (uniPublic) uniPublic.checked = true;
             fillApplicationTypes('public');
         }
+    </script>--}}
+
+    <script>
+        // Bootstrap 4 custom-file input label update
+        document.addEventListener('change', function(e){
+            if(e.target && e.target.classList.contains('custom-file-input')){
+                const label = e.target.nextElementSibling;
+                if (label) label.textContent = e.target.files.length ? e.target.files[0].name : 'Choose file...';
+            }
+        });
     </script>
+
+    <script>
+        const allApplicationTypes   = @json($applicationtypes);
+        const oldUniversityType     = @json(old('university_type'));
+        const oldApplicationType    = @json(old('applicationtype'));
+        const hasEligibilityApproval= @json($hasApprovalEligibility);
+
+        const appTypeSelect   = document.getElementById('applicationtype');
+        const uniPrivate      = document.getElementById('uni_private');
+        const uniPublic       = document.getElementById('uni_public');
+        const uniPrevEligible = document.getElementById('uni_prev_eligible');
+        const prevBlock       = document.getElementById('prev-eligibility-block');
+
+        function togglePrevBlock(show) {
+            if (!prevBlock) return;
+            prevBlock.style.display = show ? 'block' : 'none';
+        }
+
+        function fillApplicationTypes(universityType) {
+            if (!appTypeSelect) return;
+            appTypeSelect.innerHTML = '<option value="">-Select application type-</option>';
+
+            let allowedIds = [];
+            if (universityType === 'private') {
+                allowedIds = hasEligibilityApproval ? [1] : [2];
+                togglePrevBlock(false);
+            } else if (universityType === 'public') {
+                allowedIds = [1];
+                togglePrevBlock(false);
+            } else if (universityType === 'previously_eligible') {
+                // ✅ As requested: allowId = 1 (Admission)
+                allowedIds = [1];
+                togglePrevBlock(true);
+            }
+
+            allApplicationTypes.forEach(item => {
+                if (allowedIds.includes(item.id)) {
+                    const opt = document.createElement('option');
+                    opt.value = item.id;
+                    opt.textContent = item.type;
+                    appTypeSelect.appendChild(opt);
+                }
+            });
+
+            if (oldApplicationType && allowedIds.includes(Number(oldApplicationType))) {
+                appTypeSelect.value = String(oldApplicationType);
+            }
+        }
+
+        if (uniPrivate)      uniPrivate.addEventListener('change', () => fillApplicationTypes('private'));
+        if (uniPublic)       uniPublic.addEventListener('change', () => fillApplicationTypes('public'));
+        if (uniPrevEligible) uniPrevEligible.addEventListener('change', () => fillApplicationTypes('previously_eligible'));
+
+        // Init on page load (handle old() preselection)
+        if (oldUniversityType === 'private' && uniPrivate) {
+            uniPrivate.checked = true; fillApplicationTypes('private');
+        } else if (oldUniversityType === 'public' && uniPublic) {
+            uniPublic.checked = true; fillApplicationTypes('public');
+        } else if (oldUniversityType === 'previously_eligible' && uniPrevEligible) {
+            uniPrevEligible.checked = true; fillApplicationTypes('previously_eligible');
+        }
+    </script>
+
 @endsection
