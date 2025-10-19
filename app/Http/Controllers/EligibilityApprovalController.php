@@ -29,7 +29,7 @@ class EligibilityApprovalController extends Controller
             return response()->json(['ok' => false, 'msg' => 'Applicant is not eligible to be approved yet.'], 422);
         }
 
-        // ✅ Date gate: allow ONLY if now() < settings.start_date
+       /* // ✅ Date gate: allow ONLY if now() < settings.start_date
         $setting = Setting::query()->latest('id')->first();
         if (!$setting || !$setting->start_date) {
             return response()->json([
@@ -45,7 +45,7 @@ class EligibilityApprovalController extends Controller
                 'ok' => false,
                 'msg' => 'Approval window is closed. Allowed only before: '.$start->toDateString()
             ], 422);
-        }
+        }*/
 
         // toggle value
         $applicant->eligibility_approve = $applicant->eligibility_approve ? 0 : 1;
