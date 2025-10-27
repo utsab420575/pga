@@ -678,4 +678,52 @@ class PgaPaymentApiController extends Controller
         }
     }
 
+    // GET /pgaStudentCheck?authkey=...&exam_roll=...
+    public function pgaStudentCheck(Request $request)
+    {
+       // return 'hi';
+        // 1) Required params
+        $validator = Validator::make($request->all(), [
+            'authkey'   => 'required|string',
+            'exam_roll' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                "code"    => 406,
+                "status"  => "error",
+                "msg"     => "Mandatory field missing",
+                "details" => $validator->errors(),
+            ], 200);
+        }
+
+        // 2) Auth (key: UXZPQ6OEJOL2J5J8P44E6D9CJ2HS)
+        if (md5($request->authkey) !== 'ea737681fab0183ca42dca52400f20bf') {
+            return response()->json([
+                "code"    => 403,
+                "status"  => "error",
+                "msg"     => "Access Denied!",
+                "details" => "Authentication failed",
+            ], 200);
+        }
+
+        // 3) Exists check in PGA DB (applicants.roll)
+        $exists = Applicant::where('roll', $request->exam_roll)->exists();
+
+        if (!$exists) {
+            return response()->json([
+                "code"   => 404,
+                "status" => "error",
+                "msg"    => "exam_roll not found",
+            ], 200);
+        }
+
+        // 4) Found
+        return response()->json([
+            "code"   => 200,
+            "status" => "ok",
+            "msg"    => "Found",
+        ], 200);
+    }
+
 }

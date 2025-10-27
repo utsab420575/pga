@@ -1015,6 +1015,58 @@ class HomeController extends Controller
 
 
 
+    //approve admission work
+    public function approve_admission(Request $request)
+    {
+        $user = auth()->user();
+
+        // Base query: show only submitted & not-yet-approved by default
+        $q = Applicant::with([
+            'department:id,short_name',
+            'user:id,name,phone',
+            'payment:trxid,paymentdate,amount,method,applicant_id',
+        ])
+
+            ->where('payment_status', 1)
+            ->where('applicationtype_id',1);
+
+        // Role-based visibility
+        if ($user->user_type === 'head') {
+            // Assumes you store the head's department id in the session.
+            // Replace with your own mapping if different.
+            $headDeptId = $user->department_id;
+            $q->where('department_id', $headDeptId);
+        } // admins see all
+
+        $applicants = $q->orderBy('department_id')->orderBy('roll')->get();
+
+        // For the header/filter display only
+        $departments = Department::orderBy('short_name')->get();
+
+        //return $applicants->count();
+
+        // Build a per-user status map: [ user_id => 1 or 0 ]
+        $eligMap = Applicant::query()
+            ->select('user_id')
+            ->selectRaw('COUNT(*) AS total_apps')
+            ->selectRaw('MAX(applicationtype_id = 2) AS has_type2')
+            ->selectRaw('MAX(applicationtype_id = 2 AND eligibility_approve = 1) AS ok2')
+            ->groupBy('user_id')
+        ->get()
+        ->mapWithKeys(function ($row) {
+            // Include only users with >1 apps and at least one type=2 app
+            if ((int)$row->total_apps <= 1) return [];
+            if ((int)$row->has_type2 !== 1) return [];
+            // If included, value is 1 if any type=2 app is elig-approved, else 0
+            return [$row->user_id => (int)$row->ok2];
+        });
+        //return $eligMap;
+
+        return view('head.approve-admission', compact('applicants', 'departments','eligMap'));
+    }
+
+
+
 
 
 

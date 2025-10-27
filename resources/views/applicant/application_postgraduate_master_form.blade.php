@@ -809,7 +809,14 @@
                         <div class="form-group col-md-6"><label>Year of Passing</label><span class="text-danger">*</span><input type="number" name="year_of_passing" class="form-control" min="1900" max="2100" required></div>
                         <div class="form-group col-md-6"><label>Discipline/Field</label><span class="text-danger">*</span><input type="text" name="field" class="form-control"></div>
                     </div>
-                    <div class="form-group"><label>CGPA</label><span class="text-danger">*</span><input type="number" step="0.01" name="cgpa" class="form-control" required></div>
+                    {{-- <div class="form-group"><label>CGPA</label><span class="text-danger">*</span><input type="number" step="0.01" name="cgpa" class="form-control" required></div>--}}
+
+                    <div class="form-group">
+                        <label>CGPA / Class</label>
+                        <span class="text-danger">*</span>
+                        <input type="text" name="cgpa" class="form-control" required placeholder="e.g., 3.75 or First Class">
+                    </div>
+
                 </div>
 
                 <div class="modal-footer">
@@ -1051,7 +1058,8 @@
                         <select name="attachment_type_id" class="form-control" required>
                             <option value="">-- select --</option>
                             @foreach($selectableTypes as $t)
-                                <option value="{{ $t->id }}" data-rule="{{ e($t->rules) }}">{{ $t->title }}</option>
+                                {{--<option value="{{ $t->id }}" data-rule="{{!! e($t->rules) !!}}">{{ $t->title }}</option>--}}
+                                <option value="{{ $t->id }}" data-rule="{!! $t->rules !!}">{{ $t->title }}</option>
                             @endforeach
                         </select>
                     </div>

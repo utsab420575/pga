@@ -37,12 +37,21 @@
 
                               Step 3. To apply click <b>"Apply Now"</b>, provide all required information, and click the <b>"Submit"</b> button.<br><br>
 
-                              Step 4. Pay the applicable fee based on your application type
-                              (e.g., Eligibility Form or Admission Form).<br><br>
+                              {{--Step 4. Pay the applicable fee based on your application type
+                              (e.g., Eligibility Form or Admission Form).<br><br>--}}
+
+                              Step 4. Pay the applicable fee based on your application type (e.g., Eligibility Form or Admission Form).<br><br>
+                              <div style="background: rgb(242,242,242); border: 2px solid #9ca3af; color: #111827; padding: 14px 16px; border-radius: 10px;">
+                                  (For DUET employees, please do not make any payment; email the applicant’s ID and permission letter from DUET authority to
+                                  <strong><a href="mailto:pg.admission@duet.ac.bd" style="color:#1e40af; text-decoration:none;">pg.admission@duet.ac.bd</a></strong>. We will take the necessary action, after which you can continue with the steps below.)
+                              </div>
+                              <br>
+
 
                               Step 5. Log back into your account, go to the <b>"My Application"</b> section,
                               and click on either <b>"Submit Eligibility Form"</b> or <b>"Submit Admission Form"</b>
                               depending on your application type.<br><br>
+
 
                               Step 6. Fill in all required fields and upload necessary documents,
                               then click <b>"Final Submission"</b> to complete the process.

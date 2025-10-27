@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdmissionApprovalController;
 use App\Http\Controllers\ApplicationPostgraduateController;
 use App\Http\Controllers\EligibilityApprovalController;
 use App\Http\Controllers\FinalSubmitController;
@@ -290,3 +291,20 @@ Route::get('approve-eligibility', [HomeController::class, 'approve_eligibility']
 Route::post('approve-eligibility/{applicant}', [EligibilityApprovalController::class, 'toggle'])
     ->middleware(['auth','roles:admin,head'])
     ->name('approve-eligibility.toggle');
+
+
+//giving approval to admission applicant
+//showing full page for approve
+Route::get('approve-admission', [HomeController::class, 'approve_admission'])
+    ->middleware('roles:admin,head')
+    ->name('approve-admission');
+
+//approve individual applicant using sweetalert
+Route::post('approve-admission/{applicant}', [AdmissionApprovalController::class, 'toggle'])
+    ->middleware(['auth','roles:admin,head'])
+    ->name('approve-admission.toggle');
+
+
+
+//check student
+Route::get('pgaStudentCheck', [PgaPaymentApiController::class, 'pgaStudentCheck']);

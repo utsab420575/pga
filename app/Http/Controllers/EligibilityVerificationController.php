@@ -48,7 +48,7 @@ class EligibilityVerificationController extends Controller
 
         if(Auth::user()->user_type === 'head' && $applicant->applicationtype_id == 2){
             // ✅ Date gate: allow ONLY if now() < settings.start_date
-            $setting = Setting::query()->latest('id')->first();
+           /* $setting = Setting::query()->latest('id')->first();
             if (!$setting || !$setting->start_date) {
                 return response()->json([
                     'ok' => false,
@@ -63,9 +63,10 @@ class EligibilityVerificationController extends Controller
                     'ok' => false,
                     'msg' => 'Approval window is closed. Allowed only before: '.$start->toDateString()
                 ], 422);
-            }
+            }*/
         }
         if(Auth::user()->user_type === 'head' && $applicant->applicationtype_id == 1){
+            
             // ✅ Date gate: allow ONLY if now() < settings.start_date
             $setting = Setting::query()->latest('id')->first();
             if (!$setting || !$setting->start_date) {

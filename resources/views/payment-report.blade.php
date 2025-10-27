@@ -114,10 +114,11 @@
                                     <td>{{$admission_fee->department->short_name}}</td>
                                     <td>{{$admission_fee->roll}}</td>
                                     <td>{{$admission_fee->user->name}}</td>
-                                    <td>{{$admission_fee->payment->trxid}}</td>
-                                    <td>{{$admission_fee->payment->paymentdate}}</td>
-                                    <td>{{$admission_fee->payment->bankname}}</td>
-                                    <td>{{$admission_fee->payment->amount}}</td>
+                                    <td>{{ $admission_fee->payment?->trxid ?? 'no-payment' }}</td>
+                                    <td>{{ $admission_fee->payment?->paymentdate ?? '-' }}</td>
+                                    <td>{{ $admission_fee->payment?->bankname ?? '-' }}</td>
+                                    <td>{{ $admission_fee->payment?->amount ?? '-' }}</td>
+                                    
                               </tr>
                     @endforeach
                 </tbody>
