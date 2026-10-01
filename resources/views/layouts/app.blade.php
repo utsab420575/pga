@@ -146,6 +146,10 @@
                                     <i class="fas fa-project-diagram mr-2 text-purple" style="color: #6f42c1;"></i>Dept-Degree Mapping
                                 </a>
                                 <div class="dropdown-divider"></div>
+                                <h6 class="dropdown-header">Users</h6>
+                                <a class="dropdown-item" href="{{ route('admin.users.index') }}">
+                                    <i class="fas fa-users-cog mr-2 text-success"></i>Users (Add / Edit)
+                                </a>
                                 <h6 class="dropdown-header">Passwords</h6>
                                 <a class="dropdown-item" href="{{ route('admin.passwords.head') }}">
                                     <i class="fas fa-key mr-2 text-warning"></i>Password Reset for Head

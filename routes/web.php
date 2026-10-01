@@ -37,6 +37,7 @@ use App\Http\Controllers\Admin\DepartmentDegreeController as AdminDepartmentDegr
 use App\Http\Controllers\Admin\GithubDeployController;
 use App\Http\Controllers\Admin\PasswordController as AdminPasswordController;
 use App\Http\Controllers\Admin\ActivityLogController as AdminActivityLogController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
 
 use App\Http\Controllers\PgaPaymentApiController;
 use Illuminate\Support\Facades\Artisan;
@@ -450,6 +451,13 @@ Route::prefix('admin/settings')->middleware(['auth', 'roles:admin'])->group(func
 
     // Activity Log
     Route::get('activity-log', [AdminActivityLogController::class, 'index'])->name('admin.activity_logs.index');
+
+    // Users
+    Route::get('users',           [AdminUserController::class, 'index'])->name('admin.users.index');
+    Route::get('users/create',    [AdminUserController::class, 'create'])->name('admin.users.create');
+    Route::post('users',          [AdminUserController::class, 'store'])->name('admin.users.store');
+    Route::get('users/{id}/edit', [AdminUserController::class, 'edit'])->name('admin.users.edit');
+    Route::put('users/{id}',      [AdminUserController::class, 'update'])->name('admin.users.update');
 });
 
 // ============================================================
