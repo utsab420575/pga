@@ -37,6 +37,7 @@ CREATE TABLE `applicants` (
   `studenttype_id` bigint(20) UNSIGNED NOT NULL,
   `degree_id` bigint(20) UNSIGNED NOT NULL,
   `applicationtype_id` bigint(20) UNSIGNED NOT NULL,
+  `university_type` varchar(30) DEFAULT NULL COMMENT 'public | private | previously_eligible',
   `eligibility_approve` int(11) NOT NULL DEFAULT 0,
   `admission_approve` int(11) NOT NULL DEFAULT 0,
   `user_id` bigint(20) UNSIGNED NOT NULL,

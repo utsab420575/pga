@@ -153,6 +153,10 @@
                                 <a class="dropdown-item" href="{{ route('admin.passwords.applicant') }}">
                                     <i class="fas fa-user-lock mr-2 text-primary"></i>Applicant Passwords
                                 </a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item" href="{{ route('admin.activity_logs.index') }}">
+                                    <i class="fas fa-history mr-2 text-info"></i>Activity Log
+                                </a>
                             </div>
                         </li>
                     @endif

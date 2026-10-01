@@ -36,6 +36,7 @@ use App\Http\Controllers\Admin\DepartmentController as AdminDepartmentController
 use App\Http\Controllers\Admin\DepartmentDegreeController as AdminDepartmentDegreeController;
 use App\Http\Controllers\Admin\GithubDeployController;
 use App\Http\Controllers\Admin\PasswordController as AdminPasswordController;
+use App\Http\Controllers\Admin\ActivityLogController as AdminActivityLogController;
 
 use App\Http\Controllers\PgaPaymentApiController;
 use Illuminate\Support\Facades\Artisan;
@@ -446,6 +447,9 @@ Route::prefix('admin/settings')->middleware(['auth', 'roles:admin'])->group(func
     Route::get('password/head',        [AdminPasswordController::class, 'headIndex'])->name('admin.passwords.head');
     Route::post('password/head/reset', [AdminPasswordController::class, 'headReset'])->name('admin.passwords.head.reset');
     Route::get('password/applicant',   [AdminPasswordController::class, 'applicantIndex'])->name('admin.passwords.applicant');
+
+    // Activity Log
+    Route::get('activity-log', [AdminActivityLogController::class, 'index'])->name('admin.activity_logs.index');
 });
 
 // ============================================================

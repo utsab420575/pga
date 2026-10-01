@@ -63,7 +63,8 @@
                             <label class="label-req">University Type</label>
                             <div class="radio-deck mt-2">
 
-                                {{-- Public University — always shown --}}
+                                {{-- Public University — hidden if applicant already has approved eligibility --}}
+                                @if($allowPublicOption)
                                 <label class="radio-tile">
                                     <input class="form-check-input" type="radio"
                                            name="university_type" id="uni_public" value="public"
@@ -71,13 +72,14 @@
                                     <i class="fa fa-landmark text-primary"></i>
                                     <span>Public University</span>
                                 </label>
+                                @endif
 
                                 {{-- Private (Eligibility Approved) — shown only if approved --}}
                                 @if($hasApprovalEligibility)
                                 <label class="radio-tile">
                                     <input class="form-check-input" type="radio"
                                            name="university_type" id="uni_private" value="private"
-                                           {{ old('university_type') === 'private' ? 'checked' : '' }}>
+                                           {{ (old('university_type') === 'private' || !$allowPublicOption) ? 'checked' : '' }}>
                                     <i class="fa fa-university text-success"></i>
                                     <span>Private University <small class="text-success">(Eligibility Approved)</small></span>
                                 </label>

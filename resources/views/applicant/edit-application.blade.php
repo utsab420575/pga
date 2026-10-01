@@ -1,226 +1,301 @@
 @extends('layouts.app')
+
 @section('css')
+<style>
+    .form-card          { border:0; border-radius:1rem; box-shadow:0 14px 30px rgba(18,38,63,.06) }
+    .card-header-adm    { border-bottom:0; background:linear-gradient(90deg,#e67e22,#c0392b); color:#fff; font-weight:600; border-radius:1rem 1rem 0 0 !important; }
+    .label-req::after   { content:" *"; color:#dc3545; font-weight:700 }
+    .help               { font-size:.85rem; color:#6c757d }
+    .sticky-submit      { position:sticky; bottom:0; background:#fff; padding:.75rem 0; border-top:1px solid #f1f3f5 }
+    .window-info        { background:#fff8e1; border:1px solid #ffe082; border-radius:.6rem; padding:.6rem 1rem; font-size:.88rem; color:#7b5800; margin-bottom:1.2rem; }
+    .window-info i      { margin-right:.4rem; }
+    .radio-deck         { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:.75rem }
+    .radio-tile         { border:1px solid #e9ecef; border-radius:.75rem; padding:.75rem 1rem; display:flex; align-items:center; gap:.6rem; background:#fff; transition:.2s; cursor:pointer }
+    .radio-tile:hover   { border-color:#c7d2fe; box-shadow:0 6px 16px rgba(0,0,0,.05) }
+    .radio-tile .fa     { font-size:1.1rem; opacity:.8 }
+    .radio-tile input   { margin-top:2px }
+    #prev-eligibility-block { border:1px dashed #c7d2fe; border-radius:.75rem; padding:1rem; background:#f8f9ff; margin-top:.75rem }
+</style>
 @endsection
+
 @section('content')
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-12">
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-9 col-xl-8">
 
-                @if(count($errors)>0)
-                    @foreach($errors->all() as $error)
-                        <p class="alert alert-danger">{{$error}}</p>
-                    @endforeach
-                @endif
+            {{-- Error / status messages --}}
+            @if(count($errors) > 0)
+                @foreach($errors->all() as $error)
+                    <div class="alert alert-danger alert-dismissible fade show">
+                        <i class="fas fa-exclamation-circle mr-2"></i>{{ $error }}
+                        <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+                    </div>
+                @endforeach
+            @endif
+            @if(session('Status'))
+                <div class="alert alert-info">{{ session('Status') }}</div>
+            @endif
 
-                @if(session('Status'))
-                    <p class="alert alert-info">{{session('Status')}}</p>
-                @endif
+            <form method="POST" action="{{ URL('edit-application-submit') }}/{{ $applicant->id }}" enctype="multipart/form-data">
+                @csrf
 
-                <div class="card-body" align="center">
-                    Apply for Postgraduate Program in DUET, Gazipur
-                </div>
+                {{-- Hidden: always Admission (1) --}}
+                <input type="hidden" name="applicationtype" value="1">
 
-                <form method="POST" action="{{ URL('edit-application-submit') }}/{{$applicant->id}}" enctype="multipart/form-data">
-                    <div class="card" style="margin-top: 15px;">
-                        <div class="card-header">{{ __('Basic Information') }}</div>
+                <div class="card form-card" style="margin-top:15px">
 
-                        <div class="card-body">
-                            @csrf
+                    {{-- Card Header --}}
+                    <div class="card-header card-header-adm d-flex align-items-center">
+                        <i class="fas fa-edit mr-2"></i>Edit Admission Application
+                        <span class="badge badge-light ml-auto">Roll: {{ $applicant->roll }}</span>
+                    </div>
 
-                            {{-- University Type (request-only; inferred default from current applicationtype) --}}
-                            @php
-                                $paid = (int)$applicant->payment_status === 1;
-                                $currentAppTypeId = (int)($applicant->applicationtype->id ?? 0); // 1=Admission, 2=Eligibility
-                                $inferredUniType = $currentAppTypeId === 2 ? 'private' : 'public';
-                            @endphp
+                    <div class="card-body">
+
+                        {{-- Application Window Info --}}
+                        @if($admissionStart && $admissionEnd)
+                        <div class="window-info">
+                            <i class="fas fa-calendar-alt"></i>
+                            <strong>Application Window:</strong>
+                            {{ $admissionStart->format('d M Y') }} &ndash; {{ $admissionEnd->format('d M Y') }}
+                        </div>
+                        @endif
+
+                        {{-- University Type — 3 tiles matching apply_admission --}}
+                        @php
+                            $savedUniType = $applicant->university_type;
+                            // Map previously_eligible to its own tile value
+                            $currentUniType = old('university_type', $savedUniType ?: 'public');
+                        @endphp
+                        <div class="form-group">
+                            <label class="label-req">University Type</label>
+                            <div class="radio-deck mt-2">
+
+                                {{-- Public University — hidden if applicant already has approved eligibility --}}
+                                @if($allowPublicOption)
+                                <label class="radio-tile">
+                                    <input class="form-check-input" type="radio"
+                                           name="university_type" id="uni_public" value="public"
+                                           {{ $currentUniType === 'public' ? 'checked' : '' }} required>
+                                    <i class="fa fa-landmark text-primary"></i>
+                                    <span>Public University</span>
+                                </label>
+                                @endif
+
+                                {{-- Private (Eligibility Approved) — shown only if approved --}}
+                                @if($hasApprovalEligibility)
+                                <label class="radio-tile">
+                                    <input class="form-check-input" type="radio"
+                                           name="university_type" id="uni_private" value="private"
+                                           {{ ($currentUniType === 'private' || !$allowPublicOption) ? 'checked' : '' }}>
+                                    <i class="fa fa-university text-success"></i>
+                                    <span>Private University <small class="text-success">(Eligibility Approved)</small></span>
+                                </label>
+                                @endif
+
+                                {{-- Previously Approved Eligibility — always shown --}}
+                                <label class="radio-tile">
+                                    <input class="form-check-input" type="radio"
+                                           name="university_type" id="uni_prev_eligible" value="previously_eligible"
+                                           {{ $currentUniType === 'previously_eligible' ? 'checked' : '' }}>
+                                    <i class="fa fa-check-circle text-warning"></i>
+                                    <span>Previously Approved Eligibility</span>
+                                </label>
+
+                            </div>
+                        </div>
+
+                        {{-- Previously-Eligible Proof Upload (shown only when selected) --}}
+                        <div id="prev-eligibility-block" style="display:none;">
                             <div class="form-group row">
-                                <label class="col-md-4 col-form-label text-md-right">{{ __('University Type [*]') }}</label>
+                                <label class="col-md-4 col-form-label text-md-right label-req">
+                                    Upload Approval Proof (PDF / JPG / PNG)
+                                </label>
+                                <div class="col-md-6">
+                                    <div class="custom-file">
+                                        <input type="file" name="prev_eligibility_file"
+                                               accept=".pdf,.jpg,.jpeg,.png"
+                                               class="custom-file-input" id="prev_eligibility_file">
+                                        <label class="custom-file-label" for="prev_eligibility_file">Choose file...</label>
+                                    </div>
+                                    <small class="help">Max 10 MB. Upload your previous eligibility approval document.</small>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label class="col-md-4 col-form-label text-md-right label-req">Confirmation</label>
                                 <div class="col-md-6 d-flex align-items-center">
-                                    <div class="form-check mr-3">
-                                        <input class="form-check-input" type="radio" name="university_type" id="uni_private" value="private"
-                                               {{ old('university_type', $inferredUniType) === 'private' ? 'checked' : '' }}
-                                               {{ $paid ? 'disabled' : '' }} required>
-                                        <label class="form-check-label" for="uni_private">Private University</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="university_type" id="uni_public" value="public"
-                                               {{ old('university_type', $inferredUniType) === 'public' ? 'checked' : '' }}
-                                               {{ $paid ? 'disabled' : '' }} required>
-                                        <label class="form-check-label" for="uni_public">Public University</label>
-                                    </div>
-                                    @if($paid)
-                                        {{-- disabled inputs don't submit: keep the value --}}
-                                        <input type="hidden" name="university_type" value="{{ old('university_type', $inferredUniType) }}">
-                                    @endif
+                                    <input type="checkbox" name="prev_eligibility_confirm"
+                                           id="prev_eligibility_confirm" class="mr-2">
+                                    <label for="prev_eligibility_confirm" class="mb-0">
+                                        I declare that my eligibility was previously approved.
+                                    </label>
                                 </div>
                             </div>
+                        </div>
 
-                            {{-- Department --}}
-                            <div class="form-group row">
-                                <label for="department" class="col-md-4 col-form-label text-md-right">{{ __('Department/Institute [*]') }}</label>
-                                <div class="col-md-6">
-                                    <select id="department" class="form-control" name="department" required>
-                                        <option value="{{ $applicant->department->id }}" selected>{{ $applicant->department->short_name }} *</option>
-                                        @foreach($departments as $department)
-                                            @if($department->id !== $applicant->department->id)
-                                                <option value="{{$department->id}}">{{$department->short_name}}</option>
-                                            @endif
-                                        @endforeach
-                                    </select>
+                        {{-- Department --}}
+                        <div class="form-group row">
+                            <label for="department" class="col-md-4 col-form-label text-md-right label-req">
+                                Department / Institute
+                            </label>
+                            <div class="col-md-6">
+                                <select id="department" class="form-control" name="department" required>
+                                    <option value="">— Select Department —</option>
+                                    @foreach($departments as $dept)
+                                        @php $isUsed = in_array($dept->id, $usedDepartmentIds); @endphp
+                                        <option value="{{ $dept->id }}"
+                                            {{ old('department', $applicant->department_id) == $dept->id ? 'selected' : '' }}
+                                            {{ $isUsed ? 'disabled' : '' }}>
+                                            {{ $dept->short_name }}{{ $isUsed ? ' — Already Applied' : '' }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @if(count($usedDepartmentIds) > 0)
+                                    <small class="help">
+                                        <i class="fas fa-info-circle"></i>
+                                        Departments marked <em>"Already Applied"</em> are disabled.
+                                    </small>
+                                @endif
+                            </div>
+                        </div>
+
+                        {{-- Degree --}}
+                        <div class="form-group row">
+                            <label for="degree" class="col-md-4 col-form-label text-md-right label-req">
+                                Program Applied For
+                            </label>
+                            <div class="col-md-6">
+                                <select id="degree" class="form-control" name="degree" required>
+                                    <option value="">— Select Program —</option>
+                                    @foreach($degrees as $degree)
+                                        <option value="{{ $degree->id }}"
+                                            {{ old('degree', $applicant->degree_id) == $degree->id ? 'selected' : '' }}>
+                                            {{ $degree->degree_name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <small class="help">Options filter automatically based on your selected department.</small>
+                            </div>
+                        </div>
+
+                        {{-- Student Type --}}
+                        <div class="form-group row">
+                            <label for="studenttype" class="col-md-4 col-form-label text-md-right label-req">
+                                Student Status
+                            </label>
+                            <div class="col-md-6">
+                                <select id="studenttype" class="form-control" name="studenttype" required>
+                                    <option value="">— Select Status —</option>
+                                    @foreach($studenttypes as $st)
+                                        <option value="{{ $st->id }}"
+                                            {{ old('studenttype', $applicant->studenttype_id) == $st->id ? 'selected' : '' }}>
+                                            {{ $st->type }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
+                        {{-- Declaration --}}
+                        <div class="form-group row">
+                            <label for="declaration" class="col-md-4 col-form-label text-md-right label-req">
+                                Declaration
+                            </label>
+                            <div class="col-md-6">
+                                <div class="custom-control custom-checkbox">
+                                    <input type="checkbox" id="declaration" name="declaration"
+                                           class="custom-control-input" required>
+                                    <label class="custom-control-label" for="declaration">
+                                        I declare that the information provided in this form is correct, true
+                                        and complete to the best of my knowledge and belief. If any information
+                                        is found false, incorrect, or incomplete, or if any ineligibility is
+                                        detected before or after the examination, any legal action can be taken
+                                        against me by the authority including the cancellation of my candidature.
+                                    </label>
                                 </div>
                             </div>
+                        </div>
 
-                            {{-- Degree --}}
-                            <div class="form-group row">
-                                <label for="degree" class="col-md-4 col-form-label text-md-right">{{ __('Program applied for [*]') }}</label>
-                                <div class="col-md-6">
-                                    <select id="degree" class="form-control" name="degree" required>
-                                        <option value="{{ $applicant->degree->id }}" selected>{{ $applicant->degree->degree_name }} *</option>
-                                        @foreach($degrees as $degree)
-                                            @if($degree->id !== $applicant->degree->id)
-                                                <option value="{{$degree->id}}">{{$degree->degree_name}}</option>
-                                            @endif
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
+                    </div>{{-- /card-body --}}
 
-                            {{-- Student Status --}}
-                            <div class="form-group row">
-                                <label for="studenttype" class="col-md-4 col-form-label text-md-right">{{ __('Status [*]') }}</label>
-                                <div class="col-md-6">
-                                    <select id="studenttype" class="form-control" name="studenttype" required>
-                                        <option value="{{ $applicant->studenttype->id }}" selected>{{ $applicant->studenttype->type }} *</option>
-                                        @foreach($studenttypes as $studenttype)
-                                            @if($studenttype->id !== $applicant->studenttype->id)
-                                                <option value="{{$studenttype->id}}">{{$studenttype->type}}</option>
-                                            @endif
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-
-                            {{-- Application Type (disabled after payment; JS fills options) --}}
-                            <div class="form-group row">
-                                <label for="applicationtype" class="col-md-4 col-form-label text-md-right">{{ __('Application Type [*]') }}</label>
-                                <div class="col-md-6">
-                                    <select id="applicationtype" class="form-control" name="applicationtype" {{ $paid ? 'disabled' : '' }} required>
-                                        <option value="" selected>-Select application type-</option>
-                                        @if($currentAppTypeId)
-                                            <option value="{{ $currentAppTypeId }}" selected>{{ $applicant->applicationtype->type }}</option>
-                                        @endif
-                                    </select>
-                                    @if($paid)
-                                        <input type="hidden" name="applicationtype" value="{{ $currentAppTypeId }}">
-                                        <small class="text-muted d-block mt-1">Application Type is locked after payment.</small>
-                                    @endif
-                                </div>
-                            </div>
-
-                            {{-- Declaration --}}
-                            <div class="form-group row">
-                                <label for="declaration" class="col-md-4 col-form-label text-md-right">{{ __('Declaration [*]') }}</label>
-                                <div class="col-md-6">
-                                    <p align="justify">
-                                        <input type="checkbox" name="declaration" required>
-                                        I declare that the information provided in this form is correct, true and complete to the best of my knowledge and belief. If any information is found false, incorrect, and incomplete or if any ineligibility is detected before or after the examination, any legal action can be taken against me by the authority including the cancellation of my candidature.
-                                    </p>
-                                </div>
+                    {{-- Submit --}}
+                    <div class="sticky-submit">
+                        <div class="form-group row mb-0">
+                            <div class="col-md-8 offset-md-4 d-flex align-items-center">
+                                <a href="{{ route('my-application') }}" class="btn btn-outline-secondary mr-3">
+                                    <i class="fas fa-arrow-left mr-1"></i> Back
+                                </a>
+                                <button type="submit" class="btn btn-warning px-5">
+                                    <i class="fas fa-save mr-1"></i> Save Changes
+                                </button>
                             </div>
                         </div>
                     </div>
 
-                    <div class="form-group row mb-0" style="padding-top: 10px;">
-                        <div class="col-md-8 offset-md-4">
-                            <button type="submit" class="btn btn-success">{{ __('Submit') }}</button>
-                        </div>
-                    </div>
-                </form>
+                </div>{{-- /card --}}
+            </form>
 
-            </div>
         </div>
     </div>
+</div>
 @endsection
 
 @section('script')
-    {{-- Dept → Degree filtering (same map as apply) --}}
-    <script type="text/javascript">
-        /* 1=PGD, 2=M Sc., 3=M Sc. in WEM, 4=M in WEM, 5=M Engg., 6=M Sc. Engg., 7=M Phil., 8=Ph. D */
-        const deptDegreeMap = {
-            1:[5,6,8],2:[5,6,8],3:[5,6,8],4:[5,6,8],5:[5,6,8],
-            6:[5,6],7:[5,6],8:[1,3,4],9:[5,6,1],10:[5,6,1],
-            11:[2,7,8],12:[2,7,8],13:[2,7,8],
-        };
-        const allDegrees = @json($degrees);
-        const degreeSelect = document.getElementById('degree');
-        const deptSelect   = document.getElementById('department');
+<script>
+    // ── Previously-Eligible block toggle ──
+    const prevBlock       = document.getElementById('prev-eligibility-block');
+    const uniPrevEligible = document.getElementById('uni_prev_eligible');
+    const uniPublic       = document.getElementById('uni_public');
+    const uniPrivate      = document.getElementById('uni_private');
 
-        function refillDegrees(deptId, keepSelectedId = {{ (int)$applicant->degree_id }}) {
-            degreeSelect.innerHTML = '<option value="">-Select program-</option>';
-            if (deptDegreeMap[deptId]) {
-                const allowed = deptDegreeMap[deptId];
-                allDegrees.forEach(d => {
-                    if (allowed.includes(d.id)) {
-                        const opt = document.createElement('option');
-                        opt.value = d.id;
-                        opt.textContent = d.degree_name;
-                        if (Number(keepSelectedId) === Number(d.id)) opt.selected = true;
-                        degreeSelect.appendChild(opt);
-                    }
-                });
-            }
+    function togglePrevBlock() {
+        if (!prevBlock) return;
+        prevBlock.style.display = (uniPrevEligible && uniPrevEligible.checked) ? 'block' : 'none';
+    }
+
+    if (uniPrevEligible) uniPrevEligible.addEventListener('change', togglePrevBlock);
+    if (uniPublic)       uniPublic.addEventListener('change', togglePrevBlock);
+    if (uniPrivate)      uniPrivate.addEventListener('change', togglePrevBlock);
+
+    // Restore on load (in case previously_eligible was saved)
+    togglePrevBlock();
+
+    // ── Bootstrap 4 custom-file label ──
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.classList.contains('custom-file-input')) {
+            const label = e.target.nextElementSibling;
+            if (label) label.textContent = e.target.files.length ? e.target.files[0].name : 'Choose file...';
         }
-        // Initial fill honoring current selection
-        refillDegrees({{ (int)$applicant->department_id }});
-        deptSelect.addEventListener('change', function() { refillDegrees(Number(this.value), null); });
-    </script>
+    });
 
-    {{-- AppType filtering by University Type (request-only; mirrors apply) --}}
-    <script>
-        const allApplicationTypes    = @json($applicationtypes);
-        const hasEligibilityApproval = @json($hasApprovalEligibility);
-        const appTypeSelect          = document.getElementById('applicationtype');
-        const uniPrivate             = document.getElementById('uni_private');
-        const uniPublic              = document.getElementById('uni_public');
-        const currentAppTypeId       = {{ (int)($applicant->applicationtype->id ?? 0) }};
-        const paid                   = {{ (int)$applicant->payment_status }} === 1;
+    // ── Department → Degree filtering (from DB map) ──
+    const deptDegreeMap = @json($deptDegreeMap);
+    const allDegrees    = @json($degrees);
+    const savedDept     = {{ (int)old('department', $applicant->department_id) }};
+    const savedDegree   = {{ (int)old('degree', $applicant->degree_id) }};
 
-        function allowedIdsFor(uniType){
-            if (uniType === 'private') return hasEligibilityApproval ? [1] : [2];
-            if (uniType === 'public')  return [1];
-            return [];
-        }
-        function currentUniType(){
-            if (uniPrivate && uniPrivate.checked) return 'private';
-            if (uniPublic  && uniPublic.checked)  return 'public';
-            return null;
-        }
-        function fillApplicationTypes(force=null){
-            if (!appTypeSelect) return;
-            const uniType = force || currentUniType();
-            const allowed = allowedIdsFor(uniType);
-            const selectedCandidate = Number({{ (int)old('applicationtype') ?: $currentAppTypeId }});
-
-            appTypeSelect.innerHTML = '<option value="">-Select application type-</option>';
-            allApplicationTypes.forEach(item => {
-                if (allowed.includes(item.id)) {
+    function filterDegrees(deptId, keepDegreeId) {
+        const sel = document.getElementById('degree');
+        sel.innerHTML = '<option value="">— Select Program —</option>';
+        if (deptDegreeMap[deptId]) {
+            deptDegreeMap[deptId].forEach(id => {
+                const d = allDegrees.find(x => x.id === id);
+                if (d) {
                     const opt = document.createElement('option');
-                    opt.value = item.id;
-                    opt.textContent = item.type;
-                    if (selectedCandidate === Number(item.id)) opt.selected = true;
-                    appTypeSelect.appendChild(opt);
+                    opt.value = d.id;
+                    opt.textContent = d.degree_name;
+                    if (Number(keepDegreeId) === Number(d.id)) opt.selected = true;
+                    sel.appendChild(opt);
                 }
             });
         }
+    }
 
-        // Init on load using inferred radios
-        const initType = ({{ $currentAppTypeId }} === 2) ? 'private' : 'public';
-        fillApplicationTypes(initType);
+    // Initial fill with saved values
+    if (savedDept) filterDegrees(savedDept, savedDegree);
 
-        // Rebind changes when not paid
-        if (!paid) {
-            if (uniPrivate) uniPrivate.addEventListener('change', () => fillApplicationTypes('private'));
-            if (uniPublic)  uniPublic .addEventListener('change', () => fillApplicationTypes('public'));
-        }
-    </script>
+    document.getElementById('department').addEventListener('change', function() {
+        filterDegrees(parseInt(this.value), null);
+    });
+</script>
 @endsection

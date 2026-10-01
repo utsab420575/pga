@@ -380,6 +380,10 @@ class HomeController extends Controller
         // If eligibility application exists and is approved
         $hasApprovalEligibility = (bool) ($eligibilityApp && (int) $eligibilityApp->eligibility_approve === 1);
 
+        // Hide the "Public University" option if the applicant already has
+        // an approved eligibility application — they must apply as Private.
+        $allowPublicOption = !$hasApprovalEligibility;
+
         // Load dropdowns & dynamic department-degree mapping from DB
         $degrees          = Degree::all();
         $departments      = Department::all();
@@ -392,7 +396,7 @@ class HomeController extends Controller
 
         return view('applicant.apply_admission', compact(
             'degrees', 'departments', 'studenttypes', 'applicationtypes', 'deptDegreeMap',
-            'hasApprovalEligibility',
+            'hasApprovalEligibility', 'allowPublicOption',
             'admissionStart', 'admissionEnd'
         ));
     }
@@ -578,6 +582,8 @@ class HomeController extends Controller
             $applicant->degree_id          = $request->degree;
             $applicant->applicationtype_id = $appType;
             $applicant->user_id            = $userId;
+            // Store university type only for admission applications
+            $applicant->university_type    = ($appType === 1) ? $request->university_type : null;
             $applicant->save();
 
             // 🔹 Step 7: Clone attachments from the applicant with the most attachments (if any)
@@ -682,19 +688,63 @@ class HomeController extends Controller
             return back()->withErrors('Editing not allowed after payment or final submission.');
         }
 
+        // Check application window is still open for this type
+        $setting = Setting::orderByDesc('id')->first();
+        $now     = now();
+        $appType = (int) $applicant->applicationtype_id;
+
+        if ($setting) {
+            if ($appType === 1) {
+                $winStart = $setting->start_date ? Carbon::parse($setting->start_date)->startOfDay() : null;
+                $winEnd   = $setting->end_date   ? Carbon::parse($setting->end_date)->endOfDay()     : null;
+                if (!$winStart || !$winEnd || !$now->between($winStart, $winEnd)) {
+                    return back()->withErrors('The Admission application window is not currently open. Editing is not allowed.');
+                }
+            } elseif ($appType === 2) {
+                $winStart = $setting->eligibility_start_date ? Carbon::parse($setting->eligibility_start_date)->startOfDay() : null;
+                $winEnd   = $setting->eligibility_last_date  ? Carbon::parse($setting->eligibility_last_date)->endOfDay()    : null;
+                if (!$winStart || !$winEnd || !$now->between($winStart, $winEnd)) {
+                    return back()->withErrors('The Eligibility application window is not currently open. Editing is not allowed.');
+                }
+            }
+        }
+
         $degrees          = Degree::all();
         $departments      = Department::all();
         $studenttypes     = Studenttype::all();
         $applicationtypes = Applicationtype::all();
 
-        // Same flag your apply blade/JS expects
-        $hasApprovalEligibility = Applicant::where('user_id', Auth::id())
+        // Same flags apply_admission uses
+        $eligibilityApp = Applicant::with('department')
+            ->where('user_id', Auth::id())
             ->where('applicationtype_id', 2)
-            ->where('eligibility_approve', 1)
-            ->exists();
+            ->first();
+
+        $hasApprovalEligibility = (bool) ($eligibilityApp && (int)$eligibilityApp->eligibility_approve === 1);
+        $allowPublicOption      = !$hasApprovalEligibility;
+
+        // Dept → Degree map (same as apply_admission)
+        $deptDegreeMap = Department::with('degrees')
+            ->get()
+            ->mapWithKeys(fn($d) => [$d->id => $d->degrees->pluck('id')->toArray()])
+            ->toArray();
+
+        // Date window labels for display
+        $admissionStart = $setting && $setting->start_date ? Carbon::parse($setting->start_date)->startOfDay() : null;
+        $admissionEnd   = $setting && $setting->end_date   ? Carbon::parse($setting->end_date)->endOfDay()     : null;
+
+        // Department IDs where this user already has another application of the same type
+        // (excluding the current application being edited)
+        $usedDepartmentIds = Applicant::where('user_id', Auth::id())
+            ->where('applicationtype_id', $appType)
+            ->where('id', '!=', $id)
+            ->pluck('department_id')
+            ->toArray();
 
         return view('applicant.edit-application', compact(
-            'applicant', 'degrees', 'departments', 'studenttypes', 'applicationtypes', 'hasApprovalEligibility'
+            'applicant', 'degrees', 'departments', 'studenttypes', 'applicationtypes',
+            'hasApprovalEligibility', 'allowPublicOption', 'usedDepartmentIds',
+            'deptDegreeMap', 'admissionStart', 'admissionEnd'
         ));
     }
 
@@ -713,13 +763,13 @@ class HomeController extends Controller
             return back()->withErrors('Editing not allowed after payment or final submission.');
         }
 
-        // Validate (university_type is request-only; used for gating)
+        // Validate
         $this->validate($request, [
             'degree'          => ['required'],
             'department'      => ['required'],
             'studenttype'     => ['required'],
             'applicationtype' => ['required'],
-            'university_type' => ['required', 'in:private,public'],
+            'university_type' => ['required', 'in:private,public,previously_eligible'],
             'declaration'     => ['accepted'],
         ]);
 
@@ -826,11 +876,13 @@ class HomeController extends Controller
             }
         }
 
-        // Private/Public gating (same as your blade JS)
-        $hasApprovalEligibility = $hasApprovedEligibility; // reuse computed flag
-        $uniType = $request->input('university_type');     // not stored
-        $allowedAppTypeIds = $uniType === 'private'
-            ? ($hasApprovalEligibility ? [1] : [2])
+        // University type gating: all 3 types (public, previously_eligible, private with eligibility) map to Admission (1)
+        $hasApprovalEligibility = $hasApprovedEligibility;
+        $uniType = $request->input('university_type');
+        // previously_eligible and public → always Admission (1)
+        // private → Admission (1) only if eligibility approved, else Eligibility (2)
+        $allowedAppTypeIds = ($uniType === 'private' && !$hasApprovalEligibility)
+            ? [2]
             : [1];
 
         if (!in_array($newAppType, $allowedAppTypeIds, true)) {
@@ -853,6 +905,7 @@ class HomeController extends Controller
         $applicant->studenttype_id     = $request->studenttype;
         $applicant->degree_id          = $request->degree;
         $applicant->applicationtype_id = $newAppType;
+        $applicant->university_type    = $request->university_type; // save selected type
 
         // If you still use edit_per to disable further edits after this save, keep:
         $applicant->edit_per = 0;
@@ -869,8 +922,27 @@ class HomeController extends Controller
                 return Redirect::to('verify-mobile');
             }
         }
-        $applications = Applicant::where('user_id',Auth::user()->id)->get();
-        return view('applicant.my-application')->with('applications',$applications);
+        $applications = Applicant::where('user_id', Auth::user()->id)->get();
+        $setting      = Setting::orderByDesc('id')->first();
+        $now          = now();
+
+        // Pre-compute which application-type windows are currently open
+        $openWindows = [
+            1 => false, // Admission
+            2 => false, // Eligibility
+        ];
+        if ($setting) {
+            $admStart = $setting->start_date            ? Carbon::parse($setting->start_date)->startOfDay()            : null;
+            $admEnd   = $setting->end_date              ? Carbon::parse($setting->end_date)->endOfDay()                : null;
+            $eligStart= $setting->eligibility_start_date? Carbon::parse($setting->eligibility_start_date)->startOfDay(): null;
+            $eligEnd  = $setting->eligibility_last_date ? Carbon::parse($setting->eligibility_last_date)->endOfDay()   : null;
+            $openWindows[1] = $admStart  && $admEnd   && $now->between($admStart,  $admEnd);
+            $openWindows[2] = $eligStart && $eligEnd  && $now->between($eligStart, $eligEnd);
+        }
+
+        return view('applicant.my-application')
+            ->with('applications', $applications)
+            ->with('openWindows', $openWindows);
     }
 
     public function how_to_pay(){
@@ -1014,6 +1086,13 @@ class HomeController extends Controller
 
         // ✅ Copy attachments + files (if needed)
         $this->cloneAttachmentsWithFiles($oldApplicantId, $newApplicantId);
+
+        // Rows above are copied with DB::table (no model events), so log the clone once
+        activity('applicants')
+            ->event('cloned')
+            ->performedOn(Applicant::find($newApplicantId))
+            ->withProperties(['from_applicant_id' => $oldApplicantId])
+            ->log('cloned');
     }
 
 

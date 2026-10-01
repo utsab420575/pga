@@ -327,7 +327,7 @@ class AdmissionApprovalController extends Controller
             fwrite($out, "\xEF\xBB\xBF");
 
             // Headings
-            fputcsv($out, ['Roll','Department','Degree','Name','Father Name','Payment Date','Mobile']);
+            fputcsv($out, ['Roll','Department','Degree','Name','Father Name','Payment Date','Mobile','Admission Status']);
 
             foreach ($rows as $a) {
                 $roll    = $a->roll;
@@ -337,8 +337,9 @@ class AdmissionApprovalController extends Controller
                 $father  = optional($a->basicInfo)->f_name;
                 $payDate = optional($a->payment)->paymentdate ? \Carbon\Carbon::parse($a->payment->paymentdate)->toDateString() : '';
                 $mobile  = optional($a->user)->phone;
+                $status  = (int)$a->admission_approve === 1 ? 'Approved' : 'Pending';
 
-                fputcsv($out, [$roll,$dept,$degree,$name,$father,$payDate,$mobile]);
+                fputcsv($out, [$roll,$dept,$degree,$name,$father,$payDate,$mobile,$status]);
             }
 
             fclose($out);

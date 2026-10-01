@@ -2,12 +2,13 @@
 // app/Models/JobExperience.php
 namespace App\Models;
 
+use App\Models\Concerns\LogsApplicantActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class JobExperience extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsApplicantActivity;
 
     protected $guarded = [];
 

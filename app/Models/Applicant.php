@@ -2,14 +2,17 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsApplicantActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Applicant extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsApplicantActivity;
 
     protected $guarded = [];
+
+    protected function activityApplicantId(): ?int { return $this->id; }
 
     // Existing relationships
     public function department()      { return $this->belongsTo(Department::class); }

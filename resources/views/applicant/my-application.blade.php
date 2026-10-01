@@ -75,13 +75,12 @@
                                         </td>
                                         <td class="text-center">
 
-                                            {{-- ✏️ Edit button (allowed if edit_per=1 or unpaid) --}}
-                                            @if($application->edit_per == 1 || $application->payment_status == 0)
-                                                {{--<a href="{{ url('edit-application/'.$application->id) }}"
-                                                   class="btn btn-warning btn-sm mb-1"
-                                                   target="_blank" rel="noopener noreferrer">
+                                            {{-- ✏️ Edit button: only for Admission (type 1), unpaid, and window open --}}
+                                            @if($application->applicationtype_id == 1 && $application->payment_status == 0 && !empty($openWindows[(int)$application->applicationtype_id]))
+                                                <a href="{{ url('edit-application/'.$application->id) }}"
+                                                   class="btn btn-warning btn-sm mb-1">
                                                     <i class="fas fa-edit"></i> Edit
-                                                </a>--}}
+                                                </a>
                                             @endif
 
                                             {{--  Submit or View form button --}}
