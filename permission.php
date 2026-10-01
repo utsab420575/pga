@@ -29,9 +29,7 @@ $basePath = __DIR__;
 
 // Folders to skip
 $exclude = [
-    '.git',
-    '.idea',
-    'node_modules'
+    
 ];
 
 
