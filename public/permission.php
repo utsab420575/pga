@@ -2,12 +2,18 @@
 /**
  * Laravel Permission Fixer
  *
- * Folder: 755
- * File:   644
+ * Laravel Root:
+ *     Current file location
+ *
+ * Folder Permission:
+ *     755
+ *
+ * File Permission:
+ *     644
  *
  * Writable:
- * storage/          775
- * bootstrap/cache/  775
+ *     storage/          775
+ *     bootstrap/cache/  775
  *
  */
 
@@ -16,36 +22,45 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 
+// Laravel root folder
 $basePath = __DIR__;
 
 
 
+// Folders to skip
 $exclude = [
     '.git',
     '.idea',
-    'node_modules',
-    'vendor'
+    'node_modules'
 ];
 
 
 
+/**
+ * Check excluded folders
+ */
 function isExcluded($path, $exclude)
 {
 
     foreach ($exclude as $folder) {
 
+
         if (
             strpos(
                 $path,
-                DIRECTORY_SEPARATOR.$folder.DIRECTORY_SEPARATOR
+                DIRECTORY_SEPARATOR . $folder . DIRECTORY_SEPARATOR
             ) !== false
         ) {
+
             return true;
+
         }
 
 
         if (basename($path) == $folder) {
+
             return true;
+
         }
 
     }
@@ -59,49 +74,60 @@ function isExcluded($path, $exclude)
 
 
 
+/**
+ * Recursive permission fixer
+ */
 function fixPermission($path, $exclude)
 {
 
-    if(isExcluded($path,$exclude)){
+
+    if (isExcluded($path, $exclude)) {
+
         return;
+
     }
 
 
 
-    if(is_dir($path)){
+    if (is_dir($path)) {
 
 
-        chmod($path,0755);
+        chmod($path, 0755);
 
-        echo "DIR 755 : ".$path."\n";
-
-
-        $items=scandir($path);
+        echo "DIR 755  : $path\n";
 
 
-        foreach($items as $item){
+
+        $items = scandir($path);
 
 
-            if($item=="." || $item==".."){
+
+        foreach ($items as $item) {
+
+
+            if ($item == "." || $item == "..") {
+
                 continue;
+
             }
 
 
+
             fixPermission(
-                $path.DIRECTORY_SEPARATOR.$item,
+                $path . DIRECTORY_SEPARATOR . $item,
                 $exclude
             );
 
         }
 
 
-    }
-    else{
+
+    } else {
 
 
-        chmod($path,0644);
+        chmod($path, 0644);
 
-        echo "FILE 644: ".$path."\n";
+        echo "FILE 644 : $path\n";
 
     }
 
@@ -112,19 +138,24 @@ function fixPermission($path, $exclude)
 
 
 
-echo "=================================\n";
+
+echo "====================================\n";
 echo " Laravel Permission Fix Started\n";
-echo "=================================\n\n";
+echo "====================================\n\n";
 
 
 
-// Root
+
+
+// Root permission
 
 chmod($basePath,0755);
 
 
 
-// Normal Laravel permission
+
+
+// Normal Laravel files/folders
 
 fixPermission(
     $basePath,
@@ -134,91 +165,140 @@ fixPermission(
 
 
 
-// Laravel writable folders
 
-$writable = [
 
-    $basePath.'/storage',
-    $basePath.'/bootstrap/cache'
+/**
+ * Writable Laravel folders
+ */
+
+$writableFolders = [
+
+    $basePath . '/storage',
+    $basePath . '/bootstrap/cache'
 
 ];
 
 
 
-echo "\nSetting writable folders...\n\n";
 
-
-foreach($writable as $folder){
-
-
-    if(is_dir($folder)){
-
-
-        chmod($folder,0775);
-
-
-        $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator(
-                $folder,
-                RecursiveDirectoryIterator::SKIP_DOTS
-            ),
-            RecursiveIteratorIterator::SELF_FIRST
-        );
+echo "\nSetting Writable Folders...\n\n";
 
 
 
-        foreach($iterator as $item){
+foreach ($writableFolders as $folder) {
 
 
-            if($item->isDir()){
 
-                chmod(
-                    $item->getPathname(),
-                    0775
-                );
+    if (!is_dir($folder)) {
 
-            }
-            else{
+        continue;
 
-                chmod(
-                    $item->getPathname(),
-                    0664
-                );
+    }
 
-            }
+
+
+    chmod($folder,0775);
+
+
+
+    $iterator = new RecursiveIteratorIterator(
+
+        new RecursiveDirectoryIterator(
+
+            $folder,
+
+            RecursiveDirectoryIterator::SKIP_DOTS
+
+        ),
+
+        RecursiveIteratorIterator::SELF_FIRST
+
+    );
+
+
+
+
+    foreach ($iterator as $item) {
+
+
+
+        if ($item->isDir()) {
+
+
+            chmod(
+                $item->getPathname(),
+                0775
+            );
+
+
+        } else {
+
+
+            chmod(
+                $item->getPathname(),
+                0664
+            );
 
 
         }
 
 
-        echo "Writable fixed: ".$folder."\n";
-
-
     }
+
+
+
+    echo "Writable Fixed : $folder\n";
+
 
 }
 
 
 
 
-// Protect .env
 
-if(file_exists($basePath.'/.env')){
+
+// Protect environment file
+
+if (file_exists($basePath.'/.env')) {
+
 
     chmod(
         $basePath.'/.env',
         0640
     );
 
-    echo ".env permission set 640\n";
+
+    echo ".env permission : 640\n";
 
 }
 
 
 
-echo "\n=================================\n";
-echo " Laravel Permission Completed\n";
-echo "=================================\n";
 
+
+
+// Artisan executable
+
+if (file_exists($basePath.'/artisan')) {
+
+
+    chmod(
+        $basePath.'/artisan',
+        0755
+    );
+
+
+    echo "artisan permission : 755\n";
+
+}
+
+
+
+
+
+
+echo "\n====================================\n";
+echo " Permission Update Completed\n";
+echo "====================================\n";
 
 ?>
