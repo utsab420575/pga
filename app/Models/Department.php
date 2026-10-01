@@ -16,9 +16,17 @@ class Department extends Model
         return $this->belongsTo(Faculty::class);
     }
 
+    public function degrees()
+    {
+        return $this->belongsToMany(Degree::class, 'department_degree');
+    }
+
     // keep method name from your original codebase
     public function applicant()
     {
         return $this->hasMany(Applicant::class);
+    }
+    public function user(){
+        return $this->hasOne(User::class);
     }
 }

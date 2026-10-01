@@ -6,6 +6,7 @@ use App\Models\Applicant;
 use App\Models\Attachment;
 use App\Models\AttachmentType;
 use App\Models\Setting;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -40,11 +41,36 @@ class AttachmentController extends Controller
         if ($applicant->final_submit == 1) {
             return back()->withErrors('Final submission already done. Cannot upload.');
         }
+
+
+
         $setting = Setting::latest()->first();;
         $lastDate = $applicant->applicationtype_id == 1 ? $setting?->end_date : $setting?->eligibility_last_date;
         if ($lastDate && now()->toDateString() > \Carbon\Carbon::parse($lastDate)->toDateString()) {
             return back()->withErrors('Submission deadline has passed. Cannot upload.');
         }
+
+        // ✅ Deadline: applicants only, with bypass for (final_submit=0 && eligibility_approve=0 && payment_status=1)
+        /*if (Auth::user()->user_type === 'applicant') {
+            $bypassDeadline =
+                ((int)$applicant->final_submit === 0) &&
+                ((int)$applicant->eligibility_approve === 0) &&
+                ((int)$applicant->payment_status === 1);
+
+            if (!$bypassDeadline) {
+                $setting  = Setting::latest('id')->first();
+                $lastDate = $applicant->applicationtype_id == 1 ? ($setting?->end_date) : ($setting?->eligibility_last_date);
+
+                if (!$lastDate) {
+                    return response()->json(['message' => 'Setting Table Data Not Found. Contact ICT-CELL.'], 403);
+                }
+
+                $deadline = Carbon::parse($lastDate)->endOfDay();
+                if (now()->gt($deadline)) {
+                    return response()->json(['message' => 'Submission deadline has passed. You cannot upload new files.'], 403);
+                }
+            }
+        }*/
 
         if ($request->hasFile('file')) {
             $data['file'] = $request->file('file')->store('attachments', 'public');
@@ -85,6 +111,28 @@ class AttachmentController extends Controller
             return back()->withErrors('Submission deadline has passed. Cannot update.');
         }
 
+        // ✅ Deadline: applicants only, with bypass for (final_submit=0 && eligibility_approve=0 && payment_status=1)
+        /*if (Auth::user()->user_type === 'applicant') {
+            $bypassDeadline =
+                ((int)$applicant->final_submit === 0) &&
+                ((int)$applicant->eligibility_approve === 0) &&
+                ((int)$applicant->payment_status === 1);
+
+            if (!$bypassDeadline) {
+                $setting  = Setting::latest('id')->first();
+                $lastDate = $applicant->applicationtype_id == 1 ? ($setting?->end_date) : ($setting?->eligibility_last_date);
+
+                if (!$lastDate) {
+                    return response()->json(['message' => 'Setting Table Data Not Found. Contact ICT-CELL.'], 403);
+                }
+
+                $deadline = Carbon::parse($lastDate)->endOfDay();
+                if (now()->gt($deadline)) {
+                    return response()->json(['message' => 'Submission deadline has passed. You cannot upload new files.'], 403);
+                }
+            }
+        }*/
+
         $data = $request->validate([
             'file' => 'nullable|file|max:5120',
             'attachment_type_id' => 'required|exists:attachment_types,id',
@@ -116,6 +164,28 @@ class AttachmentController extends Controller
         if ($lastDate && now()->toDateString() > \Carbon\Carbon::parse($lastDate)->toDateString()) {
             return back()->withErrors('Submission deadline has passed. Cannot delete.');
         }
+
+        // ✅ Deadline: applicants only, with bypass for (final_submit=0 && eligibility_approve=0 && payment_status=1)
+        /*if (Auth::user()->user_type === 'applicant') {
+            $bypassDeadline =
+                ((int)$applicant->final_submit === 0) &&
+                ((int)$applicant->eligibility_approve === 0) &&
+                ((int)$applicant->payment_status === 1);
+
+            if (!$bypassDeadline) {
+                $setting  = Setting::latest('id')->first();
+                $lastDate = $applicant->applicationtype_id == 1 ? ($setting?->end_date) : ($setting?->eligibility_last_date);
+
+                if (!$lastDate) {
+                    return response()->json(['message' => 'Setting Table Data Not Found. Contact ICT-CELL.'], 403);
+                }
+
+                $deadline = Carbon::parse($lastDate)->endOfDay();
+                if (now()->gt($deadline)) {
+                    return response()->json(['message' => 'Submission deadline has passed. You cannot upload new files.'], 403);
+                }
+            }
+        }*/
 
         // full path in public folder
         $filePath = public_path($item->file);
@@ -149,18 +219,50 @@ class AttachmentController extends Controller
         if ($applicant->final_submit == 1) {
             return response()->json(['message' => 'Final submission already done. You cannot upload new files.'], 403);
         }
-        $setting = Setting::latest()->first();;
+
+        //this can be useful,not delete this code
+       /* $setting = Setting::latest()->first();;
         $lastDate = $applicant->applicationtype_id == 1 ? $setting?->end_date : $setting?->eligibility_last_date;
         if ($lastDate && now()->toDateString() > \Carbon\Carbon::parse($lastDate)->toDateString()) {
             return response()->json(['message' => 'Submission deadline has passed. You cannot upload new files.'], 403);
+        }*/
+
+        // ✅ Deadline: applicants only, with bypass for (final_submit=0 && eligibility_approve=0 && payment_status=1)
+        if (Auth::user()->user_type === 'applicant') {
+            $bypassDeadline =
+                ((int)$applicant->final_submit === 0) &&
+                ((int)$applicant->admission_approve === 0) &&
+                ((int)$applicant->payment_status === 1);
+
+            if (!$bypassDeadline) {
+                $setting  = Setting::latest('id')->first();
+                $lastDate = $applicant->applicationtype_id == 1 ? ($setting?->end_date) : ($setting?->eligibility_last_date);
+
+                if (!$lastDate) {
+                    return response()->json(['message' => 'Setting Table Data Not Found. Contact ICT-CELL.'], 403);
+                }
+
+                $deadline = Carbon::parse($lastDate)->endOfDay();
+                if (now()->gt($deadline)) {
+                    return response()->json(['message' => 'Submission deadline has passed. You cannot upload new files.'], 403);
+                }
+            }
         }
 
         // File validation
-        if (in_array($typeId, [1, 2], true)) {
+        // File validation with dimensions
+        if ($typeId == 1) {
+            // Photo (Passport size)
             $request->validate([
-                'file' => 'mimes:jpg,jpeg,png,webp,gif|max:500',
+                'file' => 'mimes:jpg,jpeg,png,webp,gif|max:500|dimensions:width=300,height=300',
+            ]);
+        } elseif ($typeId == 2) {
+            // Signature
+            $request->validate([
+                'file' => 'mimes:jpg,jpeg,png,webp,gif|max:500|dimensions:width=300,height=80',
             ]);
         } else {
+            // Other documents (PDFs only)
             $request->validate([
                 'file' => 'mimes:pdf|max:10240',
             ]);
@@ -191,6 +293,18 @@ class AttachmentController extends Controller
             $attachment->title = $request->input('title') ?: optional(AttachmentType::find($typeId))->title;
         }
         $attachment->save();
+
+
+        // ✅ If photo or signature, also update in basic_infos
+        $basic = $applicant->basicInfo; // relation should exist (hasOne)
+        if ($basic) {
+            if ($typeId == 1) {
+                $basic->photo = $dbPath; // assumes you have `photo` column
+            } elseif ($typeId == 2) {
+                $basic->sign = $dbPath; // assumes you have `signature` column
+            }
+            $basic->save();
+        }
 
         $type = AttachmentType::find($typeId);
         $url  = asset($attachment->file);
@@ -223,10 +337,33 @@ class AttachmentController extends Controller
         if ($applicant->final_submit == 1) {
             return response()->json(['message' => 'Final submission already done. You cannot delete files.'], 403);
         }
-        $setting = Setting::latest()->first();;
+        //not reomve this code
+        /*$setting = Setting::latest()->first();;
         $lastDate = $applicant->applicationtype_id == 1 ? $setting?->end_date : $setting?->eligibility_last_date;
         if ($lastDate && now()->toDateString() > \Carbon\Carbon::parse($lastDate)->toDateString()) {
             return response()->json(['message' => 'Submission deadline has passed. You cannot delete files.'], 403);
+        }*/
+
+        // ✅ Deadline: applicants only, with bypass for (final_submit=0 && eligibility_approve=0 && payment_status=1)
+        if (Auth::user()->user_type === 'applicant') {
+            $bypassDeadline =
+                ((int)$applicant->final_submit === 0) &&
+                ((int)$applicant->admission_approve === 0) &&
+                ((int)$applicant->payment_status === 1);
+
+            if (!$bypassDeadline) {
+                $setting  = Setting::latest('id')->first();
+                $lastDate = $applicant->applicationtype_id == 1 ? ($setting?->end_date) : ($setting?->eligibility_last_date);
+
+                if (!$lastDate) {
+                    return response()->json(['message' => 'Setting Table Data Not Found. Contact ICT-CELL.'], 403);
+                }
+
+                $deadline = Carbon::parse($lastDate)->endOfDay();
+                if (now()->gt($deadline)) {
+                    return response()->json(['message' => 'Submission deadline has passed. You cannot upload new files.'], 403);
+                }
+            }
         }
 
         $fullPath = public_path($attachment->file);

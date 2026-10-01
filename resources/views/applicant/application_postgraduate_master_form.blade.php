@@ -37,20 +37,22 @@
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span><b>Basic Information</b></span>
                         {{-- Floating Info Button --}}
-                        <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#basicInfoModal">Add / Update</button>
+                        @if($applicant->final_submit != 1)
+                            <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#basicInfoModal">Add / Update</button>
+                        @endif
                     </div>
                     <div class="card-body">
                         @if($basicInfo)
                             <table class="table table-sm table-bordered mb-0">
                                 <tbody>
-                                <tr><th width="25%">Full Name</th><td>{{ $basicInfo->full_name }}</td></tr>
+                                <tr><th width="35%">Full Name (As per S.S.C Certificate)</th><td>{{ $basicInfo->full_name }}</td></tr>
                                 <tr><th>Applicant Name (Block Letter)</th><td>{{ $basicInfo->full_name_block_letter }}</td></tr>
-                                <tr><th>Name (Bangla)</th><td>{{ $basicInfo->bn_name }}</td></tr>
+                                <tr><th>Name (Bangla)(As per S.S.C Certificate)</th><td>{{ $basicInfo->bn_name }}</td></tr>
 
                                 <tr><th>Father's Name</th><td>{{ $basicInfo->f_name }}</td></tr>
                                 <tr><th>Mother's Name</th><td>{{ $basicInfo->m_name }}</td></tr>
                                 <tr>
-                                    <th>Guardian's Income</th>
+                                    <th>Guardian's Annual Income</th>
                                     <td>
                                         @if(!is_null($basicInfo->g_income))
                                             {{ number_format((float)$basicInfo->g_income, 2) }}
@@ -60,12 +62,18 @@
 
                                 <tr><th>National ID</th><td>{{ $basicInfo->nid }}</td></tr>
                                 <tr><th>Nationality</th><td>{{ $basicInfo->nationality }}</td></tr>
-                                <tr><th>DOB</th><td>{{ optional($basicInfo->dob)->format('Y-m-d') }}</td></tr>
+                                <tr><th>Date of Birth</th><td>{{ optional($basicInfo->dob)->format('Y-m-d') }}</td></tr>
                                 <tr><th>Religion</th><td>{{ $basicInfo->religion }}</td></tr>
                                 <tr><th>Gender</th><td>{{ $basicInfo->gender }}</td></tr>
                                 <tr><th>Marital Status</th><td>{{ $basicInfo->marital_status }}</td></tr>
 
                                 <tr><th>Field of Interest</th><td>{{ $basicInfo->field_of_interest }}</td></tr>
+                                @if($applicant->department_id == 1)
+                                    <tr>
+                                        <th>Field (Civil Engineering Specific)</th>
+                                        <td>{{ $basicInfo->field_name_ce ?? 'N/A' }}</td>
+                                    </tr>
+                                @endif
 
                                 <tr><th>Present Address</th>
                                     <td><pre class="mb-0" style="white-space:pre-wrap">{{ $basicInfo->pre_address }}</pre></td>
@@ -85,18 +93,28 @@
                 {{-- CARD 3: Education Info (multiple) --}}
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <span><b>Education Info</b></span>
-                        <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#educationModal">Add</button>
+                        <div>
+                            <strong>Degrees Obtained (Starting from the Most Recent)</strong><br>
+                            <small class="text-muted">
+                                N.B.: Please attach attested copies of the Certificate, Mark-sheet, Transcript/Grade Sheet,
+                                and Testimonial for all academic qualifications.
+                            </small>
+                        </div>
+                        @if($applicant->final_submit != 1)
+                            <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#educationModal">
+                                <i class="fas fa-plus"></i> Add
+                            </button>
+                        @endif
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
                             <table class="table table-sm table-bordered mb-0">
                                 <thead>
                                 <tr>
-                                    <th>Degree</th>
-                                    <th>Institute</th>
-                                    <th>Year</th>
-                                    <th>Field</th>
+                                    <th>Degree/Certificate</th>
+                                    <th>University/Institute/Board</th>
+                                    <th>Year of Passing</th>
+                                    <th>Discipline/Field</th>
                                     <th>CGPA</th>
                                     <th class="w-110">Action</th>
                                 </tr>
@@ -138,14 +156,16 @@
                 {{-- CARD 4: Thesis (multiple like Education) --}}
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <span><b>Thesis</b></span>
-                        <button id="btnThAdd"
-                                class="btn btn-primary btn-sm"
-                                data-toggle="modal"
-                                data-target="#thesisModal"
-                                data-store-url="{{ route('thesis.store') }}">
-                            Add
-                        </button>
+                        <span><b>Thesis (if any):</b></span>
+                        @if($applicant->final_submit != 1)
+                            <button id="btnThAdd"
+                                    class="btn btn-primary btn-sm"
+                                    data-toggle="modal"
+                                    data-target="#thesisModal"
+                                    data-store-url="{{ route('thesis.store') }}">
+                                <i class="fas fa-plus"></i> Add
+                            </button>
+                        @endif
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
@@ -153,7 +173,8 @@
                                 <thead>
                                 <tr>
                                     <th>Title</th>
-                                    <th>Institute</th>
+                                    <th>Name of University/Institute</th>
+                                    <th>Supervisor</th>
                                     <th>Period</th>
                                     <th class="w-110">Action</th>
                                 </tr>
@@ -163,6 +184,7 @@
                                     <tr>
                                         <td>{{ $t->title }}</td>
                                         <td>{{ $t->institute }}</td>
+                                        <td>{{ $t->supervisor }}</td>
                                         <td>{{ $t->period }}</td>
                                         <td>
                                             <a href="#"
@@ -179,7 +201,7 @@
                                         </td>
                                     </tr>
                                 @empty
-                                    <tr><td colspan="4"><em>No thesis added.</em></td></tr>
+                                    <tr><td colspan="5"><em>No thesis added.</em></td></tr>
                                 @endforelse
                                 </tbody>
                             </table>
@@ -192,8 +214,10 @@
                 {{-- CARD 5: Publications --}}
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <span><b>Publications</b></span>
-                        <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#publicationModal">Add</button>
+                        <span><b>Publication (if any):</b></span>
+                        @if($applicant->final_submit != 1)
+                            <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#publicationModal"><i class="fas fa-plus"></i> Add</button>
+                        @endif
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
@@ -201,9 +225,9 @@
                                 <thead>
                                 <tr>
                                     <th>Title</th>
-                                    <th>Authors</th>
-                                    <th>Year</th>
-                                    <th>Details</th>
+                                    <th>Author's</th>
+                                    <th>Year of Publication</th>
+                                    <th>Publication Details </th>
                                     <th class="w-110">Action</th>
                                 </tr>
                                 </thead>
@@ -242,8 +266,10 @@
                 {{-- CARD 6: Job Experience --}}
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <span><b>Job Experience</b></span>
-                        <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#jobModal">Add</button>
+                        <span><b>Practical Job Experience (if any)	: </b></span>
+                        @if($applicant->final_submit != 1)
+                            <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#jobModal"><i class="fas fa-plus"></i> Add</button>
+                        @endif
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
@@ -293,9 +319,19 @@
                 {{-- CARD 7: References --}}
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <span><b>References</b></span>
-                        <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#referenceModal">Add</button>
+                        <div>
+                            <strong>Name of Two Referees</strong><br>
+                            <small class="text-muted">
+                                At least one referee must be a teacher from the last institution you attended.
+                            </small>
+                        </div>
+                        @if($applicant->final_submit != 1)
+                            <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#referenceModal">
+                                <i class="fas fa-plus"></i> Add
+                            </button>
+                        @endif
                     </div>
+
                     <div class="card-body">
                         <div class="table-responsive">
                             <table class="table table-sm table-bordered mb-0">
@@ -303,7 +339,7 @@
                                 <tr>
                                     <th>Name</th>
                                     <th>Designation</th>
-                                    <th>Institute</th>
+                                    <th>University/Institute/Organization</th>
                                     <th>Email</th>
                                     <th>Phone</th>
                                     <th>Order No</th>
@@ -353,14 +389,16 @@
                 @php
                     // Filter out specific attachment types (like 5,7,8,9)
                     // so they don’t appear in the quick upload selection.
-                    $selectableTypes = $attachmentTypes->reject(fn($t) => in_array($t->id, [5,7,8,9]));
+                    $selectableTypes = $attachmentTypes->reject(fn($t) => in_array($t->id, [13,16]));
                 @endphp
 
                 <div class="card">
                     {{-- Card header with title and "Add" button (opens modal) --}}
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span><b>Upload all necessary documents</b></span>
-                        <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#quickUploadModal">Add</button>
+                        @if($applicant->final_submit != 1)
+                            <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#quickUploadModal"><i class="fas fa-plus"></i> Add</button>
+                        @endif
                     </div>
 
                     <div class="card-body">
@@ -431,39 +469,56 @@
                     </div>
                 </div>
 
-                {{-- CARD: Final Submit --}}
-                <div class="card mt-4">
-                    <div class="card-header">
-                        <b>Final Submit</b>
-                    </div>
-                    <div class="card-body">
-                        @if($applicant->final_submit == 1)
-                            <div class="alert alert-success d-flex align-items-center">
-                                <i class="fas fa-check-circle fa-2x mr-2"></i>
-                                <div>
-                                    <strong>Successfully submitted your data.</strong><br>
-                                    Application is submitted successfully.
+                    {{-- CARD: Final Submit --}}
+                    @if($applicant->final_submit == 1)
+                        <div class="alert alert-success d-flex align-items-center mt-3">
+                            <i class="fas fa-check-circle fa-2x mr-2"></i>
+                            <div>
+                                <strong>Application is submitted successfully.</strong>
+                            </div>
+                        </div>
+                    @else
+                        <form method="POST" action="{{ route('final.submit.application', $applicant->id) }}">
+                            @csrf
+
+                            {{-- CARD: Declaration --}}
+                            <div class="card mt-4">
+                                <div class="card-header">
+                                    <b>Declaration</b>
+                                </div>
+                                <div class="card-body">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="declarationCheckbox" name="declaration" required>
+                                        <label class="form-check-label" for="declarationCheckbox">
+                                            I declare that the information provided in this form is correct, true and complete to the best of my knowledge and belief.
+                                            If any information is found false, incorrect, or incomplete, or if any ineligibility is detected before or after the examination,
+                                            any legal action can be taken against me by the authority including the cancellation of my application.
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
-                        @else
-                            <form method="POST" action="{{ route('final.submit.application', $applicant->id) }}">
-                                @csrf
 
-                                <div class="form-check mb-3">
-                                    <input class="form-check-input" type="checkbox" id="confirmCheckbox" name="confirm" required>
-                                    <label class="form-check-label" for="confirmCheckbox">
-                                        I confirm that I have submitted all of the required documents and information.
-                                    </label>
+                            {{-- CARD: Final Submit --}}
+                            <div class="card mt-4">
+                                <div class="card-header">
+                                    <b>Final Submission</b>
                                 </div>
+                                <div class="card-body">
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" id="confirmCheckbox" name="confirm" required>
+                                        <label class="form-check-label" for="confirmCheckbox">
+                                            I confirm that I have submitted all of the required documents and information.
+                                        </label>
+                                    </div>
 
-                                <button type="submit" class="btn btn-success"
-                                        onclick="return confirm('Are you sure? After final submission, you may not be able to edit further.')">
-                                    Final Submit
-                                </button>
-                            </form>
-                        @endif
-                    </div>
-                </div>
+                                    <button type="submit" class="btn btn-success"
+                                            onclick="return confirm('Are you sure? After final submission, you may not be able to edit further?')">
+                                        Submit
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    @endif
 
                 {{-- spacer --}}
                 <div class="my-5"></div>
@@ -496,7 +551,10 @@
                     {{-- Names --}}
                     <div class="form-row">
                         <div class="form-group col-md-6">
-                            <label>Full Name</label><span class="text-danger">*</span>
+                            <label>
+                                Full Name in English
+                                <span class="text-muted">(As per S.S.C Certificate)</span>
+                            </label><span class="text-danger">*</span>
                             <input type="text" name="full_name" class="form-control"
                                    maxlength="255"
                                    value="{{ old('full_name', $basicInfo->full_name ?? '') }}" required>
@@ -513,7 +571,10 @@
 
                     <div class="form-row">
                         <div class="form-group col-md-12">
-                            <label>Name (Bangla)</label><span class="text-danger">*</span>
+                            <label>
+                                Full Name in Bengali
+                                <span class="text-muted">(As per S.S.C Certificate)</span>
+                            </label><span class="text-danger">*</span>
                             <input type="text" name="bn_name" class="form-control"
                                    maxlength="255"
                                    value="{{ old('bn_name', $basicInfo->bn_name ?? '') }}" required>
@@ -542,38 +603,48 @@
 
                     {{-- IDs, Nationality, DOB --}}
                     <div class="form-row">
-                        <div class="form-group col-md-4">
+                        <div class="form-group col-md-6">
                             <label>National ID</label><span class="text-danger">*</span>
                             <input type="text" name="nid" class="form-control"
                                    value="{{ old('nid', $basicInfo->nid ?? '') }}" required>
                         </div>
-                        <div class="form-group col-md-4">
+                        <div class="form-group col-md-6">
                             <label>Nationality</label><span class="text-danger">*</span>
                             <input type="text" name="nationality" class="form-control"
                                    value="{{ old('nationality', $basicInfo->nationality ?? '') }}" required>
                         </div>
-                        <div class="form-group col-md-4">
-                            <label>DOB</label><span class="text-danger">*</span>
+
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>
+                                Date of Birth
+                                <span class="text-muted">(As per S.S.C Certificate)</span>
+                            </label><span class="text-danger">*</span>
                             <input type="date" name="dob" class="form-control"
                                    value="{{ old('dob', optional($basicInfo->dob ?? null)->format('Y-m-d')) }}" required>
                         </div>
+
+                        <div class="form-group col-md-6">
+                            <label>Religion</label><span class="text-danger">*</span>
+                            @php $religionOld = old('religion', $basicInfo->religion ?? ''); @endphp
+                            <select name="religion" class="form-control">
+                                <option value="">--select--</option>
+                                <option value="Islam"   {{ $religionOld==='Islam'   ? 'selected':'' }}>Islam</option>
+                                <option value="Hindu"   {{ $religionOld==='Hindu'   ? 'selected':'' }}>Hindu</option>
+                                <option value="Cristan" {{ $religionOld==='Cristan' ? 'selected':'' }}>Cristan</option>
+                                <option value="Baudda"  {{ $religionOld==='Baudda'  ? 'selected':'' }}>Baudda</option>
+                                <option value="others"  {{ $religionOld==='Others'  ? 'selected':'' }}>Others</option>
+                            </select>
+                        </div>
                     </div>
+
 
                     {{-- Religion, Gender, Marital --}}
                     <div class="form-row">
-                        <div class="form-group col-md-4">
-                            <label>Religion</label><span class="text-danger">*</span>
-                            @php $religionOld = strtolower(old('religion', $basicInfo->religion ?? '')); @endphp
-                            <select name="religion" class="form-control">
-                                <option value="">--select--</option>
-                                <option value="islam"   {{ $religionOld==='islam'   ? 'selected':'' }}>Islam</option>
-                                <option value="hindu"   {{ $religionOld==='hindu'   ? 'selected':'' }}>Hindu</option>
-                                <option value="cristan" {{ $religionOld==='cristan' ? 'selected':'' }}>Cristan</option>
-                                <option value="baudda"  {{ $religionOld==='baudda'  ? 'selected':'' }}>Baudda</option>
-                                <option value="others"  {{ $religionOld==='others'  ? 'selected':'' }}>Others</option>
-                            </select>
-                        </div>
-                        <div class="form-group col-md-4">
+
+                        <div class="form-group col-md-6">
                             <label>Gender</label><span class="text-danger">*</span>
                             @php $genderOld = old('gender', $basicInfo->gender ?? ''); @endphp
                             <select name="gender" class="form-control">
@@ -583,7 +654,7 @@
                                 <option value="Other"  {{ $genderOld==='Other'?'selected':'' }}>Other</option>
                             </select>
                         </div>
-                        <div class="form-group col-md-4">
+                        <div class="form-group col-md-6">
                             <label>Marital Status</label><span class="text-danger">*</span>
                             @php $msOld = old('marital_status', $basicInfo->marital_status ?? ''); @endphp
                             <select name="marital_status" class="form-control" required>
@@ -606,6 +677,18 @@
                         </div>
                     </div>
 
+                    {{-- Extra row only for CE (department_id = 1) --}}
+                    @if($applicant->department_id == 1)
+                        <div class="form-row">
+                            <div class="form-group col-md-12">
+                                <label>Field Name (Civil Engineering Specific)</label><span class="text-danger">*</span>
+                                <input type="text" name="field_name_ce" class="form-control"
+                                       maxlength="255"
+                                       value="{{ old('field_name_ce', $basicInfo->field_name_ce ?? '') }}" required>
+                            </div>
+                        </div>
+                    @endif
+
                     {{-- Split Address (Present & Permanent) --}}
                     @php
                         $preText = $basicInfo->pre_address ?? '';
@@ -621,17 +704,19 @@
                     @endphp
 
                     <div class="form-row">
+                        {{-- Present Address --}}
                         <div class="col-md-6">
                             <label class="mb-2"><b>Present Address</b></label><span class="text-danger">*</span>
+
                             <div class="form-group mb-2">
                                 <small>Holding No</small>
                                 <input type="text" name="pre_holding_no" class="form-control"
-                                       value="{{ old('pre_holding_no', addr_pick($preText, 'Holding No')) }}" required>
+                                       value="{{ old('pre_holding_no', addr_pick($preText, 'Holding No')) }}">
                             </div>
                             <div class="form-group mb-2">
                                 <small>Village / Road No</small>
                                 <input type="text" name="pre_village_road" class="form-control"
-                                       value="{{ old('pre_village_road', addr_pick($preText, 'Village/Road')) }}" required>
+                                       value="{{ old('pre_village_road', addr_pick($preText, 'Village/Road')) }}">
                             </div>
                             <div class="form-group mb-2">
                                 <small>Post Office</small>
@@ -648,20 +733,30 @@
                                 <input type="text" name="pre_district" class="form-control"
                                        value="{{ old('pre_district', addr_pick($preText, 'District')) }}" required>
                             </div>
-                            <input type="hidden" name="pre_address">
+
+                            {{-- Hidden field that actually gets submitted (required as before) --}}
+                            <input type="hidden" name="pre_address" required>
                         </div>
 
+                        {{-- Permanent Address --}}
                         <div class="col-md-6">
-                            <label class="mb-2"><b>Permanent Address</b></label><span class="text-danger">*</span>
+                            <label class="mb-2 d-flex justify-content-start align-items-center">
+                                <b>Permanent Address</b><span class="text-danger">*</span>
+                                <div class="form-check ml-3">
+                                    <input type="checkbox" class="form-check-input" id="sameAsPresent">
+                                    <label class="form-check-label small" for="sameAsPresent">Same as Present</label>
+                                </div>
+                            </label>
+
                             <div class="form-group mb-2">
                                 <small>Holding No</small>
                                 <input type="text" name="per_holding_no" class="form-control"
-                                       value="{{ old('per_holding_no', addr_pick($perText, 'Holding No')) }}" required>
+                                       value="{{ old('per_holding_no', addr_pick($perText, 'Holding No')) }}">
                             </div>
                             <div class="form-group mb-2">
                                 <small>Village / Road No</small>
                                 <input type="text" name="per_village_road" class="form-control"
-                                       value="{{ old('per_village_road', addr_pick($perText, 'Village/Road')) }}" required>
+                                       value="{{ old('per_village_road', addr_pick($perText, 'Village/Road')) }}">
                             </div>
                             <div class="form-group mb-2">
                                 <small>Post Office</small>
@@ -678,7 +773,8 @@
                                 <input type="text" name="per_district" class="form-control"
                                        value="{{ old('per_district', addr_pick($perText, 'District')) }}" required>
                             </div>
-                            <input type="hidden" name="per_address">
+
+                            <input type="hidden" name="per_address" required>
                         </div>
                     </div>
                 </div>
@@ -707,13 +803,20 @@
                 </div>
 
                 <div class="modal-body">
-                    <div class="form-group"><label>Degree</label><span class="text-danger">*</span><input type="text" name="degree" class="form-control" required></div>
-                    <div class="form-group"><label>Institute</label><span class="text-danger">*</span><input type="text" name="institute" class="form-control" required></div>
+                    <div class="form-group"><label>Degree/Certificate</label><span class="text-danger">*</span><input type="text" name="degree" class="form-control" required></div>
+                    <div class="form-group"><label>University/Institute/Board</label><span class="text-danger">*</span><input type="text" name="institute" class="form-control" required></div>
                     <div class="form-row">
                         <div class="form-group col-md-6"><label>Year of Passing</label><span class="text-danger">*</span><input type="number" name="year_of_passing" class="form-control" min="1900" max="2100" required></div>
-                        <div class="form-group col-md-6"><label>Field</label><span class="text-danger">*</span><input type="text" name="field" class="form-control"></div>
+                        <div class="form-group col-md-6"><label>Discipline/Field</label><span class="text-danger">*</span><input type="text" name="field" class="form-control"></div>
                     </div>
-                    <div class="form-group"><label>CGPA</label><span class="text-danger">*</span><input type="number" step="0.01" name="cgpa" class="form-control" required></div>
+                    {{-- <div class="form-group"><label>CGPA</label><span class="text-danger">*</span><input type="number" step="0.01" name="cgpa" class="form-control" required></div>--}}
+
+                    <div class="form-group">
+                        <label>CGPA / Class</label>
+                        <span class="text-danger">*</span>
+                        <input type="text" name="cgpa" class="form-control" required placeholder="e.g., 3.75 or First Class">
+                    </div>
+
                 </div>
 
                 <div class="modal-footer">
@@ -746,7 +849,12 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Institute</label><span class="text-danger">*</span>
+                        <label for="supervisor">Supervisor Name with Designation <span class="text-danger">*</span></label>
+                        <textarea name="supervisor" id="supervisor" class="form-control" rows="3" required>{{ old('supervisor') }}</textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Name of University/Institute</label><span class="text-danger">*</span>
                         <input type="text" name="institute" class="form-control"
                                value="{{ old('institute') }}" required>
                     </div>
@@ -788,20 +896,21 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Authors</label><span class="text-danger">*</span>
+                        <label>Author's</label><span class="text-danger">*</span>
                         <input type="text" name="authors" class="form-control" value="{{ old('authors') }}" placeholder="e.g., A. Rahman, B. Akter" required>
                     </div>
 
                     <div class="form-group">
 
-                            <label>Year</label><span class="text-danger">*</span>
+                            <label>Year of Publication</label><span class="text-danger">*</span>
                             <input type="number" name="year_of_publication" class="form-control" min="1900" max="2100" value="{{ old('year_of_publication') }}" required>
 
                     </div>
                     <div class="form-group">
 
-                        <label>Details</label><span class="text-danger">*</span>
-                        <textarea name="details" class="form-control" rows="2" placeholder="Journal/Conference, DOI, volume/issue, pages..." required>{{ old('details') }}</textarea>
+                        <label>Publication Details
+                        </label><span class="text-danger">*</span>
+                        <textarea name="details" class="form-control" rows="2" placeholder="Journal/Conference/Patent/ Book Chapter/Book..." required>{{ old('details') }}</textarea>
 
                     </div>
                 </div>
@@ -851,7 +960,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Details</label><span class="text-danger">*</span>
+                        <label>Job Description</label><span class="text-danger">*</span>
                         <textarea name="details" class="form-control" rows="3" required>{{ old('details') }}</textarea>
                     </div>
                 </div>
@@ -889,7 +998,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Institute</label><span class="text-danger">*</span>
+                        <label>University/Institute/Organization</label><span class="text-danger">*</span>
                         <input type="text" name="institute" class="form-control" value="{{ old('institute') }}" required>
                     </div>
 
@@ -1008,9 +1117,9 @@
     });
 @endphp--}}
 @section('script')
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    {{--<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.3/dist/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/js/bootstrap.min.js"></script>--}}
 
     {{-- SweetAlert handler for all deletes (assumes Swal loaded in layout) --}}
     <script>
@@ -1071,6 +1180,22 @@
                 document.getElementById('ei_method').value = 'POST';
                 document.getElementById('ei_modal_title').textContent = 'Add Education Info';
                 document.getElementById('ei_submit_btn').textContent  = 'Save';
+            }
+        });
+    </script>
+
+    <script>
+        document.getElementById('sameAsPresent').addEventListener('change', function() {
+            const fields = ['holding_no','village_road','post_office','upazila_thana','district'];
+            if (this.checked) {
+                fields.forEach(f => {
+                    document.querySelector(`[name="per_${f}"]`).value =
+                        document.querySelector(`[name="pre_${f}"]`).value;
+                });
+            } else {
+                fields.forEach(f => {
+                    document.querySelector(`[name="per_${f}"]`).value = '';
+                });
             }
         });
     </script>

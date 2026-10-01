@@ -16,4 +16,9 @@ class Degree extends Model
     {
         return $this->hasMany(Applicant::class);
     }
+
+    public function departments()
+    {
+        return $this->belongsToMany(Department::class, 'department_degree');
+    }
 }

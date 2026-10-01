@@ -13,7 +13,6 @@ class EducationInfo extends Model
 
     protected $casts = [
         'year_of_passing' => 'integer',
-        'cgpa'            => 'decimal:2',
     ];
 
     public function applicant()

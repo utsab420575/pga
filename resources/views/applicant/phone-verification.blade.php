@@ -75,7 +75,9 @@
                                         <label for="email" class="col-md-4 col-form-label text-md-right"></label>
 
                                         <div class="col-md-6">
-                                            <button type="button" onclick="phoneAuth();">Send Code</button>
+                                            <button type="button" class="btn btn-primary" onclick="phoneAuth();">
+                                                <i class="fas fa-paper-plane mr-1"></i> Send Code
+                                            </button>
                                         </div>
                                     </div>
 
@@ -92,20 +94,22 @@
                                             <input id="verificationCode" type="text" class="form-control" name="verificationCode" value="{{ old('verificationCode') }}" required="" >
 
                                             @error('verificationCode')
-                                            <span class="invalid-feedback" role="alert">
-                                                <strong>{{ $message }}</strong>
-                                            </span>
+                                             <span class="invalid-feedback" role="alert">
+                                                 <strong>{{ $message }}</strong>
+                                             </span>
                                             @enderror
                                         </div>
                                     </div>
                                     <div id="myDIV" align="center" style="display: none;">
-                                        <img src="public/load.gif">
+                                        <img src="{{asset('load.gif')}}" alt="Loading...">
                                     </div>
                                     <div class="form-group row">
                                         <label for="email" class="col-md-4 col-form-label text-md-right"></label>
 
                                         <div class="col-md-6">
-                                            <button type="button" onclick="codeverify();">Verify Code & Next</button>
+                                            <button type="button" class="btn btn-success" onclick="codeverify();">
+                                                <i class="fas fa-check-circle mr-1"></i> Verify Code & Next
+                                            </button>
                                         </div>
                                     </div>
 
@@ -151,83 +155,174 @@
 
         function render() {
             console.log("🖌 Rendering Firebase reCAPTCHA...");
-            window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
-                size: 'normal',   // can be 'invisible' if you want auto
-                callback: function(response) {
-                    console.log("✅ Firebase reCAPTCHA solved:", response);
-                },
-                'expired-callback': function() {
-                    console.warn("⚠️ Firebase reCAPTCHA expired.");
+            if (document.getElementById('recaptcha-container')) {
+                try {
+                    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+                        size: 'normal',
+                        callback: function(response) {
+                            console.log("✅ Firebase reCAPTCHA solved:", response);
+                        },
+                        'expired-callback': function() {
+                            console.warn("⚠️ Firebase reCAPTCHA expired.");
+                        }
+                    });
+                    recaptchaVerifier.render().then(function(widgetId) {
+                        console.log("✅ Firebase reCAPTCHA rendered with ID:", widgetId);
+                    }).catch(function(err){
+                        console.error("❌ Error rendering Firebase reCAPTCHA:", err);
+                    });
+                } catch(e) {
+                    console.error("Firebase reCAPTCHA init failed", e);
                 }
-            });
-            recaptchaVerifier.render().then(function(widgetId) {
-                console.log("✅ Firebase reCAPTCHA rendered with ID:", widgetId);
-            }).catch(function(err){
-                console.error("❌ Error rendering Firebase reCAPTCHA:", err);
-            });
+            }
         }
 
 
         function phoneAuth() {
             console.log("📱 phoneAuth() called.");
 
-            var number = "88" + document.getElementById('phone').value;
-            numb = number;
-            console.log("➡️ Phone number prepared:", number);
+            var rawPhone = document.getElementById('phone').value.trim();
+
+            if (rawPhone === '') {
+                console.warn("⚠️ Phone number empty.");
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Phone Required',
+                    text: 'Please enter your mobile number.',
+                    confirmButtonColor: '#3085d6',
+                    confirmButtonText: 'OK'
+                });
+                document.getElementById("phone").focus();
+                return false;
+            }
+
+            if (rawPhone.length !== 11) {
+                console.warn("⚠️ Phone number invalid length:", rawPhone.length);
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Invalid Number',
+                    text: 'Mobile number must be 11 digits long.',
+                    confirmButtonColor: '#3085d6',
+                    confirmButtonText: 'OK'
+                });
+                document.getElementById("phone").focus();
+                return false;
+            }
 
             var xc = document.getElementById("myDIVsend");
-            if (xc.style.display === "none") {
-                xc.style.display = "block";
-                console.log("⏳ Loader shown.");
-            } else {
-                xc.style.display = "none";
-                console.log("❌ Loader toggled off unexpectedly.");
-            }
+            xc.style.display = "block";
 
-            if (number === '' || number === '88') {
-                console.warn("⚠️ Phone number empty.");
-                alert("Please enter your mobile number");
-                document.getElementById("phone").focus();
-                xc.style.display = "none";
-                return false;
-            }
-            if (number.length != 13) {
-                console.warn("⚠️ Phone number invalid length:", number.length);
-                alert("Mobile number must be 11 digits long.");
-                document.getElementById("phone").focus();
-                xc.style.display = "none";
-                return false;
-            }
-
-            var recaptchaResponse = grecaptcha.getResponse();
-            console.log("🔑 reCAPTCHA response token:", recaptchaResponse);
-
-            if (recaptchaResponse.length === 0) {
-                console.warn("⚠️ reCAPTCHA not solved.");
-                alert("Please complete the reCAPTCHA verification");
-                xc.style.display = "none";
-                return false;
-            }
-
-            console.log("🚀 Sending AJAX request to sentverifyotp...");
+            // Step 1: Check if mobile already exists before sending OTP
             $.ajax({
-                url: '{{ URL('sentverifyotp') }}',
-                data: { id: number, gresp: recaptchaResponse },
+                url: '{{ route('check-mobile-exists') }}',
                 method: 'POST',
+                data: { phone: rawPhone },
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 },
-                success: function(response) {
-                    console.log("✅ OTP sent response:", response);
-                    check = 1;
-                    alert("Message sent");
-                    $('#verificationCode').focus();
-                    xc.style.display = "none";
+                success: function(checkRes) {
+                    if (checkRes.exists) {
+                        xc.style.display = "none";
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Already Registered',
+                            text: 'Your mobile number already exists.',
+                            confirmButtonColor: '#3085d6',
+                            confirmButtonText: 'OK'
+                        });
+                        return;
+                    }
+
+                    // Step 2: Validate reCAPTCHA if rendered
+                    var recaptchaResponse = '';
+                    if (typeof grecaptcha !== 'undefined' && typeof grecaptcha.getResponse === 'function') {
+                        try {
+                            recaptchaResponse = grecaptcha.getResponse();
+                        } catch(e) {}
+                    }
+
+                    if (recaptchaResponse.length === 0 && document.getElementById('recaptcha-container')) {
+                        xc.style.display = "none";
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Verification Required',
+                            text: 'Please complete the reCAPTCHA verification.',
+                            confirmButtonColor: '#3085d6',
+                            confirmButtonText: 'OK'
+                        });
+                        return false;
+                    }
+
+                    var number = "88" + rawPhone;
+                    numb = number;
+                    console.log("➡️ Phone number prepared:", number);
+
+                    // Step 3: Send OTP via AJAX
+                    console.log("🚀 Sending AJAX request to sentverifyotp...");
+                    $.ajax({
+                        url: '{{ route('sentverifyotp') }}',
+                        data: { id: number, gresp: recaptchaResponse },
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        success: function(response) {
+                            console.log("✅ OTP sent response:", response);
+                            check = 1;
+                            xc.style.display = "none";
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Code Sent',
+                                text: 'Verification code has been sent to your mobile number.',
+                                confirmButtonColor: '#28a745',
+                                confirmButtonText: 'OK'
+                            });
+                            $('#verificationCode').focus();
+                        },
+                        error: function(xhr) {
+                            console.error("❌ Error sending OTP:", xhr);
+                            xc.style.display = "none";
+                            if (xhr.responseJSON && xhr.responseJSON.exists) {
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: 'Already Registered',
+                                    text: 'Your mobile number already exists.',
+                                    confirmButtonColor: '#3085d6',
+                                    confirmButtonText: 'OK'
+                                });
+                            } else {
+                                var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Failed to send verification code.';
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error Sending Code',
+                                    text: msg,
+                                    confirmButtonColor: '#d33',
+                                    confirmButtonText: 'OK'
+                                });
+                            }
+                        }
+                    });
                 },
-                error: function(error) {
-                    console.error("❌ Error sending OTP:", error);
-                    alert('Error: ' + error.responseJSON.message);
+                error: function(err) {
                     xc.style.display = "none";
+                    if (err.responseJSON && err.responseJSON.exists) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Already Registered',
+                            text: 'Your mobile number already exists.',
+                            confirmButtonColor: '#3085d6',
+                            confirmButtonText: 'OK'
+                        });
+                    } else {
+                        var errorMsg = (err.responseJSON && err.responseJSON.message) ? err.responseJSON.message : 'Error validating mobile number.';
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: errorMsg,
+                            confirmButtonColor: '#d33',
+                            confirmButtonText: 'OK'
+                        });
+                    }
                 }
             });
         }
@@ -235,52 +330,101 @@
         function codeverify() {
             console.log("🔎 codeverify() called.");
 
-            var code = document.getElementById('verificationCode').value;
+            var code = document.getElementById('verificationCode').value.trim();
             console.log("➡️ Entered code:", code, " Phone:", numb);
 
             if (code === '') {
                 console.warn("⚠️ No code entered.");
-                alert("Please enter verification code");
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Required',
+                    text: 'Please enter verification code.',
+                    confirmButtonColor: '#3085d6',
+                    confirmButtonText: 'OK'
+                });
+                document.getElementById('verificationCode').focus();
                 return false;
             }
 
             if (typeof check === 'undefined' || check == 0) {
                 console.warn("⚠️ Check flag not set. OTP was not requested.");
-                alert("Please try to get the code again.");
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Action Required',
+                    text: 'Please click "Send Code" first to receive your verification code.',
+                    confirmButtonColor: '#3085d6',
+                    confirmButtonText: 'OK'
+                });
                 return false;
             }
 
             var x = document.getElementById("myDIV");
-            if (x.style.display === "none") {
-                x.style.display = "block";
-                console.log("⏳ Loader shown for code verification.");
-            } else {
-                x.style.display = "none";
-                console.log("❌ Loader toggled off unexpectedly.");
-            }
+            x.style.display = "block";
 
             console.log("🚀 Sending AJAX request to verify-mobile-submit...");
             $.ajax({
                 type: "POST",
-                url: 'verify-mobile-submit',
+                url: '{{ route('verify-mobile-submit') }}',
                 data: { code: code, numb: numb },
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 },
                 success: function(response) {
                     console.log("✅ Code verification response:", response);
+                    x.style.display = "none";
                     if (response.success) {
                         console.log("🎉 Verification success, redirecting...");
-                        window.location.replace("home");
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Verified!',
+                            text: 'Mobile number verified successfully.',
+                            confirmButtonColor: '#28a745',
+                            timer: 1500,
+                            showConfirmButton: false
+                        }).then(function() {
+                            window.location.replace("home");
+                        });
                     } else {
-                        console.warn("⚠️ Verification failed response:", response);
-                        alert('Verification failed. Please try again.');
+                        if (response.exists) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Already Registered',
+                                text: 'Your mobile number already exists.',
+                                confirmButtonColor: '#3085d6',
+                                confirmButtonText: 'OK'
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Verification Failed',
+                                text: response.message || 'Verification failed. Please try again.',
+                                confirmButtonColor: '#d33',
+                                confirmButtonText: 'OK'
+                            });
+                        }
                     }
                 },
                 error: function(error) {
                     console.error("❌ Error verifying code:", error);
-                    alert('Error: ' + error.responseJSON.message);
                     x.style.display = "none";
+                    if (error.responseJSON && error.responseJSON.exists) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Already Registered',
+                            text: 'Your mobile number already exists.',
+                            confirmButtonColor: '#3085d6',
+                            confirmButtonText: 'OK'
+                        });
+                    } else {
+                        var msg = (error.responseJSON && error.responseJSON.message) ? error.responseJSON.message : 'Invalid verification code or server error.';
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Verification Error',
+                            text: msg,
+                            confirmButtonColor: '#d33',
+                            confirmButtonText: 'OK'
+                        });
+                    }
                 }
             });
         }

@@ -12,9 +12,15 @@ class Setting extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'start_date'          => 'date',
-        'end_date'            => 'date',
-        'last_payment_date'   => 'date',
-        'eligibility_last_date'=> 'date',
+        'start_date'                      => 'date',
+        'end_date'                        => 'date',
+        'last_payment_date'               => 'date',
+        'eligibility_start_date'          => 'date',
+        'eligibility_last_date'           => 'date',
+        'last_eligibility_payment_date'   => 'date',
+        'eligibility_approval_start_date' => 'date',
+        'eligibility_approval_last_date'  => 'date',
+        'admission_approval_start_date'   => 'date',
+        'admission_approval_last_date'    => 'date',
     ];
 }

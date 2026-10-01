@@ -74,11 +74,12 @@ class RegisterController extends Controller
             'user_type' => 'applicant',
             'phone_verified' => 0,
             'password' => Hash::make($data['password']),
+             'plain_pass'=>$data['password'],
         ]);
     }
 
 
-    // 👇 This runs after registration & login
+    //  This runs after registration & login
     protected function registered(Request $request, $user)
     {
         if ((int) $user->phone_verified === 0) {

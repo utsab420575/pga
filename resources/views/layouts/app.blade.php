@@ -9,6 +9,8 @@
 
     <title>{{ config('app.name', 'Laravel') }}</title>
 
+  <link rel="icon" type="image/png" href="{{ asset('duet.png') }}">
+
     <!-- Bootstrap 4.1.3 (CDN) -->
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/css/bootstrap.min.css"
@@ -36,7 +38,36 @@
         <div class="collapse navbar-collapse" id="main-navbar">
             <!-- Left -->
             <ul class="navbar-nav mr-auto">
-                <!-- add left links if needed -->
+                @auth
+                    @if (auth()->user()->user_type === 'head')
+                        <!-- Mobile (inside collapsed menu) -->
+                        <li class="nav-item d-md-none">
+                            <a href="{{ url('approve-eligibility') }}" class="nav-link">
+                                <i class="fas fa-user-check mr-1"></i> Eligibility for Application
+                            </a>
+                        </li>
+                        <!-- Desktop button -->
+                        <li class="nav-item d-none d-md-inline-flex align-items-center">
+                            <a href="{{ url('approve-eligibility') }}" class="btn btn-success btn-sm ml-3 text-white">
+                                <i class="fas fa-user-check mr-1"></i> Eligibility for Application
+                            </a>
+                        </li>
+
+
+                        <!-- Mobile (inside collapsed menu) -->
+                        <li class="nav-item d-md-none">
+                            <a href="{{ url('approve-admission') }}" class="nav-link">
+                                <i class="fas fa-user-check mr-1"></i> Eligibility for Admission Test
+                            </a>
+                        </li>
+                        <!-- Desktop button -->
+                        <li class="nav-item d-none d-md-inline-flex align-items-center">
+                            <a href="{{ url('approve-admission') }}" class="btn btn-success btn-sm ml-3 text-white">
+                                <i class="fas fa-user-check mr-1"></i> Eligibility for Admission Test
+                            </a>
+                        </li>
+                    @endif
+                @endauth
             </ul>
 
             <!-- Right -->
@@ -62,6 +93,8 @@
                                 Students
                             </a>
                             <div class="dropdown-menu" aria-labelledby="studentsDropdown">
+                                <a class="dropdown-item" href="{{ url('approve-eligibility') }}">Eligibility for Application</a>
+                                <a class="dropdown-item" href="{{ url('approve-admission') }}">Eligibility for Admission Test</a>
                                 <a class="dropdown-item" href="{{ url('select-department-update-student-status') }}">Admin Status</a>
                                 <a class="dropdown-item" href="{{ url('select-department-view-student-status') }}">View Status</a>
                             </div>
@@ -69,7 +102,65 @@
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url('payment-report') }}">Accounts Report</a>
                         </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('admin.github_deploy.index') }}">
+                                <i class="fab fa-github mr-1"></i> GitHub Deploy
+                            </a>
+                        </li>
+
+                        {{-- Settings Dropdown --}}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="settingsDropdown" role="button"
+                               data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fas fa-cog mr-1"></i> Settings
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="settingsDropdown">
+                                <h6 class="dropdown-header">Manage</h6>
+                                <a class="dropdown-item" href="{{ route('admin.applicationtypes.index') }}">
+                                    <i class="fas fa-file-alt mr-2 text-primary"></i>Application Types
+                                </a>
+                                <a class="dropdown-item" href="{{ route('admin.attachment_types.index') }}">
+                                    <i class="fas fa-paperclip mr-2 text-info"></i>Attachment Types
+                                </a>
+                                <a class="dropdown-item" href="{{ route('admin.degrees.index') }}">
+                                    <i class="fas fa-graduation-cap mr-2 text-success"></i>Degrees
+                                </a>
+                                <a class="dropdown-item" href="{{ route('admin.faculties.index') }}">
+                                    <i class="fas fa-university mr-2 text-warning"></i>Faculties
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item" href="{{ route('admin.notices.index') }}">
+                                    <i class="fas fa-bell mr-2 text-danger"></i>Notices
+                                </a>
+                                <a class="dropdown-item" href="{{ route('admin.settings.index') }}">
+                                    <i class="fas fa-sliders-h mr-2 text-secondary"></i>Settings
+                                </a>
+                                <a class="dropdown-item" href="{{ route('admin.studenttypes.index') }}">
+                                    <i class="fas fa-user-tag mr-2 text-primary"></i>Student Types
+                                </a>
+                                <a class="dropdown-item" href="{{ route('admin.departments.index') }}">
+                                    <i class="fas fa-building mr-2 text-success"></i>Departments
+                                </a>
+                                <a class="dropdown-item" href="{{ route('admin.department_degrees.index') }}">
+                                    <i class="fas fa-project-diagram mr-2 text-purple" style="color: #6f42c1;"></i>Dept-Degree Mapping
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <h6 class="dropdown-header">Passwords</h6>
+                                <a class="dropdown-item" href="{{ route('admin.passwords.head') }}">
+                                    <i class="fas fa-key mr-2 text-warning"></i>Password Reset for Head
+                                </a>
+                                <a class="dropdown-item" href="{{ route('admin.passwords.applicant') }}">
+                                    <i class="fas fa-user-lock mr-2 text-primary"></i>Applicant Passwords
+                                </a>
+                            </div>
+                        </li>
                     @endif
+
+
+
+
+
 
                     @if (Auth::user()->user_type == 'applicant')
                         <li class="nav-item"><a class="nav-link" href="{{ url('home') }}">Dashboard</a></li>

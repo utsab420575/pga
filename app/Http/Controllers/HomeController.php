@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Attachment;
 use App\Models\OtpVerification;
 use App\Models\Setting;
+use App\Models\UserAttachment;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
@@ -34,6 +35,7 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Console\View\Components\Alert;
 use DateTime;
+use Illuminate\Validation\Rule;
 
 class HomeController extends Controller
 {
@@ -132,80 +134,523 @@ class HomeController extends Controller
 
     public function apply_now()
     {
-      //return redirect::back()->withErrors('Online application started from 28 May, 2023 at 09.00AM');
-
-        if(Auth::user()->phone_verified === 0)
-        {
-            return Redirect::to('verify-mobile');
+        // Force mobile verification first
+        if (auth()->user()->user_type === 'applicant') {
+            // ✅ Phone Verified
+            if ((int)auth()->user()->phone_verified === 0) {
+                return Redirect::to('verify-mobile');
+            }
         }
 
-        $degrees = Degree::all();
-        $departments = Department::all();
-        $studenttypes = Studenttype::all();
-        $applicationtypes = Applicationtype::all();
-        return view('applicant.apply')->with('degrees',$degrees)->with('departments',$departments)->with('studenttypes',$studenttypes)->with('applicationtypes',$applicationtypes);
+        //  Deadline check from settings
+        $setting = Setting::query()->orderByDesc('id')->first(); // or where('session', current)
+
+        if ($setting && $setting->end_date) {
+            $deadline = \Illuminate\Support\Carbon::parse($setting->end_date)->endOfDay();
+
+            if (now()->gt($deadline)) {
+                // You can include the date to be clear
+                return back()->withErrors('Application date is over. Deadline was: '.$deadline->toDateString());
+            }
+        }else{
+            return back()->withErrors('Setting Table Data Not Found');
+        }
+
+
+        // Block if user has an eligibility application (type=2) not yet approved
+        $hasPendingEligibility = Applicant::where('user_id', Auth::id())
+            ->where('applicationtype_id', 2)
+            ->where(function ($q) {
+                $q->whereNull('eligibility_approve')
+                    ->orWhere('eligibility_approve', 0);
+            })
+            ->exists();
+
+        if ($hasPendingEligibility) {
+            return redirect()->back()
+                ->withErrors('You have to eligibility approval for apply application');
+            // (If you prefer a "success/error" flash key instead, use ->with('error', '...'))
+        }
+
+
+
+
+
+
+        // Eligibility approved?
+        $hasApprovalEligibility = Applicant::where('user_id', Auth::id())
+            ->where('applicationtype_id', 2)
+            ->where('eligibility_approve', 1)
+            ->exists();
+
+        // Load dropdown data
+        $degrees         = Degree::all();
+        $departments     = Department::all();
+        $studenttypes    = Studenttype::all();
+        $applicationtypes= Applicationtype::all();
+        $deptDegreeMap   = Department::with('degrees')
+            ->get()
+            ->mapWithKeys(fn($d) => [$d->id => $d->degrees->pluck('id')->toArray()])
+            ->toArray();
+
+        return view('applicant.apply', compact('degrees','departments','studenttypes','applicationtypes','hasApprovalEligibility','deptDegreeMap'));
     }
+
+
+    // ============================================================
+    // LANDING PAGE — shows available application type cards
+    // Cards are hidden (not shown) when their window is not active
+    // ============================================================
+    public function apply_landing()
+    {
+        // Phone verification guard
+        if (auth()->user()->user_type === 'applicant') {
+            if ((int) auth()->user()->phone_verified === 0) {
+                return Redirect::to('verify-mobile');
+            }
+        }
+
+        $setting = Setting::orderByDesc('id')->first();
+        $now     = now();
+
+        // Eligibility window dates
+        $eligStart = ($setting && $setting->eligibility_start_date)
+            ? Carbon::parse($setting->eligibility_start_date)->startOfDay() : null;
+        $eligEnd   = ($setting && $setting->eligibility_last_date)
+            ? Carbon::parse($setting->eligibility_last_date)->endOfDay()    : null;
+
+        // Admission window dates
+        $admissionStart = ($setting && $setting->start_date)
+            ? Carbon::parse($setting->start_date)->startOfDay() : null;
+        $admissionEnd   = ($setting && $setting->end_date)
+            ? Carbon::parse($setting->end_date)->endOfDay()     : null;
+
+        // Decide which card to show (completely hidden if window not active)
+        $showEligibilityCard = $eligStart && $eligEnd && $now->between($eligStart, $eligEnd);
+        $showAdmissionCard   = $admissionStart && $admissionEnd && $now->between($admissionStart, $admissionEnd);
+
+        return view('applicant.apply_landing', compact(
+            'showEligibilityCard', 'showAdmissionCard',
+            'eligStart', 'eligEnd',
+            'admissionStart', 'admissionEnd'
+        ));
+    }
+
+
+    // ============================================================
+    // ELIGIBILITY APPLICATION FORM — type 2, private university only
+    // ============================================================
+    public function apply_eligibility()
+    {
+        // Phone verification guard
+        if (auth()->user()->user_type === 'applicant') {
+            if ((int) auth()->user()->phone_verified === 0) {
+                return Redirect::to('verify-mobile');
+            }
+        }
+
+        $userId  = Auth::id();
+        $setting = Setting::orderByDesc('id')->first();
+        $now     = now();
+
+        // Check eligibility window
+        $eligStart = ($setting && $setting->eligibility_start_date)
+            ? Carbon::parse($setting->eligibility_start_date)->startOfDay() : null;
+        $eligEnd   = ($setting && $setting->eligibility_last_date)
+            ? Carbon::parse($setting->eligibility_last_date)->endOfDay()    : null;
+
+        if (!$eligStart || !$eligEnd) {
+            return back()->withErrors('Eligibility application settings not configured. Please contact the administrator.');
+        }
+
+        if ($now->lt($eligStart)) {
+            return back()->withErrors(
+                'The Eligibility application window has not started yet. It opens on ' . $eligStart->format('d M Y') . '.'
+            );
+        }
+        if ($now->gt($eligEnd)) {
+            return back()->withErrors(
+                'The Eligibility application deadline has passed. The window was '
+                . $eligStart->format('d M Y') . ' – ' . $eligEnd->format('d M Y') . '.'
+            );
+        }
+
+        // Block if already has a pending eligibility application
+        $hasPendingEligibility = Applicant::where('user_id', $userId)
+            ->where('applicationtype_id', 2)
+            ->where(function ($q) {
+                $q->whereNull('eligibility_approve')->orWhere('eligibility_approve', 0);
+            })
+            ->exists();
+
+        if ($hasPendingEligibility) {
+            return back()->withErrors('You already have a pending eligibility application. Please wait for a decision.');
+        }
+
+        // Block if already has an approved eligibility
+        $hasApprovedEligibility = Applicant::where('user_id', $userId)
+            ->where('applicationtype_id', 2)
+            ->where('eligibility_approve', 1)
+            ->exists();
+
+        if ($hasApprovedEligibility) {
+            return back()->withErrors('Your eligibility is already approved. Please go to Admission Application.');
+        }
+
+        // Block if already has an admission application
+        $hasAdmissionApplication = Applicant::where('user_id', $userId)
+            ->where('applicationtype_id', 1)
+            ->exists();
+
+        if ($hasAdmissionApplication) {
+            return back()->withErrors('You already have an admission application. You cannot apply for eligibility now.');
+        }
+
+        // Load dropdowns & dynamic department-degree mapping from DB
+        $degrees       = Degree::all();
+        $departments   = Department::all();
+        $studenttypes  = Studenttype::all();
+        $deptDegreeMap = Department::with('degrees')
+            ->get()
+            ->mapWithKeys(fn($d) => [$d->id => $d->degrees->pluck('id')->toArray()])
+            ->toArray();
+
+        return view('applicant.apply_eligibility', compact(
+            'degrees', 'departments', 'studenttypes', 'deptDegreeMap',
+            'eligStart', 'eligEnd'
+        ));
+    }
+
+
+    // ============================================================
+    // ADMISSION APPLICATION FORM — type 1
+    // For: public university / approved eligibility / previously approved
+    // ============================================================
+    public function apply_admission()
+    {
+        // Phone verification guard
+        if (auth()->user()->user_type === 'applicant') {
+            if ((int) auth()->user()->phone_verified === 0) {
+                return Redirect::to('verify-mobile');
+            }
+        }
+
+        $userId  = Auth::id();
+        $setting = Setting::orderByDesc('id')->first();
+        $now     = now();
+
+        // Check admission window
+        $admissionStart = ($setting && $setting->start_date)
+            ? Carbon::parse($setting->start_date)->startOfDay() : null;
+        $admissionEnd   = ($setting && $setting->end_date)
+            ? Carbon::parse($setting->end_date)->endOfDay()     : null;
+
+        if (!$admissionStart || !$admissionEnd) {
+            return back()->withErrors('Admission application settings not configured. Please contact the administrator.');
+        }
+
+        if ($now->lt($admissionStart)) {
+            return back()->withErrors(
+                'The Admission application window has not started yet. It opens on ' . $admissionStart->format('d M Y') . '.'
+            );
+        }
+        if ($now->gt($admissionEnd)) {
+            return back()->withErrors(
+                'The Admission application deadline has passed. The window was '
+                . $admissionStart->format('d M Y') . ' – ' . $admissionEnd->format('d M Y') . '.'
+            );
+        }
+
+        // Check if user has an existing eligibility application
+        $eligibilityApp = Applicant::with('department')
+            ->where('user_id', $userId)
+            ->where('applicationtype_id', 2)
+            ->first();
+
+        if ($eligibilityApp) {
+            // If not approved, block admission application until Department Head approves
+            if ((int) $eligibilityApp->eligibility_approve !== 1) {
+                $deptName = $eligibilityApp->department ? $eligibilityApp->department->full_name : 'your applied department';
+                return redirect()->route('apply-now')->withErrors(
+                    "You have already applied for eligibility application. Please take approval from Department Head ({$deptName})."
+                );
+            }
+        }
+
+        // If eligibility application exists and is approved
+        $hasApprovalEligibility = (bool) ($eligibilityApp && (int) $eligibilityApp->eligibility_approve === 1);
+
+        // Load dropdowns & dynamic department-degree mapping from DB
+        $degrees          = Degree::all();
+        $departments      = Department::all();
+        $studenttypes     = Studenttype::all();
+        $applicationtypes = Applicationtype::all();
+        $deptDegreeMap    = Department::with('degrees')
+            ->get()
+            ->mapWithKeys(fn($d) => [$d->id => $d->degrees->pluck('id')->toArray()])
+            ->toArray();
+
+        return view('applicant.apply_admission', compact(
+            'degrees', 'departments', 'studenttypes', 'applicationtypes', 'deptDegreeMap',
+            'hasApprovalEligibility',
+            'admissionStart', 'admissionEnd'
+        ));
+    }
+
 
     public function apply_now_submit(Request $request)
     {
+        // Step 1: Validate form input (must match your Blade form)
         $this->validate($request, [
-            'degree' => ['required'],
-            'department' => ['required'],
-            'studenttype' => ['required'],
+            'degree'          => ['required'],
+            'department'      => ['required'],
+            'studenttype'     => ['required'],
             'applicationtype' => ['required'],
-            'declaration' =>'accepted'
+            'declaration'     => 'accepted',
+
+            // Required only when previously_eligible
+            'prev_eligibility_file' => [
+                Rule::requiredIf($request->university_type === 'previously_eligible'),
+                'file','mimes:pdf,jpg,jpeg,png','max:2048'
+            ],
+
         ]);
 
-        $application = Applicationtype::find($request->applicationtype);
+        if (auth()->user()->user_type === 'applicant') {
+            // ✅ Phone Verified
+            if ((int)auth()->user()->phone_verified === 0) {
+                return Redirect::to('verify-mobile');
+            }
+        }
 
-        $checkApplication = Applicant::where('applicationtype_id', $request->applicationtype)
-            ->where('department_id', $request->department)
-            ->where('user_id', Auth::user()->id)
+        $appType = (int) $request->applicationtype; // 1 = Admission, 2 = Eligibility
+        $userId  = Auth::id();
+
+        // Step 2: Load latest settings (for date windows)
+        $setting = Setting::query()->orderByDesc('id')->first();
+        if (!$setting) {
+            return back()->withErrors('Setting Table Data Not Found');
+        }
+
+        $now = now();
+
+        // Admission application window
+        $admissionStart = $setting->start_date
+            ? \Illuminate\Support\Carbon::parse($setting->start_date)->startOfDay() : null;
+        $admissionEnd = $setting->end_date
+            ? \Illuminate\Support\Carbon::parse($setting->end_date)->endOfDay() : null;
+
+        // Eligibility application window
+        $eligStart = $setting->eligibility_start_date
+            ? \Illuminate\Support\Carbon::parse($setting->eligibility_start_date)->startOfDay() : null;
+        $eligEnd = $setting->eligibility_last_date
+            ? \Illuminate\Support\Carbon::parse($setting->eligibility_last_date)->endOfDay() : null;
+
+        $canAdmission   = $admissionStart && $admissionEnd && $now->between($admissionStart, $admissionEnd);
+        $canEligibility = $eligStart && $eligEnd && $now->between($eligStart, $eligEnd);
+
+        // 🔹 Step 3: Enforce time windows for Admission / Eligibility
+        if ($appType === 1 && !$canAdmission) {
+            if ($admissionStart && $now->lt($admissionStart)) {
+                $msg = 'The Admission application window has not started yet.'
+                    . ' It opens on ' . $admissionStart->format('d M Y') . '.';
+            } elseif ($admissionEnd && $now->gt($admissionEnd)) {
+                $msg = 'The Admission application deadline has passed.'
+                    . ' The window was ' . $admissionStart->format('d M Y')
+                    . ' – ' . $admissionEnd->format('d M Y') . '.';
+            } else {
+                $msg = 'The Admission application window is not currently available.';
+            }
+            return back()->withErrors($msg);
+        }
+        if ($appType === 2 && !$canEligibility) {
+            if ($eligStart && $now->lt($eligStart)) {
+                $msg = 'The Eligibility application window has not started yet.'
+                    . ' It opens on ' . $eligStart->format('d M Y') . '.';
+            } elseif ($eligEnd && $now->gt($eligEnd)) {
+                $msg = 'The Eligibility application deadline has passed.'
+                    . ' The window was ' . $eligStart->format('d M Y')
+                    . ' – ' . $eligEnd->format('d M Y') . '.';
+            } else {
+                $msg = 'The Eligibility application window is not currently available.';
+            }
+            return back()->withErrors($msg);
+        }
+
+        // 🔹 Step 4: Extra rules & state checks
+
+        //  If any eligibility application already exists, block another one
+        if ($appType === 2) {
+            $hasAnyEligibility = Applicant::where('user_id', $userId)
+                ->where('applicationtype_id', 2)
+                ->exists();
+
+            if ($hasAnyEligibility) {
+                return back()->withErrors('You already have an eligibility application; you cannot submit another.');
+            }
+        }
+
+        // Check if user has an existing eligibility application
+        $existingEligibility = Applicant::with('department')
+            ->where('user_id', $userId)
+            ->where('applicationtype_id', 2)
             ->first();
 
-        if ($checkApplication) {
-            return Redirect::back()->withErrors('Already applied in this department');
-        } else {
-            $applicant = new Applicant;
+        $hasPendingEligibility = $existingEligibility && (int) $existingEligibility->eligibility_approve !== 1;
 
-            if ($application->type == "Admission") {
-                $applicant->roll = 100000 + Applicant::where('applicationtype_id', 1)->count() + 1;
-            } else {
-                $applicant->roll = 200000 + Applicant::where('applicationtype_id', 2)->count() + 1;
+        // If Admission requested but eligibility is not approved → block with Department Head message
+        if ($appType === 1 && $hasPendingEligibility) {
+            $deptName = $existingEligibility->department ? $existingEligibility->department->full_name : 'your applied department';
+            return redirect()->route('apply-now')->withErrors(
+                "You have already applied for eligibility application. Please take approval from Department Head ({$deptName})."
+            );
+        }
+
+        // If Eligibility requested but one is pending → block
+        if ($appType === 2 && $hasPendingEligibility) {
+            return back()->withErrors('You already have an eligibility application pending approval. Please wait for a decision.');
+        }
+
+        // If Eligibility requested but already approved → block
+        if ($appType === 2) {
+            $hasApprovedEligibility = Applicant::where('user_id', $userId)
+                ->where('applicationtype_id', 2)
+                ->where('eligibility_approve', 1)
+                ->exists();
+
+            if ($hasApprovedEligibility) {
+                return back()->withErrors('You already have eligibility approval. Please proceed to admission application.');
             }
 
-            $applicant->payment_status = 0;
-            $applicant->edit_per = 0;
-            $applicant->department_id = $request->department;
-            $applicant->studenttype_id = $request->studenttype;
-            $applicant->degree_id = $request->degree;
-            $applicant->applicationtype_id = $request->applicationtype;
-            $applicant->user_id = Auth::user()->id;
+            // If Admission already exists, block creating eligibility
+            $hasAdmissionApplication = Applicant::where('user_id', $userId)
+                ->where('applicationtype_id', 1)
+                ->exists();
+
+            if ($hasAdmissionApplication) {
+                return back()->withErrors('You already have an admission application. You cannot apply for eligibility now.');
+            }
+        }
+
+        // 🔹 Step 5: Prevent duplicate: same user + same type + same department
+        $duplicate = Applicant::where('applicationtype_id', $appType)
+            ->where('department_id', $request->department)
+            ->where('user_id', $userId)
+            ->first();
+
+        if ($duplicate) {
+            return Redirect::back()->withErrors('Already applied in this department');
+        }
+
+        // 🔹 Step 6: Create new application (inside transaction for safety)
+        $application = Applicationtype::find($appType);
+        if (!$application) {
+            return back()->withErrors('Invalid application type.');
+        }
+
+
+        //return 'hi';
+        DB::beginTransaction();
+        try {
+            // Generate unique roll no. based on application type
+            $base = ($application->type === "Admission" || $appType == 1) ? 100000 : 200000;
+
+            // Fetch current maximum numeric roll for this application type with row locking
+            $maxRoll = Applicant::where('applicationtype_id', $appType)
+                ->whereRaw("roll REGEXP '^[0-9]+$'")
+                ->lockForUpdate()
+                ->max(DB::raw('CAST(roll AS UNSIGNED)'));
+
+            $roll = ($maxRoll && $maxRoll >= $base) ? ($maxRoll + 1) : ($base + 1);
+
+            // Double check uniqueness across all applicants to prevent any collision
+            while (Applicant::where('roll', (string) $roll)->lockForUpdate()->exists()) {
+                $roll++;
+            }
+
+            // Save applicant record
+            $applicant = new Applicant;
+            $applicant->roll               = (string) $roll;
+            $applicant->payment_status     = 0;
+            $applicant->edit_per           = 0;
+            $applicant->department_id      = $request->department;
+            $applicant->studenttype_id     = $request->studenttype;
+            $applicant->degree_id          = $request->degree;
+            $applicant->applicationtype_id = $appType;
+            $applicant->user_id            = $userId;
             $applicant->save();
 
-          /*  // ✅ Clone previous applicant data if exists
-            $userApplicants = Applicant::where('user_id', Auth::id())->orderBy('id', 'asc')->get();
-
-            if ($userApplicants->count() > 1) {
-                $oldApplicantId = $userApplicants->first()->id;   // oldest applicant id
-                $newApplicantId = $applicant->id;                 // newly created applicant id
-
-                $this->cloneApplicantData($oldApplicantId, $newApplicantId);
-            }*/
-
-            $source = Applicant::where('user_id', Auth::id())
-                ->where('id', '!=', $applicant->id)     // exclude the new one
-                ->withCount('attachments')              // Laravel will add attachments_count
-                ->orderByDesc('attachments_count')      // pick the one with most attachments
+            // 🔹 Step 7: Clone attachments from the applicant with the most attachments (if any)
+            $source = Applicant::where('user_id', $userId)
+                ->where('id', '!=', $applicant->id)
+                ->withCount('attachments')
+                ->orderByDesc('attachments_count')
                 ->first();
 
             if ($source && $source->attachments_count > 0) {
                 $this->cloneApplicantData($source->id, $applicant->id);
             }
 
-            return redirect("application/" . $applicant->id);
+
+
+
+
+            // inside your try { ... } block, AFTER $applicant->save();
+            $storedPublicRelativePath = null;
+
+            if ($request->university_type === 'previously_eligible' && $request->hasFile('prev_eligibility_file')) {
+                $file = $request->file('prev_eligibility_file');
+
+                // Basic whitelist (you already validate; this is an extra guard)
+                $extension = strtolower($file->getClientOriginalExtension());
+                if (!in_array($extension, ['pdf', 'jpg', 'jpeg', 'png'])) {
+                    throw new \RuntimeException('Invalid file type.');
+                }
+
+                $originalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+                $safeBase     = preg_replace('/[^A-Za-z0-9_-]/', '', $originalName) ?: 'file';
+                $today        = now()->format('Y-m-d');
+
+                // Folder under public/
+                $subdir     = "user_attachments/{$today}";
+                $uploadPath = public_path($subdir);
+
+                if (!is_dir($uploadPath)) {
+                    mkdir($uploadPath, 0775, true);
+                }
+
+                // e.g. 42_prev_eligibility_20251018_153045_123456_filename.pdf
+                $filename = $userId . '_prev_eligibility_' . now()->format('Ymd_His_u') . '_' . $safeBase . '.' . $extension;
+
+                // Move into public/…
+                $file->move($uploadPath, $filename);
+
+                // Save relative path (so you can use asset($path) later)
+                $storedPublicRelativePath = "{$subdir}/{$filename}";
+
+                // DB insert
+                UserAttachment::create([
+                    'user_id'     => $userId,
+                    'type'        => 3, // previous_eligibility
+                    'file'        => $storedPublicRelativePath, // <-- public relative path
+                    'title'       => 'Previously approved eligibility',
+                    'attachments' => 'previous_eligibility_proof',
+                ]);
+            }
+
+
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('Failed to create application: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return back()->withErrors('Failed to create application. Please try again.');
         }
+
+        // 🔹 Step 8: Redirect user to their new application form
+        return redirect("application/" . $applicant->id);
     }
+
+
 
 
     public function application($id)
@@ -224,82 +669,206 @@ class HomeController extends Controller
 
     public function edit_application($id)
     {
-        $applicant = Applicant::where('id',$id)->where('user_id',Auth::user()->id)->first();
-      	if($applicant->edit_per === 0 && $applicant->payment_status === 1)
-        {
-          return redirect::back()->withErrors('Already paid');
-        }
-        if($applicant)
-        {
-            $degrees = Degree::all();
-            $departments = Department::all();
-            $studenttypes = Studenttype::all();
-            $applicationtypes = Applicationtype::all();
-            return view('applicant.edit-application')->with('applicant',$applicant)->with('degrees',$degrees)->with('departments',$departments)->with('studenttypes',$studenttypes)->with('applicationtypes',$applicationtypes);
-        }
-        else
-        {
-            return redirect::back()->withErrors('Application not found');
+        $applicant = Applicant::where('id', $id)
+            ->where('user_id', Auth::id())
+            ->first();
+
+        if (!$applicant) {
+            return back()->withErrors('Application not found');
         }
 
+        // Edit only if payment==0 AND final_submit==0
+        if ((int)$applicant->payment_status === 1 || (int)$applicant->final_submit === 1) {
+            return back()->withErrors('Editing not allowed after payment or final submission.');
+        }
+
+        $degrees          = Degree::all();
+        $departments      = Department::all();
+        $studenttypes     = Studenttype::all();
+        $applicationtypes = Applicationtype::all();
+
+        // Same flag your apply blade/JS expects
+        $hasApprovalEligibility = Applicant::where('user_id', Auth::id())
+            ->where('applicationtype_id', 2)
+            ->where('eligibility_approve', 1)
+            ->exists();
+
+        return view('applicant.edit-application', compact(
+            'applicant', 'degrees', 'departments', 'studenttypes', 'applicationtypes', 'hasApprovalEligibility'
+        ));
     }
 
     public function edit_application_submit($id, Request $request)
     {
-        $this->validate($request,[
-        'degree' => ['required'],
-        'department' => ['required'],
-        'studenttype' => ['required'],
-        'applicationtype' => ['required'],
-        'declaration' =>'accepted'
-    ]);
-      	$application = Applicationtype::find($request->applicationtype);
-        $applicant = Applicant::where('id',$id)->where('user_id',Auth::user()->id)->first();
-		if($applicant->edit_per === 0 && $applicant->payment_status === 1)
-        {
-          return redirect::back()->withErrors('Already paid');
+        $applicant = Applicant::where('id', $id)
+            ->where('user_id', Auth::id())
+            ->first();
+
+        if (!$applicant) {
+            return back()->withErrors('Application not found');
         }
-        if($applicant)
-        {
-            $checkApplication = Applicant::where('applicationtype_id',$request->applicationtype)->where('department_id',$request->department)->where('user_id',Auth::user()->id)->where('id', '!=', $applicant->id)->first();
 
-          if($checkApplication)
-          {
-            return redirect::back()->withErrors('Already applied in this department');
-          }
-          else
-          {
-                if($applicant->payment_status === 0)
-                {
-                    if($application->type == "Admission")
-                    {
-                      $applicant->roll = 100000+Applicant::where('applicationtype_id',1)->count()+1;
-                    }
-                    else
-                    {
-                      $applicant->roll = 200000+Applicant::where('applicationtype_id',2)->count()+1;
-                    }
-                  $applicant->applicationtype_id = $request->applicationtype;
-                }
-                $applicant->edit_per = 0;
-                $applicant->department_id = $request->department;
-                $applicant->studenttype_id = $request->studenttype;
-                $applicant->degree_id = $request->degree;
+        // Edit only if payment==0 AND final_submit==0
+        if ((int)$applicant->payment_status === 1 || (int)$applicant->final_submit === 1) {
+            return back()->withErrors('Editing not allowed after payment or final submission.');
+        }
 
-                $applicant->save();
+        // Validate (university_type is request-only; used for gating)
+        $this->validate($request, [
+            'degree'          => ['required'],
+            'department'      => ['required'],
+            'studenttype'     => ['required'],
+            'applicationtype' => ['required'],
+            'university_type' => ['required', 'in:private,public'],
+            'declaration'     => ['accepted'],
+        ]);
 
-                return redirect("application/".$applicant->id);
+        $userId       = Auth::id();
+        $newAppType   = (int) $request->applicationtype;          // target type from form (1=Admission, 2=Eligibility)
+        $oldAppType   = (int) $applicant->applicationtype_id;     // current stored type
+        $changingType = $newAppType !== $oldAppType;
+
+        // Load settings (windows) like apply_now_submit
+        $setting = Setting::query()->orderByDesc('id')->first();
+        if (!$setting) {
+            return back()->withErrors('Setting Table Data Not Found');
+        }
+
+        $now = now();
+
+        $admissionStart = $setting->start_date
+            ? \Illuminate\Support\Carbon::parse($setting->start_date)->startOfDay() : null;
+        $admissionEnd = $setting->end_date
+            ? \Illuminate\Support\Carbon::parse($setting->end_date)->endOfDay() : null;
+
+        $eligStart = $setting->eligibility_start_date
+            ? \Illuminate\Support\Carbon::parse($setting->eligibility_start_date)->startOfDay() : null;
+        $eligEnd = $setting->eligibility_last_date
+            ? \Illuminate\Support\Carbon::parse($setting->eligibility_last_date)->endOfDay() : null;
+
+        $canAdmission   = $admissionStart && $admissionEnd && $now->between($admissionStart, $admissionEnd);
+        $canEligibility = $eligStart && $eligEnd && $now->between($eligStart, $eligEnd);
+
+        // Enforce time windows for the TARGET type (even if only department/degree changed)
+        if ($newAppType === 1 && !$canAdmission) {
+            if ($admissionStart && $now->lt($admissionStart)) {
+                $msg = 'The Admission application window has not started yet.'
+                    . ' It opens on ' . $admissionStart->format('d M Y') . '.';
+            } elseif ($admissionEnd && $now->gt($admissionEnd)) {
+                $msg = 'The Admission application deadline has passed.'
+                    . ' The window was ' . $admissionStart->format('d M Y')
+                    . ' – ' . $admissionEnd->format('d M Y') . '.';
+            } else {
+                $msg = 'The Admission application window is not currently available.';
+            }
+            return back()->withErrors($msg);
+        }
+        if ($newAppType === 2 && !$canEligibility) {
+            if ($eligStart && $now->lt($eligStart)) {
+                $msg = 'The Eligibility application window has not started yet.'
+                    . ' It opens on ' . $eligStart->format('d M Y') . '.';
+            } elseif ($eligEnd && $now->gt($eligEnd)) {
+                $msg = 'The Eligibility application deadline has passed.'
+                    . ' The window was ' . $eligStart->format('d M Y')
+                    . ' – ' . $eligEnd->format('d M Y') . '.';
+            } else {
+                $msg = 'The Eligibility application window is not currently available.';
+            }
+            return back()->withErrors($msg);
+        }
+
+        // Eligibility rule flags (same as apply)
+        $hasPendingEligibility = Applicant::where('user_id', $userId)
+            ->where('applicationtype_id', 2)
+            ->where(function ($q) {
+                $q->whereNull('eligibility_approve')->orWhere('eligibility_approve', 0);
+            })
+            ->exists();
+
+        $hasApprovedEligibility = Applicant::where('user_id', $userId)
+            ->where('applicationtype_id', 2)
+            ->where('eligibility_approve', 1)
+            ->exists();
+
+        $hasAdmissionApplication = Applicant::where('user_id', $userId)
+            ->where('applicationtype_id', 1)
+            ->exists();
+
+        // Apply the same “extra rules & state checks” against the TARGET type
+        if ($newAppType === 1 /* Admission */) {
+            // Block if there is a pending eligibility
+            if ($hasPendingEligibility) {
+                return back()->withErrors('Your eligibility application is pending approval. Please wait before applying for admission.');
+            }
+            // (Approved eligibility is fine; admission may proceed as per your rules)
+        }
+
+        if ($newAppType === 2 /* Eligibility */) {
+            // Only one eligibility application per user
+            $hasAnyEligibility = Applicant::where('user_id', $userId)
+                ->where('applicationtype_id', 2)
+                ->where('id', '!=', $applicant->id)   // exclude the one being edited
+                ->exists();
+            if ($hasAnyEligibility) {
+                return back()->withErrors('You already have an eligibility application; you cannot submit another.');
+            }
+            // Block if another eligibility is pending (excluding this one)
+            if ($hasPendingEligibility && $oldAppType !== 2) { // changing to eligibility while another pending exists
+                return back()->withErrors('You already have an eligibility application pending approval. Please wait for a decision.');
+            }
+            // Block if eligibility already approved
+            if ($hasApprovedEligibility && $oldAppType !== 2) {
+                return back()->withErrors('You already have eligibility approval. Please proceed to admission application.');
+            }
+            // Block creating eligibility if admission application exists
+            if ($hasAdmissionApplication && $oldAppType !== 2) {
+                return back()->withErrors('You already have an admission application. You cannot apply for eligibility now.');
             }
         }
-        else
-        {
-            return redirect::back()->withErrors('Application not found');
+
+        // Private/Public gating (same as your blade JS)
+        $hasApprovalEligibility = $hasApprovedEligibility; // reuse computed flag
+        $uniType = $request->input('university_type');     // not stored
+        $allowedAppTypeIds = $uniType === 'private'
+            ? ($hasApprovalEligibility ? [1] : [2])
+            : [1];
+
+        if (!in_array($newAppType, $allowedAppTypeIds, true)) {
+            return back()->withErrors('Selected application type is not allowed for the chosen university type.');
         }
 
+        // Prevent duplicate: same user + same department + same app type (exclude this record)
+        $duplicate = Applicant::where('user_id', $userId)
+            ->where('department_id', $request->department)
+            ->where('applicationtype_id', $newAppType)
+            ->where('id', '!=', $applicant->id)
+            ->first();
+
+        if ($duplicate) {
+            return back()->withErrors('Already applied in this department');
+        }
+
+        // ✅ Update fields (no roll generation in edit)
+        $applicant->department_id      = $request->department;
+        $applicant->studenttype_id     = $request->studenttype;
+        $applicant->degree_id          = $request->degree;
+        $applicant->applicationtype_id = $newAppType;
+
+        // If you still use edit_per to disable further edits after this save, keep:
+        $applicant->edit_per = 0;
+
+        $applicant->save();
+
+        return redirect("application/" . $applicant->id);
     }
 
     public function my_application(){
-
+        if (auth()->user()->user_type === 'applicant') {
+            // ✅ Phone Verified
+            if ((int)auth()->user()->phone_verified === 0) {
+                return Redirect::to('verify-mobile');
+            }
+        }
         $applications = Applicant::where('user_id',Auth::user()->id)->get();
         return view('applicant.my-application')->with('applications',$applications);
     }
@@ -323,13 +892,77 @@ class HomeController extends Controller
         return redirect::back()->with('Status','Updated successfully');
     }
 
-  public function payment_report()
+    public function payment_report()
     {
         $departments = Department::all();
-        $admission_fees = Applicant::where('payment_status',1)->where('applicationtype_id',1)->orderBy('department_id','ASC')->orderBy('roll','ASC')->get();
-        $equivalance_fees = Applicant::where('payment_status',1)->where('applicationtype_id',2)->orderBy('department_id','ASC')->orderBy('roll','ASC')->get();
 
-        return view('payment-report')->with('departments',$departments)->with('admission_fees',$admission_fees)->with('equivalance_fees',$equivalance_fees);
+        // Admission
+        $admission_fees = Applicant::with(['department', 'user', 'payment'])
+            ->select('applicants.*')
+            ->leftJoin('payments', 'payments.applicant_id', '=', 'applicants.id')
+            ->where('applicants.payment_status', 1)
+            ->where('applicants.applicationtype_id', 1)
+            ->orderBy('payments.amount', 'ASC')
+            ->orderBy('applicants.department_id', 'ASC')
+            ->orderBy('applicants.roll', 'ASC')
+            ->get();
+
+        // Equivalence
+        $equivalance_fees = Applicant::with(['department', 'user', 'payment'])
+            ->select('applicants.*')
+            ->leftJoin('payments', 'payments.applicant_id', '=', 'applicants.id')
+            ->where('applicants.payment_status', 1)
+            ->where('applicants.applicationtype_id', 2)
+            ->orderBy('payments.amount', 'ASC')
+            ->orderBy('applicants.department_id', 'ASC')
+            ->orderBy('applicants.roll', 'ASC')
+            ->get();
+
+        // Sum amounts from payments (safe if some applicants have no payment)
+        $admission_total_amount = $admission_fees->sum(function ($item) {
+            return optional($item->payment)->amount ?? 0;
+        });
+
+        $equivalance_total_amount = $equivalance_fees->sum(function ($item) {
+            return optional($item->payment)->amount ?? 0;
+        });
+
+
+        // ==== METHOD/BANK-WISE SUMMARY ====
+
+        // Admission grouped by bankname
+        $admission_method_summaries = Payment::select(
+            'bankname',
+            DB::raw('COUNT(*) as applications'),
+            DB::raw('SUM(amount) as total_amount')
+        )
+            ->whereIn('applicant_id', $admission_fees->pluck('id'))
+            ->groupBy('bankname')
+            ->get();
+
+        // Equivalance grouped by bankname
+        $equivalance_method_summaries = Payment::select(
+            'bankname',
+            DB::raw('COUNT(*) as applications'),
+            DB::raw('SUM(amount) as total_amount')
+        )
+            ->whereIn('applicant_id', $equivalance_fees->pluck('id'))
+            ->groupBy('bankname')
+            ->get();
+
+
+
+
+
+        return view('payment-report')
+            ->with('departments', $departments)
+            ->with('admission_fees', $admission_fees)
+            ->with('equivalance_fees', $equivalance_fees)
+            ->with('admission_total_amount', $admission_total_amount)
+            ->with('equivalance_total_amount', $equivalance_total_amount)
+            ->with('admission_method_summaries', $admission_method_summaries)
+            ->with('equivalance_method_summaries', $equivalance_method_summaries);
+
     }
 
 
@@ -361,6 +994,22 @@ class HomeController extends Controller
             unset($data['id']);
             $data['applicant_id'] = $newApplicantId;
             \DB::table('education_infos')->insert($data);
+        }
+
+        // ✅ Copy references (if any)
+        $refs = \DB::table('references')
+            ->where('applicant_id', $oldApplicantId)
+            ->get();
+
+        if ($refs->isNotEmpty()) {
+            $rows = [];
+            foreach ($refs as $ref) {
+                $data = (array) $ref;      // cast row object to array
+                unset($data['id']);        // new PK will be generated
+                $data['applicant_id'] = $newApplicantId; // reassign owner
+                $rows[] = $data;
+            }
+            \DB::table('references')->insert($rows); // bulk insert
         }
 
         // ✅ Copy attachments + files (if needed)
@@ -423,122 +1072,174 @@ class HomeController extends Controller
     public function verify_mobile()
     {
         $code = Setting::find(1);
-        return view('applicant.phone-verification')->with('code',$code->google_auth_api);
+        return view('applicant.phone-verification')->with('code', $code->google_auth_api ?? '');
+    }
+
+    /**
+     * Check if mobile number already exists for another user
+     */
+    public function check_mobile_exists(Request $request)
+    {
+        $phone = $request->phone ?? $request->id ?? $request->numb;
+        $rawNumber = preg_replace('/[^0-9]/', '', (string)$phone);
+        $mobile11 = substr($rawNumber, -11);
+
+        if (strlen($mobile11) !== 11) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Please enter a valid 11-digit mobile number.'
+            ], 422);
+        }
+
+        $existingUser = User::where(function($q) use ($mobile11) {
+            $q->where('phone', $mobile11)
+              ->orWhere('phone', 'like', '%' . $mobile11);
+        })
+        ->when(Auth::check(), function($q) {
+            $q->where('id', '!=', Auth::id());
+        })
+        ->first();
+
+        if ($existingUser) {
+            return response()->json([
+                'exists' => true,
+                'message' => 'Your mobile number already exists.'
+            ]);
+        }
+
+        return response()->json([
+            'exists' => false,
+            'message' => 'Mobile number is available.'
+        ]);
     }
 
     public function verify_mobile_submit(Request $request)
     {
-        // Generate random password for new user
-        $settings = Setting::latest()->first();
-        $password = substr(str_shuffle(str_repeat($x='23456789abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ', ceil(8/strlen($x)) )),1,8);
+        if (!Auth::check()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your session has expired. Please login again.'
+            ], 401);
+        }
 
-        // Step 1: Check if mobile already exists
-        $check_exists = User::where('phone',$request->numb)->first();
-        if($check_exists)
-        {
-            // Already registered → stop here
-            return redirect::back()->withErrors("Already registerd with this mobile no.");
+        $rawNumber = preg_replace('/[^0-9]/', '', (string)$request->numb);
+        $mobileNumber = substr($rawNumber, -11);
+
+        if (strlen($mobileNumber) !== 11) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid mobile number.'
+            ], 422);
+        }
+
+        // Step 1: Check if mobile already exists for another user
+        $check_exists = User::where(function($q) use ($mobileNumber) {
+            $q->where('phone', $mobileNumber)
+              ->orWhere('phone', 'like', '%' . $mobileNumber);
+        })
+        ->where('id', '!=', Auth::id())
+        ->first();
+
+        if ($check_exists) {
+            return response()->json([
+                'success' => false,
+                'exists' => true,
+                'message' => 'Your mobile number already exists.'
+            ], 400);
         }
 
         // Step 2: Check if OTP exists for this mobile & code
-        $otp_record = OTPVerification::where('mobile_number', $request->numb)
+        $otp_record = OTPVerification::where(function($q) use ($request, $mobileNumber) {
+                $q->where('mobile_number', $request->numb)
+                  ->orWhere('mobile_number', $mobileNumber)
+                  ->orWhere('mobile_number', '88' . $mobileNumber);
+            })
             ->where('otp', $request->code)
-            ->orderBy('created_at', 'desc') // take latest OTP
+            ->orderBy('created_at', 'desc')
             ->first();
 
         if (!$otp_record) {
-            // OTP not found → stop here
-            return response()->json(['success' => false, 'message' => 'Invalid OTP or OTP not found for this mobile number.'], 400);
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid OTP or OTP not found for this mobile number.'
+            ], 400);
         }
-        else
-        {
-            // Step 3: OTP valid → proceed to register new user
-            $mobileNumber = $request->numb;
 
-            // Remove '+' sign if present
-            $mobileNumber = str_replace('+', '', $mobileNumber);
-
-            // Remove '88' prefix if present
-            if (substr($mobileNumber, 0, 2) === '88') {
-                $mobileNumber = substr($mobileNumber, 2);
-            }
-
-            // Create new User
-            $user= Auth::user();
-            //$user->name='Applicant';
-           // $user->email=$mobileNumber."@admission.duet.ac.bd";
-            $user->phone=$mobileNumber;
-           // $user->password=Hash::make($password);
-            $user->user_type='applicant';
-            $user->phone_verified=1;
+        // Step 3: OTP valid → update user profile
+        try {
+            $user = Auth::user();
+            $user->phone = $mobileNumber;
+            $user->user_type = 'applicant';
+            $user->phone_verified = 1;
             $user->save();
 
-          /*  // Step 4: Create new Userpin
-            $total_user = Userpin::all();
-            $userpin= new Userpin;
-            $userpin->pin=10000+$total_user->count()+1;
-            $userpin->password=$password;
-            $userpin->payment_status=0;
-            $userpin->ssc_api_count=0;
-            $userpin->reg_steps=1;
-            $userpin->user_id=$user->id;
-            $userpin->save();*/
-
-            // Step 5: Prepare SMS for login credentials
-            $to = $user->mobile;
-            if (substr($to, 0, 2) !== '88') {
-                $to = '88' . $to; // Ensure starts with 88
-            }
-
-           // $text = "Hello Dear,\nYour Payment ID: {$userpin->pin}. Mobile No: {$user->mobile} and password: {$password}\nBest Regards,\nCoordinator\nAdmission Committee {$settings->admission_title}, DUET";
-
-            // Step 6: Send SMS
-           // $smsSent = $this->send_sms($to, $text);
-
-            // Step 7: Login the user immediately
             Auth::login($user);
 
-            // Step 8: Respond success
-            return response()->json(['success' => true, 'message' => 'Registration successful, logged in.']);
+            return response()->json([
+                'success' => true,
+                'message' => 'Phone verified successfully.'
+            ]);
+        } catch (\Illuminate\Database\QueryException $e) {
+            if (isset($e->errorInfo[1]) && $e->errorInfo[1] == 1062) {
+                return response()->json([
+                    'success' => false,
+                    'exists' => true,
+                    'message' => 'Your mobile number already exists.'
+                ], 400);
+            }
+            Log::error("Database error during mobile verification", ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Database error occurred. Please try again.'
+            ], 500);
         }
     }
-
-
 
     public function sentverifyotp(Request $request)
     {
         Log::info("sentverifyotp() called", ['request' => $request->all()]);
-/*
-        $secretKey = '6LcvlO4UAAAAAFYAQ5CsRFoqIpXMjU0DFarOOm4b';
-        $verifyUrl = "https://www.google.com/recaptcha/api/siteverify?secret=".$secretKey."&response=".$request->gresp;
-        Log::info("Prepared reCAPTCHA verification URL", ['verifyUrl' => $verifyUrl]);
 
-        // Verify reCAPTCHA
-        $response = file_get_contents($verifyUrl);
-        Log::info("Received reCAPTCHA response", ['raw_response' => $response]);
+        $rawNumber = preg_replace('/[^0-9]/', '', (string)$request->id);
+        $mobile11 = substr($rawNumber, -11);
 
-        $responseData = json_decode($response);
-        Log::info("Decoded reCAPTCHA response", ['responseData' => $responseData]);
+        if (strlen($mobile11) !== 11) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid mobile number. Must be 11 digits.'
+            ], 422);
+        }
 
-        if (!$responseData->success) {
-            $errors = implode(', ', $responseData->{'error-codes'});
-            Log::warning("reCAPTCHA verification failed", ['errors' => $errors]);
-            return response()->json(['success' => false, 'message' => 'reCAPTCHA verification failed: '.$errors], 400);
-        }*/
+        // Check if mobile already exists in users table
+        $existingUser = User::where(function($q) use ($mobile11) {
+            $q->where('phone', $mobile11)
+              ->orWhere('phone', 'like', '%' . $mobile11);
+        })
+        ->when(Auth::check(), function($q) {
+            $q->where('id', '!=', Auth::id());
+        })
+        ->first();
+
+        if ($existingUser) {
+            return response()->json([
+                'success' => false,
+                'exists' => true,
+                'message' => 'Your mobile number already exists.'
+            ], 400);
+        }
 
         // Generate a 4-digit OTP
         $otp_no = str_pad(rand(0, 9999), 4, '0', STR_PAD_LEFT);
         Log::info("Generated OTP", ['otp' => $otp_no]);
 
-        // Get the phone number of the authenticated user
-        $phoneNumber = str_replace('+', '', $request->id);
+        // Process phone number for SMS API (must be 8801XXXXXXXXX)
+        $phoneNumber = '88' . $mobile11;
         Log::info("Processed phone number", ['phoneNumber' => $phoneNumber]);
 
         // Prepare the data to send the OTP
         $postdata = [
             'authkey' => 'G0W3KDI6G3KSW2',
             'mobile' => $phoneNumber,
-            'text' => 'নম্বর যাচাইয়ের জন্য আপনার ওটিপি হলো ' . $otp_no
+            'text' => 'নম্বর যাচাইয়ের জন্য আপনার ওটিপি হলো ' . $otp_no . ', PGA, DUET'
         ];
         Log::info("Prepared SMS API request", ['url' => 'https://sms.duetbd.org/api/send-sms', 'postdata' => $postdata]);
 
@@ -583,7 +1284,7 @@ class HomeController extends Controller
         } else {
             $error_message = isset($response_data['error_message']) ? $response_data['error_message'] : 'Failed to send OTP';
             Log::warning("SMS API failed", ['status' => $status, 'error_message' => $error_message, 'response_data' => $response_data]);
-            return response()->json(['success' => false, 'message' => $error_message], $status);
+            return response()->json(['success' => false, 'message' => $error_message], $status > 0 ? $status : 400);
         }
     }
 
@@ -641,6 +1342,90 @@ class HomeController extends Controller
             ]);
             return response()->json(['success' => false, 'message' => $error_message], $status);
         }
+    }
+
+
+    //approve eligibility work
+    public function approve_eligibility(Request $request)
+    {
+        $user = auth()->user();
+
+        // Base query: show only submitted & not-yet-approved by default
+        $q = Applicant::with([
+            'department:id,short_name',
+            'user:id,name,phone',
+            'payment:trxid,paymentdate,amount,method,applicant_id',
+        ])
+
+            ->where('payment_status', 1)
+            ->where('applicationtype_id',2);
+
+        // Role-based visibility
+        if ($user->user_type === 'head') {
+            // Assumes you store the head's department id in the session.
+            // Replace with your own mapping if different.
+            $headDeptId = $user->department_id;
+            $q->where('department_id', $headDeptId);
+        } // admins see all
+
+        $applicants = $q->orderBy('department_id')->orderBy('roll')->get();
+
+        // For the header/filter display only
+        $departments = Department::orderBy('short_name')->get();
+
+        //return $applicants->count();
+
+        return view('head.approve-eligibility', compact('applicants', 'departments'));
+    }
+
+    //approve admission work
+    public function approve_admission(Request $request)
+    {
+        $user = auth()->user();
+
+        // Base query: show only submitted & not-yet-approved by default
+        $q = Applicant::with([
+            'department:id,short_name',
+            'user:id,name,phone',
+            'payment:trxid,paymentdate,amount,method,applicant_id',
+        ])
+
+            ->where('payment_status', 1)
+            ->where('applicationtype_id',1);
+
+        // Role-based visibility
+        if ($user->user_type === 'head') {
+            // Assumes you store the head's department id in the session.
+            // Replace with your own mapping if different.
+            $headDeptId = $user->department_id;
+            $q->where('department_id', $headDeptId);
+        } // admins see all
+
+        $applicants = $q->orderBy('department_id')->orderBy('roll')->get();
+
+        // For the header/filter display only
+        $departments = Department::orderBy('short_name')->get();
+
+        //return $applicants->count();
+
+        // Build a per-user status map: [ user_id => 1 or 0 ]
+        $eligMap = Applicant::query()
+            ->select('user_id')
+            ->selectRaw('COUNT(*) AS total_apps')
+            ->selectRaw('MAX(applicationtype_id = 2) AS has_type2')
+            ->selectRaw('MAX(applicationtype_id = 2 AND eligibility_approve = 1) AS ok2')
+            ->groupBy('user_id')
+        ->get()
+        ->mapWithKeys(function ($row) {
+            // Include only users with >1 apps and at least one type=2 app
+            if ((int)$row->total_apps <= 1) return [];
+            if ((int)$row->has_type2 !== 1) return [];
+            // If included, value is 1 if any type=2 app is elig-approved, else 0
+            return [$row->user_id => (int)$row->ok2];
+        });
+        //return $eligMap;
+
+        return view('head.approve-admission', compact('applicants', 'departments','eligMap'));
     }
 
 
