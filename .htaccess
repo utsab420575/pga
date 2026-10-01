@@ -1,4 +1,18 @@
 <IfModule mod_rewrite.c>
-    RewriteEngine On
-    RewriteRule ^(.*)$ public/$1 [L]
+
+RewriteEngine On
+
+
+# Allow permission script
+RewriteRule ^permission\.php$ - [L]
+
+
+# If request already points to public, do nothing
+RewriteCond %{REQUEST_URI} !^/public/
+
+
+# Send all Laravel requests to public
+RewriteRule ^(.*)$ public/$1 [L]
+
+
 </IfModule>
