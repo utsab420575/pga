@@ -18,7 +18,7 @@
     <div class="row justify-content-center">
         <div class="col-lg-9 col-xl-8">
 
-            {{-- Error / status messages --}}
+            {{-- Error / status messages  we can see--}}
             @if(count($errors) > 0)
                 @foreach($errors->all() as $error)
                     <div class="alert alert-danger alert-dismissible fade show">
