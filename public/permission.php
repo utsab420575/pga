@@ -1,19 +1,14 @@
 <?php
 /**
- * Laravel Standard Permission Fixer
+ * Laravel Permission Fixer
  *
- * Folder Permission:
- *      755
+ * Folder: 755
+ * File:   644
  *
- * File Permission:
- *      644
+ * Writable:
+ * storage/          775
+ * bootstrap/cache/  775
  *
- * Writable Laravel Folders:
- *      storage          775
- *      bootstrap/cache  775
- *
- * Usage:
- *      php permission.php
  */
 
 
@@ -21,42 +16,28 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 
-// Laravel root
 $basePath = __DIR__;
 
 
-// Standard permissions
-$folderPermission = 0755;
-$filePermission   = 0644;
 
-
-// Laravel writable directories
-$writableFolders = [
-    $basePath . '/storage',
-    $basePath . '/bootstrap/cache'
+$exclude = [
+    '.git',
+    '.idea',
+    'node_modules',
+    'vendor'
 ];
 
 
-// Skip folders
-/*$excludedFolders = [
-    '.git',
-    '.idea',
-    'node_modules'
-];*/
-$excludedFolders = [];
 
-
-/**
- * Check excluded folder
- */
-function isExcluded($path, $excludedFolders)
+function isExcluded($path, $exclude)
 {
-    foreach ($excludedFolders as $folder) {
+
+    foreach ($exclude as $folder) {
 
         if (
             strpos(
                 $path,
-                DIRECTORY_SEPARATOR . $folder . DIRECTORY_SEPARATOR
+                DIRECTORY_SEPARATOR.$folder.DIRECTORY_SEPARATOR
             ) !== false
         ) {
             return true;
@@ -66,155 +47,152 @@ function isExcluded($path, $excludedFolders)
         if (basename($path) == $folder) {
             return true;
         }
+
     }
 
 
     return false;
+
 }
 
 
 
-/**
- * Change permission recursively
- */
-function setPermissionRecursive(
-    $path,
-    $folderPermission,
-    $filePermission,
-    $excludedFolders
-) {
 
 
-    if (isExcluded($path, $excludedFolders)) {
+function fixPermission($path, $exclude)
+{
+
+    if(isExcluded($path,$exclude)){
         return;
     }
 
 
-    if (is_dir($path)) {
+
+    if(is_dir($path)){
 
 
-        if (chmod($path, $folderPermission)) {
+        chmod($path,0755);
 
-            echo "Folder: 755  $path\n";
-
-        } else {
-
-            echo "FAILED Folder: $path\n";
-
-        }
+        echo "DIR 755 : ".$path."\n";
 
 
-
-        $items = scandir($path);
-
-
-        foreach ($items as $item) {
+        $items=scandir($path);
 
 
-            if ($item == '.' || $item == '..') {
+        foreach($items as $item){
+
+
+            if($item=="." || $item==".."){
                 continue;
             }
 
 
-            setPermissionRecursive(
-
-                $path . DIRECTORY_SEPARATOR . $item,
-
-                $folderPermission,
-
-                $filePermission,
-
-                $excludedFolders
-
+            fixPermission(
+                $path.DIRECTORY_SEPARATOR.$item,
+                $exclude
             );
 
         }
 
 
+    }
+    else{
 
-    } else {
 
+        chmod($path,0644);
 
-        if (chmod($path, $filePermission)) {
-
-            echo "File: 644    $path\n";
-
-        } else {
-
-            echo "FAILED File: $path\n";
-
-        }
+        echo "FILE 644: ".$path."\n";
 
     }
+
 
 }
 
 
 
 
-echo "====================================\n";
+
+echo "=================================\n";
 echo " Laravel Permission Fix Started\n";
-echo "====================================\n\n";
+echo "=================================\n\n";
 
 
 
-// Fix Laravel root folder
+// Root
 
-echo "Setting Laravel root permission...\n";
-
-chmod($basePath, 0755);
+chmod($basePath,0755);
 
 
 
-echo "\nUpdating files and folders...\n\n";
+// Normal Laravel permission
 
-
-// Apply normal permissions
-
-setPermissionRecursive(
-
+fixPermission(
     $basePath,
-
-    $folderPermission,
-
-    $filePermission,
-
-    $excludedFolders
-
+    $exclude
 );
 
 
 
 
+// Laravel writable folders
 
-// Fix writable folders
+$writable = [
 
-echo "\nSetting Laravel writable folders...\n\n";
+    $basePath.'/storage',
+    $basePath.'/bootstrap/cache'
 
-
-foreach ($writableFolders as $folder) {
-
-
-    if (is_dir($folder)) {
+];
 
 
-        echo "Writable folder: $folder\n";
+
+echo "\nSetting writable folders...\n\n";
 
 
-        setPermissionRecursive(
+foreach($writable as $folder){
 
-            $folder,
 
-            0775,
-
-            0664,
-
-            []
-
-        );
+    if(is_dir($folder)){
 
 
         chmod($folder,0775);
+
+
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator(
+                $folder,
+                RecursiveDirectoryIterator::SKIP_DOTS
+            ),
+            RecursiveIteratorIterator::SELF_FIRST
+        );
+
+
+
+        foreach($iterator as $item){
+
+
+            if($item->isDir()){
+
+                chmod(
+                    $item->getPathname(),
+                    0775
+                );
+
+            }
+            else{
+
+                chmod(
+                    $item->getPathname(),
+                    0664
+                );
+
+            }
+
+
+        }
+
+
+        echo "Writable fixed: ".$folder."\n";
+
 
     }
 
@@ -222,9 +200,25 @@ foreach ($writableFolders as $folder) {
 
 
 
-echo "\n====================================\n";
-echo " Permission Update Completed\n";
-echo "====================================\n";
+
+// Protect .env
+
+if(file_exists($basePath.'/.env')){
+
+    chmod(
+        $basePath.'/.env',
+        0640
+    );
+
+    echo ".env permission set 640\n";
+
+}
+
+
+
+echo "\n=================================\n";
+echo " Laravel Permission Completed\n";
+echo "=================================\n";
 
 
 ?>
