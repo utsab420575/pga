@@ -268,7 +268,7 @@ class PgaPaymentApiController extends Controller
 
 
             // ✅ Test case override
-            if (in_array($examRoll, ['100001', '200001'])) {
+            /*if (in_array($examRoll, ['100001', '200001'])) {
                 if ($amount != 5) {
                     return response()->json([
                         "code" => 438,
@@ -296,7 +296,7 @@ class PgaPaymentApiController extends Controller
                     "status" => "ok",
                     "msg" => "Success (Test Mode)",
                 ]);
-            }
+            }*/
 
             // 8) Amount check
             $fee = (float)$applicationType->fee;
