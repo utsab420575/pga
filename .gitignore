@@ -18,6 +18,7 @@
 /public/storage
 /public/user_attachments
 /public/attachments
+/public/notices
 /storage/*.key
 /storage/pail
 /vendor

@@ -32,7 +32,7 @@
                             <td>{{ Str::limit($item->details, 60) }}</td>
                             <td class="text-center">
                                 @if($item->file)
-                                    <a href="{{ asset('storage/' . $item->file) }}" target="_blank" class="btn btn-info btn-sm">
+                                    <a href="{{ asset($item->file) }}" target="_blank" class="btn btn-info btn-sm">
                                         <i class="fas fa-download"></i>
                                     </a>
                                 @else

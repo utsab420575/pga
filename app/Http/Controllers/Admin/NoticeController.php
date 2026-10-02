@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Notice;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 
 class NoticeController extends Controller
 {
@@ -30,8 +32,7 @@ class NoticeController extends Controller
         ]);
 
         if ($request->hasFile('file')) {
-            $path = $request->file('file')->store('notices', 'public');
-            $data['file'] = $path;
+            $data['file'] = $this->saveFile($request->file('file'));
         }
 
         Notice::create($data);
@@ -57,11 +58,8 @@ class NoticeController extends Controller
 
         if ($request->hasFile('file')) {
             // Delete old file if it exists
-            if ($item->file) {
-                Storage::disk('public')->delete($item->file);
-            }
-            $path = $request->file('file')->store('notices', 'public');
-            $data['file'] = $path;
+            $this->deleteFile($item->file);
+            $data['file'] = $this->saveFile($request->file('file'));
         } else {
             unset($data['file']);
         }
@@ -74,11 +72,33 @@ class NoticeController extends Controller
     public function destroy($id)
     {
         $item = Notice::findOrFail($id);
-        if ($item->file) {
-            Storage::disk('public')->delete($item->file);
-        }
+        $this->deleteFile($item->file);
         $item->delete();
         return redirect()->route('admin.notices.index')
             ->with('success', 'Notice deleted successfully.');
+    }
+
+    /**
+     * Saves into public/notices/ and returns the path used with asset(),
+     * e.g. notices/20261002_153045_admission-notice.pdf
+     */
+    private function saveFile(UploadedFile $file): string
+    {
+        $dir = public_path('notices');
+        File::ensureDirectoryExists($dir, 0775);
+
+        $base = Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) ?: 'notice';
+        $name = now()->format('Ymd_His') . '_' . Str::limit($base, 80, '') . '.' . strtolower($file->getClientOriginalExtension());
+
+        $file->move($dir, $name);
+        return 'notices/' . $name;
+    }
+
+    /** Only removes files inside public/notices/, never other files under public/. */
+    private function deleteFile(?string $path): void
+    {
+        if ($path && Str::startsWith($path, 'notices/') && !Str::contains($path, '..')) {
+            File::delete(public_path($path));
+        }
     }
 }

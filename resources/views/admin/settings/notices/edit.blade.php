@@ -41,7 +41,7 @@
                             @if($item->file)
                                 <p class="mb-1">
                                     <small>Current:
-                                        <a href="{{ asset('storage/' . $item->file) }}" target="_blank" class="text-info">
+                                        <a href="{{ asset($item->file) }}" target="_blank" class="text-info">
                                             <i class="fas fa-file mr-1"></i>View file
                                         </a>
                                     </small>
