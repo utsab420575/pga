@@ -266,10 +266,10 @@ Route::delete('/attachments/{attachment}/ajax-delete', [AttachmentController::cl
     ->middleware(['auth','roles:admin,applicant']);
 
 
-//not working
-Route::post('bkash_pull', [PaymentController::class, 'bkash_pull'])->name('bkash_pull');
+//not working , we have bkash-pull
+/*Route::post('bkash_pull', [PaymentController::class, 'bkash_pull'])->name('bkash_pull');
 Route::post('bkash_push', [PaymentController::class, 'bkash_push'])->name('bkash_push');
-Route::post('bkash_check', [PaymentController::class, 'bkash_check'])->name('bkash_check');
+Route::post('bkash_check', [PaymentController::class, 'bkash_check'])->name('bkash_check');*/
 
 // mobile number verification(working)
 Route::get('/verify-mobile', [HomeController::class, 'verify_mobile'])->name('verify-mobile');

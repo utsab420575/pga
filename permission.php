@@ -29,7 +29,7 @@ $basePath = __DIR__;
 
 // Folders to skip
 $exclude = [
-    
+
 ];
 
 

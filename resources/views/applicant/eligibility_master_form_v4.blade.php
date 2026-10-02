@@ -681,12 +681,28 @@
                     </div>
                 </div>
 
-                <div class="modal-footer">
+                <div class="modal-footer flex-column align-items-stretch">
+                    {{-- Upload progress bar (hidden until upload starts) --}}
+                    <div id="uploadProgressWrap" style="display:none; width:100%; margin-bottom:.5rem;">
+                        <div class="d-flex justify-content-between mb-1">
+                            <small class="text-muted">Uploading...</small>
+                            <small id="uploadProgressPct" class="text-muted">0%</small>
+                        </div>
+                        <div class="progress" style="height:8px; border-radius:4px;">
+                            <div id="uploadProgressBar"
+                                 class="progress-bar progress-bar-striped progress-bar-animated bg-success"
+                                 role="progressbar"
+                                 style="width:0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                            </div>
+                        </div>
+                    </div>
                     {{-- submit button with spinner --}}
-                    <button id="quickUploadSubmit" type="submit" class="btn btn-success">
-                        <span class="spinner-border spinner-border-sm mr-1 d-none" id="quickUploadSpinner"></span>
-                        Upload
-                    </button>
+                    <div class="d-flex justify-content-end w-100">
+                        <button id="quickUploadSubmit" type="submit" class="btn btn-success">
+                            <span class="spinner-border spinner-border-sm mr-1 d-none" id="quickUploadSpinner"></span>
+                            Upload
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -819,80 +835,89 @@
                positionClass: 'toast-bottom-right'
            };
 
-           // ========== AJAX Upload ==========
+           // ========== AJAX Upload with Progress Bar ==========
            $form.on('submit', function (e) {
-               e.preventDefault(); // prevent normal submit
+               e.preventDefault();
 
-               const formData = new FormData(this); // build FormData from form
+               const formData = new FormData(this);
+               const $progressWrap = $('#uploadProgressWrap');
+               const $bar          = $('#uploadProgressBar');
+               const $pct          = $('#uploadProgressPct');
 
-               // disable button + show spinner while uploading
+               // Reset & show progress bar
+               $bar.css('width', '0%').attr('aria-valuenow', 0);
+               $pct.text('0%');
+               $progressWrap.show();
+
+               // Disable button + show spinner
                $btn.prop('disabled', true);
                $spin.removeClass('d-none');
 
-               $.ajax({
-                   url: @json(route('attachments.ajaxUpload')), // endpoint
-                   method: 'POST',
-                   data: formData,
-                   contentType: false,
-                   processData: false,
-                   headers: {
-                       'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || @json(csrf_token())
+               const xhr = new XMLHttpRequest();
+
+               // Track upload progress
+               xhr.upload.addEventListener('progress', function (ev) {
+                   if (!ev.lengthComputable) return;
+                   const pct = Math.round((ev.loaded / ev.total) * 100);
+                   $bar.css('width', pct + '%').attr('aria-valuenow', pct);
+                   $pct.text(pct + '%');
+               });
+
+               xhr.addEventListener('load', function () {
+                   $progressWrap.hide();
+                   $bar.css('width', '0%');
+
+                   let res;
+                   try { res = JSON.parse(xhr.responseText); } catch(err) { res = null; }
+
+                   if (xhr.status >= 200 && xhr.status < 300 && res && res.id) {
+                       const typeTitle = res.type_title || 'N/A';
+                       const title     = res.title || '';
+                       const url       = res.url || '#';
+                       const imgCell   = res.is_image
+                           ? `<img src="${url}" alt="image" style="max-width:120px;max-height:80px;border:1px solid #ddd;border-radius:6px;">`
+                           : `<a href="${url}" target="_blank" class="btn btn-outline-info btn-sm">View</a>`;
+
+                       const deleteUrl     = @json(route('attachments.ajaxDelete', 0));
+                       const finalDeleteUrl = deleteUrl.replace(/0$/, String(res.id));
+
+                       const row = `
+                   <tr data-id="${res.id}">
+                       <td>${escapeHtml(typeTitle)}</td>
+                       <td>${escapeHtml(title)}</td>
+                       <td class="text-center">${imgCell}</td>
+                       <td class="text-center">
+                           <button class="btn btn-danger btn-sm q-del" data-delete-url="${finalDeleteUrl}">Delete</button>
+                       </td>
+                   </tr>`;
+
+                       $tbody.prepend(row);
+                       toastr.success('File uploaded successfully.');
+                       $form.find('input[name="title"]').val('');
+                       $form.find('input[name="file"]').val('');
+                       updateRuleBox();
+                   } else {
+                       let msg = 'Upload failed.';
+                       if (res && res.message) msg = res.message;
+                       else if (res && res.errors) msg = Object.values(res.errors).flat().join(' ');
+                       toastr.error(msg);
                    }
-               }).done(function (res) {
-                   // Expecting JSON { id, type_id, type_title, title, url, is_image }
-                   if (!res || !res.id) {
-                       toastr.error('Unexpected server response.');
-                       return;
-                   }
 
-                   // Extract response data
-                   const typeTitle = res.type_title || 'N/A';
-                   const title     = res.title || '';
-                   const url       = res.url || '#';
-
-                   // Decide how to render cell (image preview or View button)
-                   const imgCell = res.is_image
-                       ? `<img src="${url}" alt="image" style="max-width:120px; max-height:80px; border:1px solid #ddd; border-radius:6px;">`
-                       : `<a href="${url}" target="_blank" class="btn btn-outline-info btn-sm">View</a>`;
-
-                   // Build delete URL dynamically
-                   const deleteUrl = @json(route('attachments.ajaxDelete', 0));
-                   const finalDeleteUrl = deleteUrl.replace(/0$/, String(res.id));
-
-                   // Build row HTML
-                   const row = `
-                <tr data-id="${res.id}">
-                    <td>${escapeHtml(typeTitle)}</td>
-                    <td>${escapeHtml(title)}</td>
-                    <td class="text-center">${imgCell}</td>
-                    <td class="text-center">
-                        <button class="btn btn-danger btn-sm q-del" data-delete-url="${finalDeleteUrl}">Delete</button>
-                    </td>
-                </tr>
-            `;
-
-                   // prepend new row to table body
-                   $tbody.prepend(row);
-                   toastr.success('File uploaded successfully.');
-
-                   // reset only title + file inputs (keep type selected and keep rules visible)
-                   $form.find('input[name="title"]').val('');
-                   $form.find('input[name="file"]').val('');
-
-                   // (Optional) re-evaluate rules in case you want to adapt after upload
-                   updateRuleBox();
-               }).fail(function (xhr) {
-                   // handle upload error
-                   let msg = 'Upload failed.';
-                   if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
-                       msg = xhr.responseJSON.message;
-                   }
-                   toastr.error(msg);
-               }).always(function () {
-                   // re-enable button + hide spinner
                    $btn.prop('disabled', false);
                    $spin.addClass('d-none');
                });
+
+               xhr.addEventListener('error', function () {
+                   $progressWrap.hide();
+                   toastr.error('Upload failed. Please check your connection.');
+                   $btn.prop('disabled', false);
+                   $spin.addClass('d-none');
+               });
+
+               xhr.open('POST', @json(route('attachments.ajaxUpload')));
+               xhr.setRequestHeader('X-CSRF-TOKEN', $('meta[name="csrf-token"]').attr('content') || @json(csrf_token()));
+               xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+               xhr.send(formData);
            });
 
            // ========== AJAX Delete ==========
