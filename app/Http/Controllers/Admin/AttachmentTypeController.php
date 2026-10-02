@@ -25,11 +25,9 @@ class AttachmentTypeController extends Controller
             'title'    => 'required|string|max:255',
             'rules'    => 'nullable|string',
             'status'   => 'nullable|boolean',
-            'required' => 'nullable|boolean',
         ]);
 
         $data['status']   = isset($data['status'])   ? 1 : 0;
-        $data['required'] = isset($data['required']) ? 1 : 0;
 
         AttachmentType::create($data);
         return redirect()->route('admin.attachment_types.index')
@@ -49,11 +47,9 @@ class AttachmentTypeController extends Controller
             'title'    => 'required|string|max:255',
             'rules'    => 'nullable|string',
             'status'   => 'nullable|boolean',
-            'required' => 'nullable|boolean',
         ]);
 
         $data['status']   = $request->has('status')   ? 1 : 0;
-        $data['required'] = $request->has('required') ? 1 : 0;
 
         $item->update($data);
         return redirect()->route('admin.attachment_types.index')

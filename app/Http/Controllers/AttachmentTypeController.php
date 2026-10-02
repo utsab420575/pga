@@ -23,11 +23,9 @@ class AttachmentTypeController extends Controller
         $data = $request->validate([
             'title' => 'required|string|max:255',
             'status' => 'nullable|boolean',
-            'required' => 'nullable|boolean',
         ]);
 
         $data['status'] = $data['status'] ?? false;
-        $data['required'] = $data['required'] ?? false;
 
         AttachmentType::create($data);
         return redirect()->route('attachment_type.all')->with('success', 'Attachment type created.');
@@ -51,11 +49,9 @@ class AttachmentTypeController extends Controller
         $data = $request->validate([
             'title' => 'required|string|max:255',
             'status' => 'nullable|boolean',
-            'required' => 'nullable|boolean',
         ]);
 
         $data['status'] = $data['status'] ?? false;
-        $data['required'] = $data['required'] ?? false;
 
         $item->update($data);
         return redirect()->route('attachment_type.all')->with('success', 'Attachment type updated.');

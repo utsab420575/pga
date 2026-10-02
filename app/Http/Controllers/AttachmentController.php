@@ -219,6 +219,9 @@ class AttachmentController extends Controller
         if ($applicant->final_submit == 1) {
             return response()->json(['message' => 'Final submission already done. You cannot upload new files.'], 403);
         }
+        if (!AttachmentType::offeredFor($applicant)->contains('id', $typeId)) {
+            return response()->json(['message' => 'This attachment type is not accepted for your application.'], 422);
+        }
 
         //this can be useful,not delete this code
        /* $setting = Setting::latest()->first();;

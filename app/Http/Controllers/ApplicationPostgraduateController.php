@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Applicant;
 use App\Models\AttachmentType;
+use App\Models\AttachmentRequirement;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -121,7 +122,8 @@ class ApplicationPostgraduateController extends Controller
             'eligibilityDegree'  => $applicant->eligibilityDegree,
             'educationInfos'     => $applicant->educationInfos,
             'attachments'        => $applicant->attachments,
-            'attachmentTypes'    => AttachmentType::orderBy('id')->get(),
+            'attachmentTypes'    => AttachmentType::offeredFor($applicant),
+            'requiredTypeIds'    => AttachmentRequirement::requiredTypeIdsFor($applicant),
 
             // new datasets
             'theses'             => $applicant->theses,

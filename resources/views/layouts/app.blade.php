@@ -123,6 +123,9 @@
                                 <a class="dropdown-item" href="{{ route('admin.attachment_types.index') }}">
                                     <i class="fas fa-paperclip mr-2 text-info"></i>Attachment Types
                                 </a>
+                                <a class="dropdown-item" href="{{ route('admin.attachment_requirements.index') }}">
+                                    <i class="fas fa-clipboard-check mr-2 text-success"></i>Required Attachments
+                                </a>
                                 <a class="dropdown-item" href="{{ route('admin.degrees.index') }}">
                                     <i class="fas fa-graduation-cap mr-2 text-success"></i>Degrees
                                 </a>

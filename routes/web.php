@@ -38,6 +38,7 @@ use App\Http\Controllers\Admin\GithubDeployController;
 use App\Http\Controllers\Admin\PasswordController as AdminPasswordController;
 use App\Http\Controllers\Admin\ActivityLogController as AdminActivityLogController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Admin\AttachmentRequirementController as AdminAttachmentRequirementController;
 
 use App\Http\Controllers\PgaPaymentApiController;
 use Illuminate\Support\Facades\Artisan;
@@ -390,6 +391,10 @@ Route::prefix('admin/settings')->middleware(['auth', 'roles:admin'])->group(func
     Route::get('attachment_types/{id}/edit',    [AdminAttachmentTypeController::class, 'edit'])->name('admin.attachment_types.edit');
     Route::put('attachment_types/{id}',         [AdminAttachmentTypeController::class, 'update'])->name('admin.attachment_types.update');
     Route::get('attachment_types/{id}/delete',  [AdminAttachmentTypeController::class, 'destroy'])->name('admin.attachment_types.destroy');
+
+    // Required Attachments (per application type / degree)
+    Route::get('attachment_requirements',                      [AdminAttachmentRequirementController::class, 'index'])->name('admin.attachment_requirements.index');
+    Route::put('attachment_requirements/{applicationtype_id}', [AdminAttachmentRequirementController::class, 'update'])->name('admin.attachment_requirements.update');
 
     // Degrees
     Route::get('degrees',              [AdminDegreeController::class, 'index'])->name('admin.degrees.index');

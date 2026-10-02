@@ -34,15 +34,6 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <div class="custom-control custom-switch">
-                                        <input type="checkbox" class="custom-control-input" id="required" name="required"
-                                               value="1" {{ old('required', $item->required) ? 'checked' : '' }}>
-                                        <label class="custom-control-label" for="required">Required</label>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                         <div class="d-flex justify-content-between">
                             <a href="{{ route('admin.attachment_types.index') }}" class="btn btn-secondary">

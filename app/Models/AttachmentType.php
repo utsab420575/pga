@@ -13,11 +13,24 @@ class AttachmentType extends Model
 
     protected $casts = [
         'status'   => 'boolean',
-        'required' => 'boolean',
     ];
 
     public function attachments()
     {
         return $this->hasMany(Attachment::class);
+    }
+
+    public function applicationtypes()
+    {
+        return $this->belongsToMany(Applicationtype::class, 'applicationtype_attachment_type')->withTimestamps();
+    }
+
+    /** Active types offered in the upload dropdown for this applicant's application type. */
+    public static function offeredFor(Applicant $applicant)
+    {
+        return static::where('status', 1)
+            ->whereHas('applicationtypes', fn ($q) => $q->where('applicationtypes.id', $applicant->applicationtype_id))
+            ->orderBy('id')
+            ->get();
     }
 }

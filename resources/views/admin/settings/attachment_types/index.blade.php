@@ -19,7 +19,6 @@
                         <th>Title</th>
                         <th>Rules</th>
                         <th class="text-center">Status</th>
-                        <th class="text-center">Required</th>
                         <th class="text-center">Actions</th>
                     </tr>
                 </thead>
@@ -37,13 +36,6 @@
                                 @endif
                             </td>
                             <td class="text-center">
-                                @if($item->required)
-                                    <span class="badge badge-danger">Yes</span>
-                                @else
-                                    <span class="badge badge-light">No</span>
-                                @endif
-                            </td>
-                            <td class="text-center">
                                 <a href="{{ route('admin.attachment_types.edit', $item->id) }}" class="btn btn-warning btn-sm">
                                     <i class="fas fa-edit"></i> Edit
                                 </a>
@@ -53,7 +45,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="6" class="text-center text-muted py-4">No records found.</td></tr>
+                        <tr><td colspan="5" class="text-center text-muted py-4">No records found.</td></tr>
                     @endforelse
                 </tbody>
             </table>

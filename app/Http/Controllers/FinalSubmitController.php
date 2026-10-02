@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Applicant;
+use App\Models\AttachmentRequirement;
+use App\Models\AttachmentType;
 use Illuminate\Http\Request;
 
 class FinalSubmitController extends Controller
@@ -80,86 +82,10 @@ class FinalSubmitController extends Controller
 
 
 
-        //Attachments
-        // ✅ 5. Check attachments by type
-        $attachments = $applicant->attachments;
-
-        // Count attachments per type
-        $typeCounts = $attachments->groupBy('attachment_type_id')->map->count();
-
-       // --- Type 1: Recent photograph
-        if (($typeCounts[1] ?? 0) < 1) {
-            return back()->withErrors('You must upload at least 1 recent passport-size photograph.');
+        // ✅ 5. Required attachments (rules in attachment_requirements table)
+        if ($error = $this->missingAttachmentsError($applicant)) {
+            return back()->withErrors($error);
         }
-
-        // --- Type 2: Signature
-        if (($typeCounts[2] ?? 0) < 1) {
-            return back()->withErrors('You must upload at least 1 signature.');
-        }
-
-        // --- Type 3: SSC Certificate
-        if (($typeCounts[3] ?? 0) < 1) {
-            return back()->withErrors('You must upload your SSC or equivalent certificate.');
-        }
-
-        // --- Type 4: HSC/Diploma Certificate
-        if (($typeCounts[4] ?? 0) < 1) {
-            return back()->withErrors('You must upload your HSC or equivalent / Diploma certificate.');
-        }
-
-        // --- Type 5: BSc Certificate
-        if (($typeCounts[5] ?? 0) < 1) {
-            return back()->withErrors('You must upload your BSc certificate.');
-        }
-
-        // --- Type 7: SSC Mark Sheet
-        if (($typeCounts[7] ?? 0) < 1) {
-            return back()->withErrors('You must upload your SSC or equivalent mark sheet/grade sheet/transcript.');
-        }
-
-        // --- Type 8: HSC/Diploma Mark Sheet
-        if (($typeCounts[8] ?? 0) < 1) {
-            return back()->withErrors('You must upload your HSC or equivalent / Diploma mark sheet/grade sheet/transcript.');
-        }
-
-        // --- Type 9: BSC Mark Sheet
-        if (($typeCounts[9] ?? 0) < 1) {
-            return back()->withErrors('You must upload your BSC or equivalent mark sheet/grade sheet/transcript.');
-        }
-
-
-
-        // --- Type 14: Detailed Syllabus
-        if (($typeCounts[13] ?? 0) < 1) {
-            return back()->withErrors('You must upload the detailed syllabus mentioning all course contents.');
-        }
-
-        // --- Type 13: NID/Birth Certificate
-        if (($typeCounts[14] ?? 0) < 1) {
-            return back()->withErrors('You must upload your National ID card or Birth Certificate.');
-        }
-
-
-        //for PHD you need to upload msc certificate and transcript
-        if ((int) $applicant->degree_id === 8) {
-            if (($typeCounts[6] ?? 0) < 1) {
-                return back()->withErrors(
-                    'You must upload the M Engg. / M Sc. Engg. / M Sc. / M Phil. / equivalent certificate.'
-                );
-            }
-
-            if (($typeCounts[10] ?? 0) < 1) {
-                return back()->withErrors(
-                    'You must upload the M Engg. / M Sc. Engg. / M Sc. / M Phil. / equivalent mark sheet/transcript.'
-                );
-            }
-        }
-
-
-
-
-
-
 
         // ✅ Mark applicant as finally submitted
         $applicant->final_submit = 1;
@@ -234,78 +160,10 @@ class FinalSubmitController extends Controller
         }
 
 
-      //Attachments
-        // ✅ 5. Check attachments by type
-        $attachments = $applicant->attachments;
-
-        //return $attachments;
-
-        // Count attachments per type
-        $typeCounts = $attachments->groupBy('attachment_type_id')->map->count();
-
-        // --- Type 1: Recent photograph
-        if (($typeCounts[1] ?? 0) < 1) {
-            return back()->withErrors('You must upload at least 1 recent passport-size photograph.');
+        // ✅ 5. Required attachments (rules in attachment_requirements table)
+        if ($error = $this->missingAttachmentsError($applicant)) {
+            return back()->withErrors($error);
         }
-
-        // --- Type 2: Signature
-        if (($typeCounts[2] ?? 0) < 1) {
-            return back()->withErrors('You must upload at least 1 signature.');
-        }
-
-        // --- Type 3: SSC Certificate
-        if (($typeCounts[3] ?? 0) < 1) {
-            return back()->withErrors('You must upload your SSC or equivalent certificate.');
-        }
-
-        // --- Type 4: HSC/Diploma Certificate
-        if (($typeCounts[4] ?? 0) < 1) {
-            return back()->withErrors('You must upload your HSC or equivalent / Diploma certificate.');
-        }
-
-        // --- Type 5: BSc Certificate
-        if (($typeCounts[5] ?? 0) < 1) {
-            return back()->withErrors('You must upload your BSc certificate.');
-        }
-
-        // --- Type 7: SSC Mark Sheet
-        if (($typeCounts[7] ?? 0) < 1) {
-            return back()->withErrors('You must upload your SSC or equivalent mark sheet/grade sheet/transcript.');
-        }
-
-        // --- Type 8: HSC/Diploma Mark Sheet
-        if (($typeCounts[8] ?? 0) < 1) {
-            return back()->withErrors('You must upload your HSC or equivalent / Diploma mark sheet/grade sheet/transcript.');
-        }
-
-        // --- Type 9: BSC Mark Sheet
-        if (($typeCounts[9] ?? 0) < 1) {
-            return back()->withErrors('You must upload your BSC or equivalent mark sheet/grade sheet/transcript.');
-        }
-
-        // --- Type 9: Testimonial
-        if (($typeCounts[11] ?? 0) < 1) {
-            return back()->withErrors('You must upload your Testimonial.');
-        }
-
-
-
-        if ((int) $applicant->degree_id == 8) {
-            if (($typeCounts[6] ?? 0) < 1) {
-                return back()->withErrors(
-                    'You must upload the M Engg. / M Sc. Engg. / M Sc. / M Phil. / equivalent certificate.'
-                );
-            }
-
-            if (($typeCounts[10] ?? 0) < 1) {
-                return back()->withErrors(
-                    'You must upload the M Engg. / M Sc. Engg. / M Sc. / M Phil. / equivalent mark sheet/transcript.'
-                );
-            }
-        }
-
-
-
 
         // ✅ Mark applicant as finally submitted
         $applicant->final_submit = 1;
@@ -314,5 +172,19 @@ class FinalSubmitController extends Controller
         return redirect()->route('home')->with('success', 'Your application has been finally submitted.');
 
         return back()->with('success', 'Your application has been finally submitted.');
+    }
+
+    /** Lists every required attachment type the applicant has not uploaded yet, or null if complete. */
+    private function missingAttachmentsError(Applicant $applicant): ?string
+    {
+        $uploaded = $applicant->attachments->pluck('attachment_type_id')->map(fn ($id) => (int) $id)->all();
+        $missing  = array_diff(AttachmentRequirement::requiredTypeIdsFor($applicant), $uploaded);
+
+        if (empty($missing)) {
+            return null;
+        }
+
+        $titles = AttachmentType::whereIn('id', $missing)->orderBy('id')->pluck('title')->map(fn ($t) => trim($t));
+        return 'Please upload the following required document(s): ' . $titles->implode('; ') . '.';
     }
 }

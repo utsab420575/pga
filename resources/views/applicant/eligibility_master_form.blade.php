@@ -175,9 +175,11 @@
                 {{-- CARD 8: Attachments (by type, with previews) --}}
                 {{-- CARD X: Quick Upload (AJAX, single file, toaster feedback) --}}
                 @php
-                    // Filter out specific attachment types (like 5,7,8,9)
-                    // so they don’t appear in the quick upload selection.
-                    $selectableTypes = $attachmentTypes->reject(fn($t) => in_array($t->id, [11,12]));
+                    // Types offered for this application type (Settings → Required Attachments)
+                    $selectableTypes = $attachmentTypes;
+
+                    // Type ids that already have at least one uploaded file (drives the upload-status badges)
+                    $uploadedTypeIds = ($attachments ?? collect())->pluck('attachment_type_id')->map(fn($id) => (int) $id)->unique()->values();
                 @endphp
 
                 <div class="card">
@@ -220,7 +222,7 @@
                                         $url = asset($file->file);
                                     @endphp
 
-                                    <tr data-id="{{ $file->id }}">
+                                    <tr data-id="{{ $file->id }}" data-type-id="{{ $file->attachment_type_id }}">
                                         {{-- File type --}}
                                         <td>{{ $typeTitle }}</td>
 
@@ -731,7 +733,7 @@
                         <select name="attachment_type_id" class="form-control" required>
                             <option value="">-- select --</option>
                             @foreach($selectableTypes as $t)
-                                <option value="{{ $t->id }}" data-rule="{{ e($t->rules) }}">{{ $t->title }}</option>
+                                <option value="{{ $t->id }}" data-label="{{ $t->title }}" data-required="{{ in_array($t->id, $requiredTypeIds ?? []) ? 1 : 0 }}" data-rule="{{ e($t->rules) }}">{{ $t->title }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -920,6 +922,34 @@
                }
            }
 
+           // ========== Upload status per attachment type ==========
+           // Type ids that already have a file; seeded from the server, kept in sync after upload/delete
+           const uploadedTypes = new Set(@json($uploadedTypeIds));
+
+           // Mark each dropdown option as uploaded / not uploaded (required types only get the warning)
+           function refreshTypeLabels() {
+               $typeSelect.find('option[value!=""]').each(function () {
+                   const label    = this.dataset.label || this.textContent;
+                   const required = this.dataset.required === '1';
+                   const uploaded = uploadedTypes.has(Number(this.value));
+
+                   // Native <option> can't hold HTML, so use a text marker
+                   this.textContent = label + (uploaded ? '  ✔ Uploaded' : (required ? '  ⚠ Not uploaded' : ''));
+               });
+           }
+
+           // Recount from the table rows (used after delete, since a type may still have other files)
+           function recountUploadedTypes() {
+               uploadedTypes.clear();
+               $tbody.find('tr[data-type-id]').each(function () {
+                   const tid = Number(this.dataset.typeId);
+                   if (tid) uploadedTypes.add(tid);
+               });
+               refreshTypeLabels();
+           }
+
+           refreshTypeLabels();
+
            // NEW: initialize rules when modal opens & when type changes
            $modal.on('shown.bs.modal', updateRuleBox);
            $typeSelect.on('change', updateRuleBox);
@@ -976,7 +1006,7 @@
                        const finalDeleteUrl = deleteUrl.replace(/0$/, String(res.id));
 
                        const row = `
-                   <tr data-id="${res.id}">
+                   <tr data-id="${res.id}" data-type-id="${res.type_id || ''}">
                        <td>${escapeHtml(typeTitle)}</td>
                        <td>${escapeHtml(title)}</td>
                        <td class="text-center">${imgCell}</td>
@@ -989,6 +1019,8 @@
                        toastr.success('File uploaded successfully.');
                        $form.find('input[name="title"]').val('');
                        $form.find('input[name="file"]').val('');
+                       // Update dropdown indicator live
+                       if (res.type_id) { uploadedTypes.add(Number(res.type_id)); refreshTypeLabels(); }
                        updateRuleBox();
                    } else {
                        let msg = 'Upload failed.';
@@ -1042,11 +1074,13 @@
                        }
                    }).done(function () {
                        $row.remove();
+                       recountUploadedTypes();   // a type may still have other files
                        toastr.success('File deleted.');
                    }).fail(function (xhr) {
                        // If Laravel route-model binding can’t find it, it returns 404 -> treat as already deleted
                        if (xhr && xhr.status === 404) {
                            $row.remove();
+                           recountUploadedTypes();
                            toastr.info('Item was already deleted.');
                            return;
                        }
