@@ -22,6 +22,7 @@
                     <tr>
                         <th>#</th>
                         <th>Roll</th>
+                        <th>Final Submit</th>
                         <th>Name</th>
                         <th>Email</th>
                         <th>Phone</th>
@@ -50,6 +51,27 @@
                                     <span class="text-muted">—</span>
                                 @endif
                             </td>
+                            <td>
+                                @php
+                                    $applicants = $item->applicant ?? $item->applicants ?? null;
+                                    if ($applicants instanceof \Illuminate\Support\Collection) {
+                                        $apps = $applicants;
+                                    } elseif (is_object($applicants)) {
+                                        $apps = collect([$applicants]);
+                                    } else {
+                                        $apps = collect();
+                                    }
+                                @endphp
+                                @forelse($apps as $app)
+                                    @if((int)($app->final_submit ?? 0) === 1)
+                                        <span class="badge badge-success">Submitted</span>
+                                    @else
+                                        <span class="badge badge-secondary">Not Submitted</span>
+                                    @endif
+                                @empty
+                                    <span class="text-muted">—</span>
+                                @endforelse
+                            </td>
                             <td>{{ $item->name }}</td>
                             <td>{{ $item->email }}</td>
                             <td>{{ $item->phone ?? '—' }}</td>
@@ -57,7 +79,7 @@
                             <td>{{ $item->created_at ? $item->created_at->format('d M Y') : '—' }}</td>
                         </tr>
                     @empty
-                        <tr><td colspan="7" class="text-center text-muted py-4">No applicants found.</td></tr>
+                        <tr><td colspan="8" class="text-center text-muted py-4">No applicants found.</td></tr>
                     @endforelse
                 </tbody>
             </table>
