@@ -51,11 +51,15 @@ class PasswordController extends Controller
         $search = trim((string) $request->get('search'));
 
         $items = User::where('user_type', 'applicant')
+            ->with('applicant')
             ->when($search !== '', function ($q) use ($search) {
                 $q->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
                       ->orWhere('email', 'like', "%{$search}%")
-                      ->orWhere('phone', 'like', "%{$search}%");
+                      ->orWhere('phone', 'like', "%{$search}%")
+                      ->orWhereHas('applicant', function ($sub) use ($search) {
+                          $sub->where('roll', 'like', "%{$search}%");
+                      });
                 });
             })
             ->latest('id')

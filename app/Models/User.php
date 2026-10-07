@@ -41,6 +41,11 @@ class User extends Authenticatable /* implements MustVerifyEmail */
         return $this->hasMany(\App\Models\Applicant::class);
     }
 
+    public function applicants()
+    {
+        return $this->hasMany(\App\Models\Applicant::class);
+    }
+
     public function department()
     {
         return $this->belongsTo(Department::class);

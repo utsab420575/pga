@@ -5,7 +5,7 @@
         <h1 class="h3 mb-0"><i class="fas fa-user-lock text-primary mr-2"></i>Applicant Passwords</h1>
         <form method="GET" action="{{ route('admin.passwords.applicant') }}" class="form-inline">
             <input type="text" name="search" value="{{ $search }}" class="form-control form-control-sm mr-1"
-                   placeholder="Name, email or phone">
+                   placeholder="Roll, name, email or phone">
             <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-search"></i></button>
             @if($search !== '')
                 <a href="{{ route('admin.passwords.applicant') }}" class="btn btn-secondary btn-sm ml-1">Clear</a>
@@ -21,6 +21,7 @@
                 <thead class="thead-dark">
                     <tr>
                         <th>#</th>
+                        <th>Roll</th>
                         <th>Name</th>
                         <th>Email</th>
                         <th>Phone</th>
@@ -32,6 +33,23 @@
                     @forelse($items as $item)
                         <tr>
                             <td>{{ $loop->iteration + ($items->currentPage() - 1) * $items->perPage() }}</td>
+                            <td>
+                                @php
+                                    $applicantRel = $item->applicant ?? $item->applicants ?? null;
+                                    if ($applicantRel instanceof \Illuminate\Support\Collection) {
+                                        $rolls = $applicantRel->pluck('roll')->filter()->unique()->values();
+                                    } elseif (is_object($applicantRel) && isset($applicantRel->roll)) {
+                                        $rolls = collect([$applicantRel->roll])->filter();
+                                    } else {
+                                        $rolls = collect();
+                                    }
+                                @endphp
+                                @if($rolls->isNotEmpty())
+                                    {{ $rolls->implode(', ') }}
+                                @else
+                                    <span class="text-muted">—</span>
+                                @endif
+                            </td>
                             <td>{{ $item->name }}</td>
                             <td>{{ $item->email }}</td>
                             <td>{{ $item->phone ?? '—' }}</td>
@@ -39,7 +57,7 @@
                             <td>{{ $item->created_at ? $item->created_at->format('d M Y') : '—' }}</td>
                         </tr>
                     @empty
-                        <tr><td colspan="6" class="text-center text-muted py-4">No applicants found.</td></tr>
+                        <tr><td colspan="7" class="text-center text-muted py-4">No applicants found.</td></tr>
                     @endforelse
                 </tbody>
             </table>
