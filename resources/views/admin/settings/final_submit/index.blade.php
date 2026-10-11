@@ -141,19 +141,25 @@
                                     {{-- Action Buttons --}}
                                     @if((int)$item->final_submit === 1)
                                         {{-- Undo Final Submit --}}
-                                        <form method="POST" action="{{ route('admin.final_submit.undo', $item->id) }}" class="d-inline"
-                                              onsubmit="return confirm('Are you sure you want to UNDO Final Submit for Applicant ID #{{ $item->id }} ({{ addslashes($item->user->name ?? '') }})?\n\nThis will UNLOCK the application and allow the applicant to edit and re-submit.');">
+                                        <form method="POST" action="{{ route('admin.final_submit.undo', $item->id) }}" class="d-inline form-action-undo"
+                                              data-id="{{ $item->id }}"
+                                              data-name="{{ $item->user->name ?? 'Applicant' }}"
+                                              data-roll="{{ $item->roll ?? '—' }}">
                                             @csrf
-                                            <button type="submit" class="btn btn-warning btn-sm" title="Unlock and undo final submission">
+                                            <button type="button" class="btn btn-warning btn-sm btn-undo-submit" title="Unlock and undo final submission">
                                                 <i class="fas fa-undo mr-1"></i>Undo Submit
                                             </button>
                                         </form>
                                     @else
                                         {{-- Make Final Submit --}}
-                                        <form method="POST" action="{{ route('admin.final_submit.submit', $item->id) }}" class="d-inline"
-                                              onsubmit="return confirm('Make Final Submit for Applicant ID #{{ $item->id }} ({{ addslashes($item->user->name ?? '') }})?{{ !$item->is_fillup_complete ? '\n\nNote: Incomplete items will be verified according to submission rules.' : '' }}');">
+                                        <form method="POST" action="{{ route('admin.final_submit.submit', $item->id) }}" class="d-inline form-action-submit"
+                                              data-id="{{ $item->id }}"
+                                              data-name="{{ $item->user->name ?? 'Applicant' }}"
+                                              data-roll="{{ $item->roll ?? '—' }}"
+                                              data-complete="{{ $item->is_fillup_complete ? '1' : '0' }}"
+                                              data-errors="{{ json_encode($item->fillup_errors) }}">
                                             @csrf
-                                            <button type="submit" class="btn btn-success btn-sm" title="Mark as Final Submitted">
+                                            <button type="button" class="btn btn-success btn-sm btn-make-submit" title="Mark as Final Submitted">
                                                 <i class="fas fa-check-circle mr-1"></i>Make Final Submit
                                             </button>
                                         </form>
@@ -184,10 +190,73 @@
 </div>
 @endsection
 
-@push('scripts')
+@section('script')
 <script>
     $(function () {
         $('[data-toggle="tooltip"]').tooltip();
+
+        // SweetAlert2 Confirmation for Undo Final Submit
+        $(document).on('click', '.btn-undo-submit', function (e) {
+            e.preventDefault();
+            const form = $(this).closest('form');
+            const id   = form.data('id');
+            const name = form.data('name');
+            const roll = form.data('roll');
+
+            Swal.fire({
+                title: 'Undo Final Submit?',
+                html: `Are you sure you want to <strong>undo final submit</strong> for <strong>${name}</strong> (Roll: ${roll}, ID #${id})?<br><br><span class="text-danger font-weight-bold"><i class="fas fa-exclamation-triangle mr-1"></i>This will UNLOCK the application and allow the applicant to edit and re-submit.</span>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#f39c12',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="fas fa-undo mr-1"></i> Yes, Undo Submit',
+                cancelButtonText: 'Cancel',
+                reverseButtons: true,
+                focusCancel: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+
+        // SweetAlert2 Confirmation for Make Final Submit
+        $(document).on('click', '.btn-make-submit', function (e) {
+            e.preventDefault();
+            const form       = $(this).closest('form');
+            const id         = form.data('id');
+            const name       = form.data('name');
+            const roll       = form.data('roll');
+            const isComplete = form.data('complete') == 1;
+            const errors     = form.data('errors') || [];
+
+            let extraHtml = '';
+            if (!isComplete && errors.length > 0) {
+                let errorList = errors.map(err => `<li>${err}</li>`).join('');
+                extraHtml = `<div class="alert alert-warning text-left mt-3 mb-0 small">
+                    <strong><i class="fas fa-exclamation-triangle mr-1"></i>Warning: Incomplete Data Detected</strong>
+                    <ul class="mb-0 pl-3 mt-1">${errorList}</ul>
+                    <div class="mt-1 text-muted">Rules will be validated on submission.</div>
+                </div>`;
+            }
+
+            Swal.fire({
+                title: 'Make Final Submit?',
+                html: `Mark application as <strong>Final Submitted</strong> for <strong>${name}</strong> (Roll: ${roll}, ID #${id})?${extraHtml}`,
+                icon: isComplete ? 'question' : 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="fas fa-check-circle mr-1"></i> Yes, Final Submit',
+                cancelButtonText: 'Cancel',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
     });
 </script>
-@endpush
+@endsection
