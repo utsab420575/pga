@@ -39,6 +39,7 @@ use App\Http\Controllers\Admin\PasswordController as AdminPasswordController;
 use App\Http\Controllers\Admin\ActivityLogController as AdminActivityLogController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\AttachmentRequirementController as AdminAttachmentRequirementController;
+use App\Http\Controllers\Admin\FinalSubmitController as AdminFinalSubmitController;
 
 use App\Http\Controllers\PgaPaymentApiController;
 use Illuminate\Support\Facades\Artisan;
@@ -463,6 +464,11 @@ Route::prefix('admin/settings')->middleware(['auth', 'roles:admin'])->group(func
     Route::post('users',          [AdminUserController::class, 'store'])->name('admin.users.store');
     Route::get('users/{id}/edit', [AdminUserController::class, 'edit'])->name('admin.users.edit');
     Route::put('users/{id}',      [AdminUserController::class, 'update'])->name('admin.users.update');
+
+    // Final Submit Control (Undo / Make Final Submit)
+    Route::get('undo-final-submit',                     [AdminFinalSubmitController::class, 'index'])->name('admin.final_submit.index');
+    Route::post('undo-final-submit/{applicant}/undo',   [AdminFinalSubmitController::class, 'undo'])->name('admin.final_submit.undo');
+    Route::post('undo-final-submit/{applicant}/submit', [AdminFinalSubmitController::class, 'submit'])->name('admin.final_submit.submit');
 });
 
 // ============================================================

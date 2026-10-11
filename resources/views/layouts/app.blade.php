@@ -160,6 +160,10 @@
                                 <a class="dropdown-item" href="{{ route('admin.passwords.applicant') }}">
                                     <i class="fas fa-user-lock mr-2 text-primary"></i>Applicant Passwords
                                 </a>
+                                <h6 class="dropdown-header">Submissions</h6>
+                                <a class="dropdown-item" href="{{ route('admin.final_submit.index') }}">
+                                    <i class="fas fa-undo-alt mr-2 text-warning"></i>Undo Final Submit
+                                </a>
                                 <div class="dropdown-divider"></div>
                                 <a class="dropdown-item" href="{{ route('admin.activity_logs.index') }}">
                                     <i class="fas fa-history mr-2 text-info"></i>Activity Log
