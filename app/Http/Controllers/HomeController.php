@@ -68,12 +68,53 @@ class HomeController extends Controller
                 return view('home');
             }
         }
+        elseif(Auth::user()->user_type == 'head')
+        {
+            return $this->head_dashboard();
+        }
         else
         {
             return view('home');
         }
 
 
+    }
+
+    //head dashboard: paid / unpaid statistics and lists, application type wise
+    protected function head_dashboard()
+    {
+        $user = auth()->user();
+
+        $applicants = Applicant::with([
+            'department:id,short_name',
+            'user:id,name,phone',
+            'payment:trxid,paymentdate,amount,method,applicant_id',
+        ])
+            ->where('department_id', $user->department_id)
+            ->orderBy('roll')
+            ->get();
+
+        // 2 = Application for Eligibility (shown first), 1 = Application for Admission Test
+        $typeLabels = [
+            2 => 'Application for Eligibility',
+            1 => 'Application for Admission Test',
+        ];
+        $applicationtypes = Applicationtype::whereIn('id', array_keys($typeLabels))
+            ->orderByDesc('id')
+            ->get()
+            ->each(fn ($t) => $t->type = $typeLabels[$t->id]);
+
+        // [ applicationtype_id => ['paid' => Collection, 'unpaid' => Collection] ]
+        $byType = [];
+        foreach ($applicationtypes as $type) {
+            $rows = $applicants->where('applicationtype_id', $type->id);
+            $byType[$type->id] = [
+                'paid'   => $rows->filter(fn ($a) => (int)$a->payment_status === 1)->values(),
+                'unpaid' => $rows->filter(fn ($a) => (int)$a->payment_status !== 1)->values(),
+            ];
+        }
+
+        return view('head.dashboard', compact('applicationtypes', 'byType'));
     }
 
    /* public function phone_verification()
@@ -1505,6 +1546,39 @@ class HomeController extends Controller
         //return $eligMap;
 
         return view('head.approve-admission', compact('applicants', 'departments','eligMap'));
+    }
+
+    //unpaid applicants for eligibility (applicationtype 2)
+    public function unpaid_eligibility(Request $request)
+    {
+        return $this->unpaid_applicants(2, 'Application for Eligibility');
+    }
+
+    //unpaid applicants for admission (applicationtype 1)
+    public function unpaid_admission(Request $request)
+    {
+        return $this->unpaid_applicants(1, 'Application for Admission Test');
+    }
+
+    protected function unpaid_applicants(int $applicationtypeId, string $title)
+    {
+        $user = auth()->user();
+
+        $q = Applicant::with([
+            'department:id,short_name',
+            'user:id,name,phone',
+        ])
+            ->where('payment_status', '<>', 1)
+            ->where('applicationtype_id', $applicationtypeId);
+
+        // Role-based visibility
+        if ($user->user_type === 'head') {
+            $q->where('department_id', $user->department_id);
+        } // admins see all
+
+        $applicants = $q->orderBy('department_id')->orderBy('roll')->get();
+
+        return view('head.unpaid-applicants', compact('applicants', 'title'));
     }
 
 

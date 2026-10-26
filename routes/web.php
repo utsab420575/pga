@@ -351,6 +351,16 @@ Route::post('approve-admission/{applicant}', [AdmissionApprovalController::class
     ->name('approve-admission.toggle');
 
 
+//unpaid applicants (no action buttons)
+Route::get('unpaid-eligibility', [HomeController::class, 'unpaid_eligibility'])
+    ->middleware('roles:admin,head')
+    ->name('unpaid-eligibility');
+
+Route::get('unpaid-admission', [HomeController::class, 'unpaid_admission'])
+    ->middleware('roles:admin,head')
+    ->name('unpaid-admission');
+
+
 //check student
 Route::get('pgaStudentCheck', [PgaPaymentApiController::class, 'pgaStudentCheck']);
 

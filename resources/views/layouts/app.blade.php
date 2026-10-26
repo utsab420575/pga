@@ -40,31 +40,35 @@
             <ul class="navbar-nav mr-auto">
                 @auth
                     @if (auth()->user()->user_type === 'head')
-                        <!-- Mobile (inside collapsed menu) -->
-                        <li class="nav-item d-md-none">
-                            <a href="{{ url('approve-eligibility') }}" class="nav-link">
-                                <i class="fas fa-user-check mr-1"></i> Eligibility for Application
-                            </a>
-                        </li>
-                        <!-- Desktop button -->
-                        <li class="nav-item d-none d-md-inline-flex align-items-center">
-                            <a href="{{ url('approve-eligibility') }}" class="btn btn-success btn-sm ml-3 text-white">
-                                <i class="fas fa-user-check mr-1"></i> Eligibility for Application
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url('home') }}">
+                                <i class="fas fa-tachometer-alt mr-1"></i> Dashboard
                             </a>
                         </li>
 
-
-                        <!-- Mobile (inside collapsed menu) -->
-                        <li class="nav-item d-md-none">
-                            <a href="{{ url('approve-admission') }}" class="nav-link">
-                                <i class="fas fa-user-check mr-1"></i> Eligibility for Admission Test
+                        {{-- Applicant Approval Dropdown --}}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="approvalDropdown" role="button"
+                               data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fas fa-user-check mr-1"></i> Applicant Approval
                             </a>
-                        </li>
-                        <!-- Desktop button -->
-                        <li class="nav-item d-none d-md-inline-flex align-items-center">
-                            <a href="{{ url('approve-admission') }}" class="btn btn-success btn-sm ml-3 text-white">
-                                <i class="fas fa-user-check mr-1"></i> Eligibility for Admission Test
-                            </a>
+                            <div class="dropdown-menu" aria-labelledby="approvalDropdown">
+                                <h6 class="dropdown-header">Application for Eligibility</h6>
+                                <a class="dropdown-item pl-4" href="{{ url('approve-eligibility') }}">
+                                    <i class="fas fa-check-circle mr-2 text-success"></i>Paid Applicant
+                                </a>
+                                <a class="dropdown-item pl-4" href="{{ url('unpaid-eligibility') }}">
+                                    <i class="fas fa-times-circle mr-2 text-danger"></i>Unpaid Applicant
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <h6 class="dropdown-header">Application for Admission Test</h6>
+                                <a class="dropdown-item pl-4" href="{{ url('approve-admission') }}">
+                                    <i class="fas fa-check-circle mr-2 text-success"></i>Paid Applicant
+                                </a>
+                                <a class="dropdown-item pl-4" href="{{ url('unpaid-admission') }}">
+                                    <i class="fas fa-times-circle mr-2 text-danger"></i>Unpaid Applicant
+                                </a>
+                            </div>
                         </li>
                     @endif
                 @endauth
