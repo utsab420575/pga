@@ -1388,7 +1388,7 @@ class HomeController extends Controller
         $response_data = json_decode($response, true);
         Log::info("Decoded SMS API response", ['response_data' => $response_data]);
 
-        if ($status == 200 && isset($response_data['response']['status']) && strtolower($response_data['response']['status']) == 'success') {
+        /*if ($status == 200 && isset($response_data['response']['status']) && strtolower($response_data['response']['status']) == 'success') {
             Log::info("SMS API reported success, storing OTP in database", ['otp' => $otp_no, 'mobile' => $phoneNumber]);
 
             OTPVerification::create([
@@ -1406,7 +1406,43 @@ class HomeController extends Controller
             $error_message = isset($response_data['error_message']) ? $response_data['error_message'] : 'Failed to send OTP';
             Log::warning("SMS API failed", ['status' => $status, 'error_message' => $error_message, 'response_data' => $response_data]);
             return response()->json(['success' => false, 'message' => $error_message], $status > 0 ? $status : 400);
+        }*/
+
+        if (
+                $status == 200 &&
+                isset($response_data['success']) &&
+                $response_data['success'] === true &&
+                isset($response_data['response']['Text']) &&
+                strtoupper($response_data['response']['Text']) === 'ACCEPTD'
+            ) {
+                Log::info("SMS API reported success, storing OTP in database", [
+                    'mobile' => $phoneNumber,
+                    'message_id' => $response_data['response']['Message_ID'] ?? null
+                ]);
+
+                OTPVerification::create([
+                    'otp' => $otp_no,
+                    'mobile_number' => $phoneNumber,
+                ]);
+
+                Log::info("OTP stored successfully in database");
+                return response()->json([
+                    'success' => true,
+                    'message' => 'OTP sent successfully',
+                    'otp' => $otp_no
+                ]);
+        } else {
+            $error_message = isset($response_data['error_message']) ? $response_data['error_message'] : 'Failed to send OTP';
+            Log::warning("SMS API failed", [
+                'status' => $status,
+                'response_data' => $response_data
+            ]);
+
+            return response()->json(['success' => false, 'message' => $error_message], $status > 0 ? $status : 400);
         }
+
+
+
     }
 
     private function send_sms($to, $text)
