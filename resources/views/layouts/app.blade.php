@@ -168,6 +168,9 @@
                                 <a class="dropdown-item" href="{{ route('admin.final_submit.index') }}">
                                     <i class="fas fa-undo-alt mr-2 text-warning"></i>Undo Final Submit
                                 </a>
+                                <a class="dropdown-item" href="{{ route('admin.applicants.index') }}">
+                                    <i class="fas fa-user-edit mr-2 text-primary"></i>Edit Applicant Information
+                                </a>
                                 <div class="dropdown-divider"></div>
                                 <a class="dropdown-item" href="{{ route('admin.activity_logs.index') }}">
                                     <i class="fas fa-history mr-2 text-info"></i>Activity Log

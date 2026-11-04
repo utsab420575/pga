@@ -109,7 +109,6 @@
                                                 <th>SL</th>
                                                 <th>Applicant Roll</th>
                                                 <th>Name</th>
-                                                <th>Phone</th>
                                                 @if($status === 'paid')
                                                     <th>Payment Date</th>
                                                     <th>Final Submit</th>
@@ -123,8 +122,11 @@
                                                 <tr>
                                                     <td>{{ $loop->iteration }}</td>
                                                     <td>{{ $row->roll }}</td>
-                                                    <td>{{ optional($row->user)->name }}</td>
-                                                    <td>{{ optional($row->user)->phone }}</td>
+                                                    <td>
+                                                        {{ optional($row->user)->name }} <br>
+                                                        {{ optional($row->user)->phone }}
+                                                        @include('head._degree', ['degree' => $row->degree])
+                                                    </td>
                                                     @if($status === 'paid')
                                                         <td>
                                                             {{ optional($row->payment)->paymentdate

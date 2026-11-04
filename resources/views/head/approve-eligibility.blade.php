@@ -147,6 +147,7 @@
                                     <td>
                                         {{ $row->user->name }} <br>
                                         {{ $row->user->phone }}
+                                        @include('head._degree', ['degree' => $row->degree])
                                     </td>
                                     {{--<td>{{ optional($row->payment)->trxid ?? '-' }}</td>--}}
                                     <td>

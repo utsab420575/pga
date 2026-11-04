@@ -88,6 +88,7 @@ class HomeController extends Controller
         $applicants = Applicant::with([
             'department:id,short_name',
             'user:id,name,phone',
+            'degree:id,degree_name',
             'payment:trxid,paymentdate,amount,method,applicant_id',
         ])
             ->where('department_id', $user->department_id)
@@ -1474,6 +1475,7 @@ class HomeController extends Controller
         $q = Applicant::with([
             'department:id,short_name',
             'user:id,name,phone',
+            'degree:id,degree_name',
             'payment:trxid,paymentdate,amount,method,applicant_id',
         ])
 
@@ -1507,6 +1509,7 @@ class HomeController extends Controller
         $q = Applicant::with([
             'department:id,short_name',
             'user:id,name,phone',
+            'degree:id,degree_name',
             'payment:trxid,paymentdate,amount,method,applicant_id',
         ])
 
@@ -1567,6 +1570,7 @@ class HomeController extends Controller
         $q = Applicant::with([
             'department:id,short_name',
             'user:id,name,phone',
+            'degree:id,degree_name',
         ])
             ->where('payment_status', '<>', 1)
             ->where('applicationtype_id', $applicationtypeId);

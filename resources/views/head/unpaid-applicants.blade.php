@@ -64,6 +64,7 @@
                                     <td>
                                         {{ optional($row->user)->name }} <br>
                                         {{ optional($row->user)->phone }}
+                                        @include('head._degree', ['degree' => $row->degree])
                                     </td>
                                     <td>{{ $row->created_at ? $row->created_at->format('d M Y') : '-' }}</td>
                                     <td><span class="badge badge-danger">Unpaid</span></td>

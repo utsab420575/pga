@@ -159,11 +159,11 @@
                                     <td>{{ $i++ }}</td>
                                     {{--<td>{{ optional($row->department)->short_name ?? '-' }}</td>--}}
                                     <td>{{ $row->roll }}<br>
-                                        <span class="badge bg-primary">{{ $row->degree?->degree_name ?? 'N/A' }}</span><br>
                                         <span class="badge bg-warning">{{ $row->studenttype?->type ?? 'N/A' }}</span>
                                     <td>
                                         {{ $row->user->name }} <br>
                                         {{ $row->user->phone }}
+                                        @include('head._degree', ['degree' => $row->degree])
                                     </td>
 
                                     {{--<td>{{ optional($row->payment)->trxid ?? '-' }}</td>--}}

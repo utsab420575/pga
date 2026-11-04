@@ -40,6 +40,7 @@ use App\Http\Controllers\Admin\ActivityLogController as AdminActivityLogControll
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\AttachmentRequirementController as AdminAttachmentRequirementController;
 use App\Http\Controllers\Admin\FinalSubmitController as AdminFinalSubmitController;
+use App\Http\Controllers\Admin\ApplicantController as AdminApplicantController;
 
 use App\Http\Controllers\PgaPaymentApiController;
 use Illuminate\Support\Facades\Artisan;
@@ -479,6 +480,10 @@ Route::prefix('admin/settings')->middleware(['auth', 'roles:admin'])->group(func
     Route::get('undo-final-submit',                     [AdminFinalSubmitController::class, 'index'])->name('admin.final_submit.index');
     Route::post('undo-final-submit/{applicant}/undo',   [AdminFinalSubmitController::class, 'undo'])->name('admin.final_submit.undo');
     Route::post('undo-final-submit/{applicant}/submit', [AdminFinalSubmitController::class, 'submit'])->name('admin.final_submit.submit');
+
+    // Edit Applicant Information
+    Route::get('applicants',           [AdminApplicantController::class, 'index'])->name('admin.applicants.index');
+    Route::put('applicants/{id}',      [AdminApplicantController::class, 'update'])->name('admin.applicants.update');
 });
 
 // ============================================================
