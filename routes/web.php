@@ -42,6 +42,7 @@ use App\Http\Controllers\Admin\AttachmentRequirementController as AdminAttachmen
 use App\Http\Controllers\Admin\FinalSubmitController as AdminFinalSubmitController;
 use App\Http\Controllers\Admin\ApplicantController as AdminApplicantController;
 
+use App\Http\Controllers\GatewayPaymentController;
 use App\Http\Controllers\PgaPaymentApiController;
 use Illuminate\Support\Facades\Artisan;
 
@@ -313,10 +314,26 @@ Route::get('applicant/preview-eligibility-form/{applicant}', [ApplicationPostgra
 
 
 //Payment Route
-Route::get('/bkash-pull', [PgaPaymentApiController::class, 'bkashPull']);
-Route::get('/bkash-push', [PgaPaymentApiController::class, 'bkashPush']);
-Route::get('/agrani-pull', [PgaPaymentApiController::class, 'agraniPull']);
-Route::get('/agrani-push', [PgaPaymentApiController::class, 'agraniPush']);
+/*Route::post('/bkash_pull', [PgaPaymentApiController::class, 'bkashPull']);
+Route::post('/bkash_push', [PgaPaymentApiController::class, 'bkashPush']);
+Route::post('/agrani_pull', [PgaPaymentApiController::class, 'agraniPull']);
+Route::post('/agrani_push', [PgaPaymentApiController::class, 'agraniPush']);*/
+
+
+// Shared gateway Pull/Push (POST, gateway identified by route default)
+//Bkash
+Route::post('/bkash_pull', [GatewayPaymentController::class, 'paymentPull'])->defaults('gateway', 'bkash')->name('bkash_pull');
+Route::post('/bkash_push', [GatewayPaymentController::class, 'paymentPush'])->defaults('gateway', 'bkash')->name('bkash_push');
+
+//Agrani
+Route::post('/agrani_pull', [GatewayPaymentController::class, 'paymentPull'])->defaults('gateway', 'agrani')->name('agrani_pull');
+Route::post('/agrani_push', [GatewayPaymentController::class, 'paymentPush'])->defaults('gateway', 'agrani')->name('agrani_push');
+
+//Upay
+Route::post('/upay_pull', [GatewayPaymentController::class, 'paymentPull'])->defaults('gateway', 'upay')->name('upay_pull');
+Route::post('/upay_push', [GatewayPaymentController::class, 'paymentPush'])->defaults('gateway', 'upay')->name('upay_push');
+
+
 
 
 //showing full page for approve

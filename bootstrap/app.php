@@ -25,6 +25,16 @@ return Application::configure(basePath: dirname(__DIR__))
             'trust.proxies' => TrustProxies::class,    // optional alias if you need it
         ]);
 
+         // Payment API routes called by the central payment system (server to server, no CSRF token)
+        $middleware->validateCsrfTokens(except: [
+            '/bkash_pull',
+            '/bkash_push',
+            '/agrani_pull',
+            '/agrani_push',
+            '/upay_pull',
+            '/upay_push',
+        ]);
+
         // If you want to push custom middleware into groups:
         // $middleware->appendToGroup('web', \App\Http\Middleware\YourWebMiddleware::class);
         // $middleware->appendToGroup('api', \App\Http\Middleware\YourApiMiddleware::class);
