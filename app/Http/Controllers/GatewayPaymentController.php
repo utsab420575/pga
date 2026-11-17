@@ -337,14 +337,14 @@ class GatewayPaymentController extends Controller
     private function deadlinePassed($typeId, $settings, Carbon $today): bool
     {
         if ($typeId === 1) {
-            return !$settings->end_date
-                || $today->gt(Carbon::parse($settings->end_date))
+            return !$settings->last_payment_date
+                || $today->gt(Carbon::parse($settings->last_payment_date))
                 || ($settings->start_date && $today->lt(Carbon::parse($settings->start_date)));
         }
 
         if ($typeId === 2) {
-            return !$settings->eligibility_last_date
-                || $today->gt(Carbon::parse($settings->eligibility_last_date))
+            return !$settings->last_eligibility_payment_date
+                || $today->gt(Carbon::parse($settings->last_eligibility_payment_date))
                 || ($settings->eligibility_start_date && $today->lt(Carbon::parse($settings->eligibility_start_date)));
         }
 
