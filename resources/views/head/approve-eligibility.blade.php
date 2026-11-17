@@ -171,8 +171,8 @@
                                     <td class="cell-status">
                                           <span
                                               id="status-{{ $row->id }}"
-                                              class="badge {{ $isApproved ? 'badge-success' : 'badge-secondary' }}">
-                                            {{ $isApproved ? 'Approved' : 'Pending' }}
+                                              class="badge {{ $isApproved ? 'badge-success' : 'badge-danger' }}">
+                                            {{ $isApproved ? 'Approved' : 'Rejected' }}
                                           </span>
                                     </td>
                                     <td>
@@ -276,9 +276,9 @@
                 const statusSel = btn.dataset.statusTarget;              // "#status-123"
                 const statusEl  = statusSel ? document.querySelector(statusSel) : null;
                 if (statusEl) {
-                    statusEl.textContent = data.approved ? 'Approved' : 'Pending';
-                    statusEl.classList.remove('badge-success','badge-secondary','badge-warning');
-                    statusEl.classList.add(data.approved ? 'badge-success' : 'badge-secondary');
+                    statusEl.textContent = data.approved ? 'Approved' : 'Rejected';
+                    statusEl.classList.remove('badge-success','badge-secondary','badge-warning','badge-danger');
+                    statusEl.classList.add(data.approved ? 'badge-success' : 'badge-danger');
                 }
 
                 // Toast
